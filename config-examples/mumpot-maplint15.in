@@ -1,0 +1,18 @@
+#!@prefix@/bin/mumpot
+
+placefile "~/.mumpot/places.txt"
+startplace 53°02'N 9°00'E
+origin 85°3'4.063607''N 180°0'0''W
+xfactor 6.472691358016
+yfactor 6.472691358016
+projection mercator
+fullwidth 8388608
+fullheight 8388608
+map "OSM" {
+  origin 85°3'4.063607''N 180°00'00''W 0 0
+  tilewidth 256
+  tileheight 256
+  filepattern "~/.mumpot/tiles/maplint15/%05X/%03Y"
+  url "http://tah.openstreetmap.org/Tiles/maplint/15/%05X/%05Y.png"
+}
+

@@ -1,0 +1,273 @@
+# Chinese translations for kartenleser package
+# kartenleser 软件包的简体中文翻译.
+# Copyright (C) 2008 Andreas Kemnade
+# This file is distributed under the same license as the kartenleser package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: kartenleser 0.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-05-12 22:07+0200\n"
+"PO-Revision-Date: 2008-01-19 18:07+0100\n"
+"Language-Team: Chinese\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.c:129
+msgid "/View/Show place searchbox"
+msgstr ""
+
+#: src/main.c:130
+msgid "/View/Show crosshairs"
+msgstr ""
+
+#: src/main.c:131
+msgid "/View/Follow GPS"
+msgstr ""
+
+#: src/main.c:132
+msgid "/View/Zoom out"
+msgstr ""
+
+#: src/main.c:133
+msgid "/View/Zoom in"
+msgstr ""
+
+#: src/main.c:356 src/printdlg.c:206 src/create_connection.c:362
+msgid "OK"
+msgstr ""
+
+#: src/main.c:1276
+msgid "select a name for the new nmea file"
+msgstr ""
+
+#: src/main.c:1352
+msgid "select a gps file"
+msgstr ""
+
+#: src/main.c:1383
+msgid "select an osm file"
+msgstr ""
+
+#: src/main.c:1403
+msgid "save OSM data"
+msgstr ""
+
+#: src/main.c:1452
+msgid "Lost GPS connection"
+msgstr ""
+
+#: src/main.c:1638
+#, c-format
+msgid ""
+"%s %s\n"
+"Copyright (C) 2008 Andreas Kemnade\n"
+"This is free software.  You may redistribute copies of it under the terms "
+"of\n"
+"the GNU General Public License <http://www.gnu.org/licenses/gpl.html>\n"
+"There is NO WARRANTY, to the extent permitted by law."
+msgstr ""
+
+#: src/main.c:1656
+msgid "/Help/About"
+msgstr ""
+
+#: src/main.c:1658
+msgid "/Project/Printing/mark page in scale 1:50000"
+msgstr ""
+
+#: src/main.c:1659
+msgid "/Project/Printing/mark page in scale 1:25000"
+msgstr ""
+
+#: src/main.c:1660
+msgid "/Project/Printing/mark page in scale 1:100000"
+msgstr ""
+
+#: src/main.c:1661
+msgid "/Project/Printing/mark page in scale 1:200000"
+msgstr ""
+
+#: src/main.c:1662
+msgid "/Project/Printing/mark page in scale 1:1000000"
+msgstr ""
+
+#: src/main.c:1663
+msgid "/Project/Printing/delete marked areas"
+msgstr ""
+
+#: src/main.c:1664
+msgid "/Project/Printing/print marked areas"
+msgstr ""
+
+#: src/main.c:1665
+msgid "/Project/Printing/delete marked area"
+msgstr ""
+
+#: src/main.c:1666
+msgid "/Project/save route"
+msgstr ""
+
+#: src/main.c:1667
+msgid "/Project/load route"
+msgstr ""
+
+#: src/main.c:1668
+msgid "/Project/load GPS data"
+msgstr ""
+
+#: src/main.c:1669
+msgid "/Project/load OSM data"
+msgstr ""
+
+#: src/main.c:1670
+msgid "/Project/save OSM data"
+msgstr ""
+
+#: src/main.c:1672
+msgid "/Project/Connect to GPS receiver"
+msgstr ""
+
+#: src/main.c:1679 src/main.c:1680 src/main.c:1681
+msgid "/View/Request tiles/request missing"
+msgstr ""
+
+#: src/main.c:1680
+msgid "/View/Request tiles/request never"
+msgstr ""
+
+#: src/main.c:1681
+msgid "/View/Request tiles/older than one day"
+msgstr ""
+
+#: src/main.c:1683
+msgid "/View/Disconnect GPS"
+msgstr ""
+
+#: src/main.c:1686
+msgid "/Project/quit"
+msgstr ""
+
+#: src/main.c:1713
+msgid "Name"
+msgstr ""
+
+#: src/main.c:1713
+msgid "is in"
+msgstr ""
+
+#: src/main.c:1769
+msgid "file name"
+msgstr ""
+
+#: src/main.c:1773
+msgid "place name:"
+msgstr ""
+
+#: src/main.c:1777
+msgid "search"
+msgstr ""
+
+#: src/main.c:1936 src/main.c:1943
+#, c-format
+msgid "Usage: %s configfile\n"
+msgstr ""
+
+#: src/printdlg.c:21
+msgid "Default printer"
+msgstr ""
+
+#: src/printdlg.c:176
+msgid "Print"
+msgstr ""
+
+#: src/printdlg.c:181
+msgid "to printer: "
+msgstr ""
+
+#: src/printdlg.c:192
+msgid "Print to file: "
+msgstr ""
+
+#: src/printdlg.c:198
+msgid "Print with the following command: "
+msgstr ""
+
+#: src/printdlg.c:202
+msgid "Print range"
+msgstr ""
+
+#: src/printdlg.c:210 src/create_connection.c:366
+msgid "Cancel"
+msgstr ""
+
+#: src/printdlg.c:216
+msgid "all pages"
+msgstr ""
+
+#: src/printdlg.c:220
+msgid "Page from: "
+msgstr ""
+
+#: src/printdlg.c:224
+msgid "to: "
+msgstr ""
+
+#: src/osm_view.c:454
+msgid "set"
+msgstr ""
+
+#: src/create_connection.c:72
+#, c-format
+msgid "searching devices failed\n"
+msgstr ""
+
+#: src/create_connection.c:76
+#, c-format
+msgid "found %d devices\n"
+msgstr ""
+
+#: src/create_connection.c:275 src/create_connection.c:305
+msgid "TCP/IP"
+msgstr ""
+
+#: src/create_connection.c:304
+msgid "Bluetooth"
+msgstr ""
+
+#: src/create_connection.c:306
+msgid "Serial"
+msgstr ""
+
+#: src/create_connection.c:307
+msgid "Type of connection:"
+msgstr ""
+
+#: src/create_connection.c:316
+msgid "Device:"
+msgstr ""
+
+#: src/create_connection.c:322
+msgid "baud rate:"
+msgstr ""
+
+#: src/create_connection.c:331
+msgid "Bluetooth address:"
+msgstr ""
+
+#: src/create_connection.c:337
+msgid "Channel:"
+msgstr ""
+
+#: src/create_connection.c:346
+msgid "IP/Hostname:"
+msgstr ""
+
+#: src/create_connection.c:353
+msgid "Port:"
+msgstr ""
+
+#: src/create_connection.c:372
+msgid "Creating GPS connection failed"
+msgstr ""

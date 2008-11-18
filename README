@@ -1,0 +1,109 @@
+To use mumpot:
+
+start
+mumpot-tah
+or
+mumpot-mapnik
+
+These files contain configuration files, so that
+mumpot loads tiles@home resp. mapnik tiles. 
+
+If you want to use the place search box, generate the corresponding
+text file first:
+bzcat some_osm_dump.osm.bz2 | osm2places /dev/stdin >~/.mumpot/places.txt
+This can even be the big planet.osm.bz2
+
+Handling OSM vector data
+------------------------
+You can load an OSM file in the project menu. It
+may have been compressed with bzip2, but take
+care of the memory usage of big files.
+The other possibility is to download the OSM data
+using the corresponding menu item in the project menu.
+A bounding box is then constructed around your route
+and the corresponding OSM data is downloaded.
+
+Routing with osm data:
+Select View->Mode->routing in the menu.
+on the right side, you see three buttons.
+With the first two ones you set the starting point
+and the destination point for route planning.
+For navigation, you use the third button and click on the
+destination point. 
+A line will be drawn from the nearest node
+to the destination and is kept uptodate
+when the map is scrolled (= you move around).
+
+Editing OSM data:
+Select View->Mode->live edit
+To edit the tags of existing ways,
+select OSM->Auto-select way in center
+and OSM->Display tags
+You have now a row with the tag
+names and values.  After editing one tag,
+click on set to save the changes.
+The other possibility to edit OSM data
+is to connect to a gps receiver and
+click on the first button to start a
+new way. Then you can select the highway
+class.  When you reach the end of the way,
+click on the end way button.
+To immediately start a new way of the same type
+(because e.g. the street name changes),
+press the restart way button (3rd button in row).
+The fourth button enables merging the ends
+with existing ways. You can save the OSM data and
+load it with JOSM and have a final look on it and upload
+it there.
+
+Printing
+----------
+To print an area, you select in the menu  Printing->mark page in scale .....
+Then a rectangle appears which shows the borders of the area that would
+fit on a page which can be fixed to an area by mouse clicks.
+If you use the right mouse button, you will get landscape areas.
+If you have marked all your pages, you can select Printing->print marked
+pages and print it.
+
+
+Mouse handling 
+---------------
+
+In the route planing mode, you can
+draw lines on the map to mark your route.
+You can add points to your route with the left
+mouse button. With the shift button
+remove the last point with the right button.
+With the middle button, you set an endpoint, the
+route will not be continued after that and
+pressing the left button again will delete everything
+in the current line layer.
+If you press the ctrl key while moving
+the mouse along the line, you will see the distance.
+The map can be centered by clicking
+the right mouse button when holding the shift key.
+With the shift key hold down,  you can also calculate
+routes if there is vector data loaded. 
+Click with the left button on the starting
+point and when you still hold down the
+shift key, a red line will follow through the
+streets your mouse pointer, when you click on
+a point again, the destination is set.
+
+
+GPS 
+---
+Mumpot can connect to gps receivers over bluetooth
+(you can enter the bluetooth address directly and the 
+channel, no need to create a serial device for the
+bluetooth connection). You also can connect to serial
+ports or to any source with streams NMEA data or gpx data
+over tcp (the operation mode for connecting it to gpsd).
+It is strongly recommended to log the gps
+recordings external (for example using
+nc localhost 2947 >filename ), but you can also
+save the track in mumpot, simply select View->Select line layer->4
+and select Project->save route
+
+
+

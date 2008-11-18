@@ -1,0 +1,107 @@
+ The configfile consists of lines in the following format 
+configfile: | configfile T_NEWLINE configline ;
+--
+ one line can have the following contents: 
+configline: /* nothing 
+    load the given place file list 
+   | T_PLACEFILE T_STRING {
+--
+    specify the start place by lattitude/longitude 
+   | T_STARTPLACE lattitude longitude {
+--
+    specify origin (lattitude/longitude)
+      of the coordinate system 
+   | T_ORIGIN lattitude longitude {
+--
+    set the start place by a name of a place 
+   | T_STARTPLACE T_STRING {
+--
+    width of the coordinate system in pixels 
+   | T_FULLWIDTH T_NUM {
+--
+    height of the coordinate system in pixels 
+   | T_FULLHEIGHT T_NUM {
+--
+    global xfactor 
+   | T_XFACTOR realnum {
+--
+    global yfactor 
+   | T_YFACTOR realnum {
+--
+    definition of a map 
+   | T_MAP map 
+--
+    definition of a map 
+map: T_STRING ' 
+    or without a newline 
+   | T_STRING ' 
+--
+    a map definition can consist of lines 
+maplines: | maplines T_NEWLINE mapline
+--
+    in the following form 
+mapline: /* nothing 
+    a reference point with geographical coordinates
+      and with x/y coordinates  relative to the origin specified above 
+   | T_ORIGIN lattitude longitude T_NUM T_NUM {
+--
+    x scaling factor relative to the global coordinate system 
+   | T_XFACTOR realnum {
+--
+    y scaling factor relative to the global coordinate system 
+   | T_YFACTOR realnum {
+--
+    tile width (width of a single file) 
+   | T_TILEWIDTH T_NUM {
+--
+    tile height (height of a single file) 
+   | T_TILEHEIGHT T_NUM {
+--
+    file pattern: %X and %Y are replaced
+      with the x and y number of the tile, 
+      both must appear
+      printf modifiers are allowed (0, - and 0-9) 
+   | T_FILEPATTERN T_STRING {
+--
+ a longitude can be defined as
+   a degree followed  by E for east 
+longitude: degree 'E' 
+ or by W for west 
+	 | degree 'W' 
+--
+ a lattitude can be defined as
+   a degree followed by N for north 
+lattitude:  degree 'N' 
+ or by S for south 
+	 | degree 'S' 
+--
+ a degree can contain the degree with 
+   minutes separated by the ° character
+degree: realnum '°' degmin  
+ or  minutes only 
+        | degmin 
+ or  seconds only 
+	| degsec 
+--
+ minutes can be minutes with secods  
+degmin:  realnum '\'' degsec 
+ or only minutes followed by the ' character 
+        | realnum '\'' 
+--
+ seconds followed by '' 
+degsec: realnum '\'' '\'' 
+T_STRING := \"[^\"]*\"  
+T_PLACEFILE := placefile      
+T_STARTPLACE := startplace     
+T_FULLWIDTH := fullwidth      
+T_FULLHEIGHT := fullheight     
+T_MAP := map            
+T_ORIGIN := origin         
+T_XFACTOR := xfactor        
+T_YFACTOR := yfactor        
+T_TILEWIDTH := tilewidth      
+T_TILEHEIGHT := tileheight     
+T_FILEPATTERN := filepattern    
+T_NEWLINE := \n   
+T_REALNUM := [[:digit:]]+\.[[:digit:]]+   
+T_NUM := [[:digit:]]+  

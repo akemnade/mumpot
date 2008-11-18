@@ -1,0 +1,15 @@
+T_STRING := \"[^\"]*\"  
+T_PLACEFILE := placefile      
+T_STARTPLACE := startplace     
+T_FULLWIDTH := fullwidth      
+T_FULLHEIGHT := fullheight     
+T_MAP := map            
+T_ORIGIN := origin         
+T_XFACTOR := xfactor        
+T_YFACTOR := yfactor        
+T_TILEWIDTH := tilewidth      
+T_TILEHEIGHT := tileheight     
+T_FILEPATTERN := filepattern    
+T_NEWLINE := \n   
+T_REALNUM := [[:digit:]]+\.[[:digit:]]+   
+T_NUM := [[:digit:]]+  
