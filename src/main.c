@@ -1517,7 +1517,22 @@ static void got_gpsinput(gpointer data, int fd,
     gtk_label_set_text(GTK_LABEL(mw->gps_label),"");
     mw->gpsf=NULL;
     display_text_box(_("Lost GPS connection"));
+  } else {
+    if (mw->gpstimertag) {
+      g_source_remove(mw->gpstimertag);
+      mw->gpstimertag=0;
+    }
   }
+}
+
+/* send r if no nmea data arrives */
+static int gps_timer_first(void *data)
+{
+  struct mapwin *mw = (struct mapwin *)data;
+  if (mw->gpsf) {
+    gps_writeback(mw->gpsf,"r+\n",3); 
+  }
+  return FALSE;
 }
 
 static int gps_timer(void *data)
@@ -1541,7 +1556,8 @@ static void gps_connected(struct connection_dialog *cdlg,
   mw->gpsf=open_gps_file(fd);
   mw->gpstag=gdk_input_add(fd, GDK_INPUT_READ,
 			   got_gpsinput,mw);
-  g_timeout_add_full(0,3000,gps_timer,mw,NULL);
+  mw->gpstimertag=g_timeout_add_full(0,3000,gps_timer,mw,NULL);
+  g_timeout_add_full(0,3000,gps_timer_first,mw,NULL);
   mw->follow_gps=1;
   check_item_set_state(mw,PATH_FOLLOW_GPS,mw->follow_gps);
   

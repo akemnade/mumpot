@@ -30,3 +30,4 @@ struct gpsfile *open_gps_file(int fd);
 void close_gps_file(struct gpsfile *gpsf,int closefd);
 int proc_gps_input(struct gpsfile *gpsf,
                    void (*gpsproc)(struct nmea_pointinfo *,void *), void *data);
+int gps_writeback(struct gpsfile *gpsf, void *data, int len);

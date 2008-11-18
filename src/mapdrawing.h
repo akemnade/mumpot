@@ -63,6 +63,7 @@ struct mapwin {
   GList *modelist;
   int disp_search;
   int gpstag;
+  int gpstimertag;
   int gpsfd;
   int follow_gps;
   int have_gpspos;

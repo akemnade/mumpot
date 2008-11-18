@@ -69,7 +69,10 @@ void  save_nmea(FILE *f,GList *save_list)
   }
 }
  
-
+int gps_writeback(struct gpsfile *gpsf, void *data, int len)
+{
+   return write(gpsf->fd, data, len);
+}
 
 
 static int my_split(char *bigstr, char **needle, char *delim, int maxsplit)
