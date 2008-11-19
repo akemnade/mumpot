@@ -11,6 +11,8 @@
  GNU General Public License for more details.
 ***********************************************************************/
 #include <gtk/gtk.h>
+#include <glib.h>
+#include <stdio.h>
 #include "gps.h"
 #include "mapconfig_data.h"
 #include "mapdrawing.h"

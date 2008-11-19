@@ -408,7 +408,11 @@ static gboolean check_cons(gpointer key, gpointer value, gpointer data)
 static void osmroute_check_consistency()
 {
   double dist=0;
+#ifdef USE_GTK2
   g_tree_foreach(ptree,check_cons,&dist);
+#else
+  g_tree_traverse(ptree,check_cons,G_IN_ORDER,&dist);
+#endif
 }
 
 static void osmroute_check_node(int nodenum,double newlen, int prevnode)
@@ -581,7 +585,11 @@ int osmroute_set_first_point(struct mapwin *mw,
     osmroute_put_way_info(nnum,0,0);
     osmroute_ways2fifo(nnum);
     nnum=0;
+#ifdef USE_GTK2
     g_tree_foreach(ptree,ptree_trav,&nnum);
+#else
+    g_tree_traverse(ptree,ptree_trav,G_IN_ORDER,&nnum);
+#endif
     while(nnum) {
       /*
       double mindist=DBL_MAX;
@@ -601,7 +609,11 @@ int osmroute_set_first_point(struct mapwin *mw,
       g_tree_remove(ptree,get_osm_node(nnum)->user_data);
       osmroute_ways2fifo(nnum);
       nnum=0;
+#ifdef USE_GTK2
       g_tree_foreach(ptree,ptree_trav,&nnum);
+#else
+      g_tree_traverse(ptree,ptree_trav,G_IN_ORDER,&nnum);
+#endif
     }
     g_tree_destroy(ptree);
     gettimeofday(&tv2,NULL);

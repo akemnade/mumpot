@@ -934,6 +934,23 @@ static void paste_coords(GtkWidget *widget,
           8,(guchar *)clip_coord_buf,strlen(clip_coord_buf));
 }
 
+
+/* map focus in */
+static gboolean map_focus_in(GtkWidget *w, GdkEventFocus *event, gpointer user_data)
+{
+  GTK_WIDGET_SET_FLAGS(w,GTK_HAS_FOCUS);
+  gtk_widget_draw_focus(w);
+  return FALSE;
+}
+
+/* map focus out */
+static gboolean map_focus_out(GtkWidget *w, GdkEventFocus *event, gpointer user_data)
+{
+  GTK_WIDGET_UNSET_FLAGS(w,GTK_HAS_FOCUS);
+  gtk_widget_draw_focus(w);
+  return FALSE;
+}
+
 /* hanlde map clicks */
 gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
@@ -1398,8 +1415,12 @@ static gboolean map_key_press(GtkWidget *w, GdkEventKey *ev, gpointer data)
     mw->follow_gps=follow_gps;
     check_item_set_state(mw,PATH_FOLLOW_GPS,mw->follow_gps);
   }
-  }
+#ifndef USE_GTK2
+  gtk_signal_emit_stop_by_name(w,"key_press_event");
+#endif
   return TRUE;
+  }
+  return FALSE;
 }
 
 
@@ -2029,6 +2050,10 @@ struct mapwin * create_mapwin()
 		     GTK_SIGNAL_FUNC(map_click),w);
   gtk_signal_connect(GTK_OBJECT(w->map),"button_release_event",
 		     GTK_SIGNAL_FUNC(map_click_release),w);
+  gtk_signal_connect(GTK_OBJECT(w->map),"focus_in_event",
+                     GTK_SIGNAL_FUNC(map_focus_in),w);
+  gtk_signal_connect(GTK_OBJECT(w->map),"focus_out_event",
+                     GTK_SIGNAL_FUNC(map_focus_out),w);
   gtk_signal_connect(GTK_OBJECT(w->map),"key_press_event",
                      GTK_SIGNAL_FUNC(map_key_press),w);
 /*  gtk_signal_connect(GTK_OBJECT(w->mainwin),"key_press_event",
