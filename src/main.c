@@ -939,7 +939,9 @@ static void paste_coords(GtkWidget *widget,
 static gboolean map_focus_in(GtkWidget *w, GdkEventFocus *event, gpointer user_data)
 {
   GTK_WIDGET_SET_FLAGS(w,GTK_HAS_FOCUS);
+#ifndef USE_GTK2
   gtk_widget_draw_focus(w);
+#endif
   return FALSE;
 }
 
@@ -947,7 +949,9 @@ static gboolean map_focus_in(GtkWidget *w, GdkEventFocus *event, gpointer user_d
 static gboolean map_focus_out(GtkWidget *w, GdkEventFocus *event, gpointer user_data)
 {
   GTK_WIDGET_UNSET_FLAGS(w,GTK_HAS_FOCUS);
+#ifndef USE_GTK2
   gtk_widget_draw_focus(w);
+#endif
   return FALSE;
 }
 
