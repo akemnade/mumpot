@@ -736,6 +736,18 @@ static void handle_route_click(struct mapwin *mw, int x, int y)
   }
 }
 
+static void remove_last_route_point(struct mapwin *mw)
+{
+  if (*mw->mark_line_list) {
+    GList *glast=g_list_last(*mw->mark_line_list);
+    free(glast->data);
+    *mw->mark_line_list=g_list_remove_link(*mw->mark_line_list,glast);
+    gdk_draw_pixmap(mw->map->window,mygc,mw->map_store,0,0,0,0,mw->page_width,
+		    mw->page_height);
+  }
+}
+
+
 struct t_mark_rect *mark_is_clicked(struct mapwin *mw, int x, int y)
 {
   GList *l;
@@ -764,21 +776,35 @@ gboolean map_click_release(GtkWidget *widget, GdkEventButton *event,
   y+=mw->page_y;
   if (mouse_state==PANNING) {
     handle_pan_release(mw,event,x,y);
+  } else if (mouse_state==IN_WAY) {
+    int wd=x-mw->mouse_x;
+    int hd=y-mw->mouse_y;
+    hd=hd/(mw->page_height/4);
+    wd=wd/(mw->page_width/4);
+    if ((wd<=-2)&&(hd==0)) {
+      mw->mark_str=NULL;
+      reset_way_info();
+      mw->has_path=0;
+      remove_last_route_point(mw);
+      remove_last_route_point(mw);
+      gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
+  
+    } else if ((wd==0)&&(hd<=-2)) {
+      mw->line_drawing=0;
+      g_list_foreach(*mw->mark_line_list,free_line,NULL);
+      g_list_free(*mw->mark_line_list);
+      *mw->mark_line_list=NULL;
+      reset_way_info();
+      mw->has_path=0;
+      mouse_state=START_WAY;
+      gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
+  
+    }
   }
   return TRUE;
 }
 
 
-static void remove_last_route_point(struct mapwin *mw)
-{
-  if (*mw->mark_line_list) {
-    GList *glast=g_list_last(*mw->mark_line_list);
-    free(glast->data);
-    *mw->mark_line_list=g_list_remove_link(*mw->mark_line_list,glast);
-    gdk_draw_pixmap(mw->map->window,mygc,mw->map_store,0,0,0,0,mw->page_width,
-		    mw->page_height);
-  }
-}
 
 /* handle clicks when the click could start a way */
 static void handle_start_way_click(struct mapwin *mw, GdkEventButton *event, int x, int y)
@@ -964,6 +990,8 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
   y=(int)event->y;
   x+=mw->page_x;
   y+=mw->page_y;
+  mw->mouse_x=x;
+  mw->mouse_y=y;
   mw->mouse_move_str=NULL;
   if (!GTK_WIDGET_HAS_FOCUS(mw->map)) {
     gtk_widget_grab_focus(widget);
