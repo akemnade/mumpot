@@ -22,7 +22,7 @@
 #include "mapconfig.h"
 char *current_file;
 int current_lineno=1;
-YYSTYPE yylval;
+YYSTYPE kconfylval;
 extern double parsed_lattitude;
 extern double parsed_longitude;
 int parse_init_state;
@@ -75,7 +75,7 @@ static char *delquote(char *str)
 }
 %}			  
 %%
-\"[^\"]*\"     yylval.str=delquote(yytext); return T_STRING;
+\"[^\"]*\"     kconfylval.str=delquote(yytext); return T_STRING;
 placefile      return T_PLACEFILE;
 startplace     return T_STARTPLACE;
 fullwidth      return T_FULLWIDTH;
@@ -95,8 +95,8 @@ mercator       return T_MERCATOR;
 \n   current_lineno++; return T_NEWLINE;
 [ \t]+ /* ignore */
 #.* /* ignore*/
--?[[:digit:]]+\.[[:digit:]]+  yylval.realnum=atof(yytext); return T_REALNUM;
--?[[:digit:]]+          yylval.num=atoi(yytext); return T_NUM;
+-?[[:digit:]]+\.[[:digit:]]+  kconfylval.realnum=atof(yytext); return T_REALNUM;
+-?[[:digit:]]+          kconfylval.num=atoi(yytext); return T_NUM;
 .    return (int)(yytext[0]&0xff);
 
 %%

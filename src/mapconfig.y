@@ -11,7 +11,6 @@
  GNU General Public License for more details.
 ***********************************************************************/
 %name-prefix="kconfy"
-%defines
 %{
 #include <stdio.h>
 #include <stdlib.h>
