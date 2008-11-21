@@ -1,6 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-YFLAGS = -d
-LFLAGS = -P kconf
 
 INCLUDES = \
 	@GTK_CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/pixmaps

@@ -10,8 +10,10 @@
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 ***********************************************************************/
-
+%option prefix="kconf"
+%option nounput
 %{
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +27,7 @@ extern double parsed_lattitude;
 extern double parsed_longitude;
 int parse_init_state;
 int parsing_started;
-extern int yyparse();
+extern int kconfyparse();
 int parse_mapconfig(char *fname) 
 {
   FILE *f;
@@ -40,7 +42,7 @@ int parse_mapconfig(char *fname)
   parsing_started = 0;
 
   yyrestart(f);
-  yyparse();
+  kconfyparse();
   setlocale(LC_ALL,"");
   return 1;
   	  
@@ -55,7 +57,7 @@ int parse_coords(char *coordstr, double *lattitude, double *longitude)
   parse_init_state = PARSE_COORDS;
   parsing_started=0;
   bs=yy_scan_string(coordstr);
-  yyparse();
+  kconfyparse();
   yy_delete_buffer(bs);
   *lattitude=parsed_lattitude;
   *longitude=parsed_longitude;
