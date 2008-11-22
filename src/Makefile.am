@@ -3,8 +3,9 @@
 INCLUDES = \
 	@GTK_CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/pixmaps
 DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
+AM_YFLAGS = -d
 
-
+BUILT_SOURCES = mapconfig.h
 
 .l.c:
 	$(LEX) $(LFLAGS) -o$@ $<
