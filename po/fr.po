@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mumpot 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-11-11 22:37+0100\n"
+"POT-Creation-Date: 2008-11-19 23:11+0100\n"
 "PO-Revision-Date: 2008-11-11 08:29+0100\n"
 "Last-Translator: Georgy Baudart <georgyatbaweticdotbe>\n"
 "Language-Team: French\n"
@@ -41,27 +41,27 @@ msgstr "/Affichage/Zoom arrière"
 msgid "OK"
 msgstr "OK"
 
-#: src/main.c:1331
+#: src/main.c:1348
 msgid "select a name for the new nmea file"
 msgstr "Choisir un nom pour les nouvelles données NMEA"
 
-#: src/main.c:1411
+#: src/main.c:1432
 msgid "select a gps file"
 msgstr "Choisir un fichier GPS"
 
-#: src/main.c:1442
+#: src/main.c:1463
 msgid "select an osm file"
 msgstr "Choisir un fichier OSM"
 
-#: src/main.c:1462
+#: src/main.c:1483
 msgid "save OSM data"
 msgstr "Enregistrer les données OSM"
 
-#: src/main.c:1519
+#: src/main.c:1540
 msgid "Lost GPS connection"
 msgstr "Connection avec le GPS perdue"
 
-#: src/main.c:1710
+#: src/main.c:1747
 #, c-format
 msgid ""
 "%s %s\n"
@@ -72,15 +72,15 @@ msgid ""
 "There is NO WARRANTY, to the extent permitted by law."
 msgstr ""
 
-#: src/main.c:1733
+#: src/main.c:1770
 msgid "downloading OSM data failed"
 msgstr "Téléchargement des données OSM echoué"
 
-#: src/main.c:1743
+#: src/main.c:1780
 msgid "downloading OSM data finished"
 msgstr "Téléchargement des données OSM terminé"
 
-#: src/main.c:1777
+#: src/main.c:1814
 msgid ""
 "No area selected,\n"
 " draw some lines around the area \n"
@@ -93,145 +93,145 @@ msgstr ""
 "quelques lignes autour de la région\n"
 "désirée"
 
-#: src/main.c:1809
+#: src/main.c:1846
 msgid "/Help/About"
 msgstr "/Aide/A propos"
 
-#: src/main.c:1811
+#: src/main.c:1848
 msgid "/Project/Printing/mark page in scale 1:50000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:50000"
 
-#: src/main.c:1812
+#: src/main.c:1849
 msgid "/Project/Printing/mark page in scale 1:25000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:25000"
 
-#: src/main.c:1813
+#: src/main.c:1850
 msgid "/Project/Printing/mark page in scale 1:100000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:100000"
 
-#: src/main.c:1814
+#: src/main.c:1851
 msgid "/Project/Printing/mark page in scale 1:200000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:200000"
 
-#: src/main.c:1815
+#: src/main.c:1852
 msgid "/Project/Printing/mark page in scale 1:1000000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:1000000"
 
-#: src/main.c:1816
+#: src/main.c:1853
 msgid "/Project/Printing/delete marked areas"
 msgstr "/Projet/Imprimer/Effacer la région sélectionnée"
 
-#: src/main.c:1817
+#: src/main.c:1854
 msgid "/Project/Printing/print marked areas"
 msgstr "/Projet/Imprimer/Imprimer la région sélectionnée"
 
-#: src/main.c:1818
+#: src/main.c:1855
 msgid "/Project/Printing/delete marked area"
 msgstr "/Projet/Imprimer/Effacer la région sélectionnée"
 
-#: src/main.c:1819
+#: src/main.c:1856
 msgid "/Project/save route (current layer)"
 msgstr "/Projet/Enregistrer le tracé (calque présent)"
 
-#: src/main.c:1820
+#: src/main.c:1857
 msgid "/Project/load GPS data"
 msgstr "/Projet/Charger données GPS"
 
-#: src/main.c:1821
+#: src/main.c:1858
 msgid "/Project/load OSM data"
 msgstr "/Projet/Charger données OSM"
 
-#: src/main.c:1822
+#: src/main.c:1859
 msgid "/Project/download OSM data for selected region"
 msgstr "/Projet/Télécharger les données OSM pour la région sélectionnée"
 
-#: src/main.c:1823
+#: src/main.c:1860
 msgid "/Project/save OSM data"
 msgstr "/Projet/Enregistrer les données OSM"
 
-#: src/main.c:1825
+#: src/main.c:1862
 msgid "/Project/Connect to GPS receiver"
 msgstr "/Projet/Connection au GPS"
 
-#: src/main.c:1831 src/main.c:1832 src/main.c:1833 src/main.c:1834
-#: src/main.c:1835
+#: src/main.c:1868 src/main.c:1869 src/main.c:1870 src/main.c:1871
+#: src/main.c:1872
 msgid "/View/Select line layer/0"
 msgstr "/Affichage/Choisir niveau de ligne/0"
 
-#: src/main.c:1832
+#: src/main.c:1869
 msgid "/View/Select line layer/1"
 msgstr "/Affichage/Choisir niveau de ligne/1"
 
-#: src/main.c:1833
+#: src/main.c:1870
 msgid "/View/Select line layer/2"
 msgstr "/Affichage/Choisir niveau de ligne/2"
 
-#: src/main.c:1834
+#: src/main.c:1871
 msgid "/View/Select line layer/3"
 msgstr "/Affichage/Choisir niveau de ligne/3"
 
-#: src/main.c:1835
+#: src/main.c:1872
 msgid "/View/Select line layer/4 (live gps)"
 msgstr "/Affichage/Choisir niveau de ligne/4 (d'après GPS)"
 
-#: src/main.c:1837 src/main.c:1838 src/main.c:1839
+#: src/main.c:1874 src/main.c:1875 src/main.c:1876
 msgid "/View/Request tiles/request missing"
 msgstr "/Affichage/Charger tuiles/manquantes"
 
-#: src/main.c:1838
+#: src/main.c:1875
 msgid "/View/Request tiles/request never"
 msgstr "/Affichage/Charger tuiles/jamais"
 
-#: src/main.c:1839
+#: src/main.c:1876
 msgid "/View/Request tiles/older than one day"
 msgstr "/Affichage/Charger tuiles/plus d'un jour"
 
-#: src/main.c:1840
+#: src/main.c:1877
 msgid "/View/Disconnect GPS"
 msgstr "/Affichage/Se déconnecter du GPS"
 
-#: src/main.c:1843
+#: src/main.c:1880
 msgid "/Project/quit"
 msgstr "/Projet/quitter"
 
-#: src/main.c:1873 src/main.c:1878
+#: src/main.c:1910 src/main.c:1915
 #, c-format
 msgid "/View/Mode/%s"
 msgstr "/Affichage/Mode/%s"
 
-#: src/main.c:1919
+#: src/main.c:1956
 msgid "Name"
 msgstr ""
 
-#: src/main.c:1919
+#: src/main.c:1956
 msgid "is in"
 msgstr ""
 
-#: src/main.c:1978
+#: src/main.c:2015
 msgid "file name"
 msgstr "Nom du fichier"
 
-#: src/main.c:1982
+#: src/main.c:2019
 msgid "place name:"
 msgstr "Nom de l'endroit:"
 
-#: src/main.c:1986
+#: src/main.c:2023
 msgid "search"
 msgstr "Chercher"
 
-#: src/main.c:2064
+#: src/main.c:2105
 msgid "Move mode"
 msgstr "Mode déplacement"
 
-#: src/main.c:2070
+#: src/main.c:2111
 msgid "pan mode"
 msgstr ""
 
-#: src/main.c:2076
+#: src/main.c:2117
 msgid "route drawing mode"
 msgstr "Editeur de tracé"
 
-#: src/main.c:2177 src/main.c:2184 src/main.c:2188
+#: src/main.c:2218 src/main.c:2225 src/main.c:2229
 #, c-format
 msgid "Usage: %s configfile\n"
 msgstr "Utilisation: %s Fichier de configuration\n"
@@ -304,43 +304,43 @@ msgstr "/OSM/Mode/Mode édition directe"
 msgid "/OSM/Mode/routing"
 msgstr "/OSM/Mode/Calcul de la navigation"
 
-#: src/osm_view.c:821
+#: src/osm_view.c:833
 msgid "set"
 msgstr ""
 
-#: src/osm_view.c:1222
+#: src/osm_view.c:1234
 msgid "start a new way"
 msgstr "Commencer un nouveau chemin"
 
-#: src/osm_view.c:1230
+#: src/osm_view.c:1242
 msgid "finish a new way"
 msgstr "Terminer un nouveau chemin"
 
-#: src/osm_view.c:1234
+#: src/osm_view.c:1246
 msgid "finish a way and start a new one at the same place"
 msgstr "Terminer un chemin et commencer un nouveau chemin en ce point"
 
-#: src/osm_view.c:1242
+#: src/osm_view.c:1254
 msgid "auto-merge the start/end of a way to an existing way"
 msgstr "Commencer/Terminer un chemin à un point déja existant"
 
-#: src/osm_view.c:1252
+#: src/osm_view.c:1264
 msgid "set the start point for the route calculation"
 msgstr "Déterminer le point de départ"
 
-#: src/osm_view.c:1254
+#: src/osm_view.c:1266
 msgid "set the destination point for the route calculation"
 msgstr "Déterminer le point de destination"
 
-#: src/osm_view.c:1256
+#: src/osm_view.c:1268
 msgid "navigate to the given destination"
 msgstr "Naviguer vers le point de destination"
 
-#: src/osm_view.c:1261
+#: src/osm_view.c:1273
 msgid "routing"
 msgstr "Calcul de la navigation"
 
-#: src/osm_view.c:1265
+#: src/osm_view.c:1277
 msgid "live edit"
 msgstr "Mode édition directe"
 
