@@ -31,5 +31,5 @@ struct osmtagpresets *osm_parse_presetfile(char *fname)
   FILE *f;
   char buf[256];
   setlocale(LC_NUMERIC,"C");
-  
+  f=fopen(fname,"r");
 }
