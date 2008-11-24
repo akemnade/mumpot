@@ -158,7 +158,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
                &pinfo.color_type,
                &pinfo.interlace_type, NULL, NULL);
   pinfo.num_palette=0;
-  if (pinfo.color_type == PNG_COLOR_TYPE_PALETTE)
+  if (pinfo.color_type & PNG_COLOR_TYPE_PALETTE)
     {
       int i;
       /* we want 8 bit per pixel */
@@ -178,10 +178,10 @@ struct pixmap_info *load_gfxfile(const char *filename)
         }
     }
   num_channels=png_get_channels(png_ptr,info_ptr);
-#if 0
-  if (num_channels<4)
-    png_set_bgr(png_ptr);
-#endif
+  if (num_channels == 4) {
+    png_set_strip_alpha(png_ptr);
+    pinfo.color_type &= (~PNG_COLOR_MASK_ALPHA);
+  }
   if (pinfo.color_type == PNG_COLOR_TYPE_GRAY) {
     int i;
     if (  pinfo.bit_depth < 8)
@@ -190,7 +190,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
     for(i=0;i<256;i++) {
       pinfo.gdk_palette[i]=(i<<16)+(i<<8)+i;
     }
-  }
+  } 
   /* tell libpng about our format wishes */
   png_read_update_info(png_ptr, info_ptr);
   if (pinfo.color_type==PNG_COLOR_TYPE_RGB)
