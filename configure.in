@@ -82,6 +82,7 @@ po/Makefile.in
 config-examples/Makefile
 config-examples/mumpot-tah
 config-examples/mumpot-mapnik
+config-examples/mumpot-cyclemap
 config-examples/mumpot-maplint15
 ])
 
