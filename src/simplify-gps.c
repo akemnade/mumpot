@@ -79,6 +79,22 @@ int main(int argc, char **argv)
   int nodenum=-1;
   int mergeosm=0;
   int o;
+  if (argc == 2) {
+    if (!strcmp(argv[1],"--version")) {
+      printf("%s (%s %s)\n""Copyright (C) 2008 Andreas Kemnade\n"
+      "This is free software.  You may redistribute copies of it under the terms of\n"
+      "the GNU General Public License version 3 or any later version <http://www.gnu.org/licenses/gpl.html>\n"
+      "There is NO WARRANTY, to the extent permitted by law.\n",argv[0],PACKAGE,VERSION);
+      return 0;
+    } else if (!strcmp(argv[1],"--help")) {
+      printf("Usage: %s [-p mindist] [-n negnodenum] [-o] nmea-files ...\n\n"
+	     "Simplifies NMEA data\n\n"
+"  -p mindist gives the limit for simplification, the resulting trace does not differ mindist arc seconds from the original.\n"
+ "  -o switch to osm output: the trace is converted to an osm way, with node numbers starting by -1 or if specified by negnodenum\n",argv[0]);
+
+      return 0;
+    }
+  }
   while(0<(o=getopt(argc,argv,"hop:n:"))) {
     switch(o) {
     case 'p':

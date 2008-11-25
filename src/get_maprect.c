@@ -66,6 +66,25 @@ int main(int argc, char **argv)
 	    argv[0]);
     return 1;
     } */
+  if (argc == 2) {
+    if (!strcmp(argv[1],"--help")) {
+      printf("Usage: %s -x xoffset -y yoffset -w width -h height [-c configfile] [-p] [-n nmeafile] [-z] filename coords\n\n"
+      "Extracts one rectangle from the tile cache.\n\n"
+      "coords are the geographical coordinates in the form like \"49°22'33''N 7°11'44''E\" \n"
+      "-x/-y/-w/-h specify the area around the coords to extract in pixels\n"
+      "-p turns on eps output instead of png output\n"
+      "-c gives the name of a configfile for mumpot (like /usr/bin/mumpot-tah)\n"
+      "-n gives an nmea track which is drawn on top of the map in eps mode\n"
+      "-z draws an arrow to the place specified by coords\n",argv[0]);
+       return 0;
+    } else if (!strcmp(argv[1],"--version")) {
+      printf("%s (%s %s)\n""Copyright (C) 2008 Andreas Kemnade\n"
+      "This is free software.  You may redistribute copies of it under the terms of\n"
+      "the GNU General Public License version 3 or any later version <http://www.gnu.org/licenses/gpl.html>\n"
+      "There is NO WARRANTY, to the extent permitted by law.\n",argv[0],PACKAGE,VERSION);
+      return 0;
+    }
+  }
   while(0<(o=getopt(argc,argv,"zx:w:y:h:c:pn:"))) {
     switch(o) {
     case 'x': xoffset=atoi(optarg); o_found |= OPT_XOFF; break;

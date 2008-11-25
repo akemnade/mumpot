@@ -10,7 +10,9 @@
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 ***********************************************************************/
-
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <libxml/parser.h>
 #include <string.h>
 static int placedepth=-1;
@@ -107,14 +109,26 @@ int main(int argc, char **argv)
   };
   xmlParserCtxtPtr ctxt;
   char buf[256];
-  if (argc!=2) {
-    fprintf(stderr,"Usage %s file.osm > places.txt\n", argv[0]);
-    return 1;
+  if ((argc!=2) || (!strcmp(argv[1],"--help"))) {
+    printf("Usage %s file.osm > ~/.mumpot/places.txt\n\n"
+	   "Extracts placenames from the OSM file and outputs them to stdout\n\n"
+	   "The osm file can be also be a bigger file like the dumps from\n"
+	   "download.geofabrik.de or the full planet.osm but using the result\n"
+	   "on systems like the FreeRunner is not recommended\n"
+	   "Big osm files can be piped through the program by using\n"
+	   "bzcat bigosmfile.osm.bz2 | osm2places /dev/stdin >places.txt",argv[0]);
+    return 0;
+  } else if (!strcmp("--version",argv[1])) {
+    printf("%s (%s %s)\n""Copyright (C) 2008 Andreas Kemnade\n"
+	   "This is free software.  You may redistribute copies of it under the terms of\n"
+	   "the GNU General Public License version 3 or any later version <http://www.gnu.org/licenses/gpl.html>\n"
+	   "There is NO WARRANTY, to the extent permitted by law.\n",argv[0],PACKAGE,VERSION);
+    return 0;
   }
-  f=fopen(argv[1],"rb");
+	     
+	     f=fopen(argv[1],"rb");
   if (!f) {
     fprintf(stderr,"Cannot open %s\n",argv[1]);
-    fprintf(stderr,"Usage %s file.osm > places.txt\n",argv[0]);
     return 1;
   }
   l = fread(buf, 1, sizeof(buf), f);
