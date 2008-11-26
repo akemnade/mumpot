@@ -1312,6 +1312,7 @@ struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
   menu_item_set_state(mw, MENU_OSM_DISPLAY_TAGS,1);
   gtk_widget_set_sensitive(mw->osm_inf->startwaybut,1);
   gtk_widget_set_sensitive(mw->osm_inf->start_route,1);
+  gtk_widget_set_sensitive(mw->osm_inf->set_destination,1);
 
   return osmf;
 }
