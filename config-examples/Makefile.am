@@ -1,1 +1,1 @@
-bin_SCRIPTS = mumpot-maplint15 mumpot-tah mumpot-mapnik mumpot-cyclemap
+bin_SCRIPTS = mumpot-tah mumpot-mapnik mumpot-cyclemap
