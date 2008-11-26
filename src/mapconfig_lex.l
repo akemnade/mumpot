@@ -97,6 +97,7 @@ mercator       return T_MERCATOR;
 #.* /* ignore*/
 -?[[:digit:]]+\.[[:digit:]]+  kconfylval.realnum=atof(yytext); return T_REALNUM;
 -?[[:digit:]]+          kconfylval.num=atoi(yytext); return T_NUM;
+\xc2\xb0   return 0xb0;
 .    return (int)(yytext[0]&0xff);
 
 %%
