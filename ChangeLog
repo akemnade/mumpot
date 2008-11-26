@@ -1,3 +1,13 @@
+Changes between 0.3.2 and 0.3.1:
+- send r+ to gpsd if no NMEA data arrives
+- adding cyclemap wrapper
+- fixed handling of alpha channel in pngs so that the cyclemap
+  can be displayed
+- mouse gestures for route editing no it can be done
+  with one mouse button
+- manpages
+
+
 Changes between 0.3 and 0.3.1:
 - various bug fixes
 - correct printing problems
