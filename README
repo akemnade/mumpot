@@ -4,6 +4,8 @@ start
 mumpot-tah
 or
 mumpot-mapnik
+or
+mumpot-cyclemap
 
 These files contain configuration files, so that
 mumpot loads tiles@home resp. mapnik tiles. 
@@ -72,12 +74,16 @@ Mouse handling
 In the route planing mode, you can
 draw lines on the map to mark your route.
 You can add points to your route with the left
-mouse button. With the shift button
+mouse button (or the touchscreen). With the shift button
 remove the last point with the right button.
 With the middle button, you set an endpoint, the
 route will not be continued after that and
 pressing the left button again will delete everything
 in the current line layer.
+If you have only a touchscreen you can move the finger
+from right to left on the touchscreen to delete the last
+point. Moving the finger from bottom to top will
+delete everything on the current line layer. 
 If you press the ctrl key while moving
 the mouse along the line, you will see the distance.
 The map can be centered by clicking
@@ -104,6 +110,4 @@ recordings external (for example using
 nc localhost 2947 >filename ), but you can also
 save the track in mumpot, simply select View->Select line layer->4
 and select Project->save route
-
-
 
