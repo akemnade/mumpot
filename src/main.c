@@ -1557,6 +1557,16 @@ static void got_gps_position(struct nmea_pointinfo *nmea,
   g_idle_add(set_gps_position,mw);
 }
 
+static void close_gps(struct mapwin *mw)
+{
+  if (mw->gpsf) {
+    close_gps_file(mw->gpsf,1);
+    gdk_input_remove(mw->gpstag);
+  }
+  mw->gpsf=NULL;
+  mw->gpsfd=-1,
+  gtk_label_set_text(GTK_LABEL(mw->gps_label),"");
+}
 
 static void got_gpsinput(gpointer data, int fd,
 			 GdkInputCondition cond)
@@ -1565,12 +1575,9 @@ static void got_gpsinput(gpointer data, int fd,
   
   if (proc_gps_input(mw->gpsf,
 		     got_gps_position, mw)<=0) {
-    close_gps_file(mw->gpsf,1);
-    gdk_input_remove(mw->gpstag);
-    gtk_label_set_text(GTK_LABEL(mw->gps_label),"");
-    mw->gpsf=NULL;
+    close_gps(mw);
     display_text_box(_("Lost GPS connection"));
-  } else {
+  } else { 
     if (mw->gpstimertag) {
       g_source_remove(mw->gpstimertag);
       mw->gpstimertag=0;
@@ -1609,8 +1616,8 @@ static void gps_connected(struct connection_dialog *cdlg,
   mw->gpsf=open_gps_file(fd);
   mw->gpstag=gdk_input_add(fd, GDK_INPUT_READ,
 			   got_gpsinput,mw);
-  mw->gpstimertag=g_timeout_add_full(0,3000,gps_timer,mw,NULL);
-  g_timeout_add_full(0,3000,gps_timer_first,mw,NULL);
+  mw->gpstimertag=g_timeout_add_full(0,3000,gps_timer_first,mw,NULL);
+  g_timeout_add_full(0,3000,gps_timer,mw,NULL);
   mw->follow_gps=1;
   check_item_set_state(mw,PATH_FOLLOW_GPS,mw->follow_gps);
   
@@ -1622,6 +1629,7 @@ static void connect_gps_cb(gpointer callback_data,
 			GtkWidget *w)
 {
   struct mapwin *mw=(struct mapwin *)callback_data;
+  close_gps(mw);
 #ifndef _WIN32
   show_connection_dialog(mw->cdlg);
 #endif
@@ -1658,15 +1666,12 @@ static void switch_followgps(gpointer callback_data,
   mw->follow_gps=GTK_CHECK_MENU_ITEM(w)->active;
 }
 
-static void close_gps(gpointer callback_data,
-                      guint callback_action,
-                      GtkWidget *w)
+static void close_gps_cb(gpointer callback_data,
+                         guint callback_action,
+                         GtkWidget *w)
 {
   struct mapwin *mw=(struct mapwin *)callback_data;
-  gdk_input_remove(mw->gpstag);
-  close(mw->gpsfd);
-  gtk_label_set_text(GTK_LABEL(mw->gps_label),"");
-  mw->gpsfd=-1;
+  close_gps(mw);
 }
 
 
@@ -1906,7 +1911,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/View/Request tiles/request missing"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),1,"<RadioItem>"},
     {N_("/View/Request tiles/request never"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),0,N_("/View/Request tiles/request missing")},
     {N_("/View/Request tiles/older than one day"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),86400,N_("/View/Request tiles/request missing")},
-    {N_("/View/Disconnect GPS"),NULL,GTK_SIGNAL_FUNC(close_gps),0,NULL},
+    {N_("/View/Disconnect GPS"),NULL,GTK_SIGNAL_FUNC(close_gps_cb),0,NULL},
     {PATH_ZOOM_OUT_N,NULL,GTK_SIGNAL_FUNC(zoom_out_cb),0,NULL},
     {PATH_ZOOM_IN_N,NULL,GTK_SIGNAL_FUNC(zoom_in_cb),0,NULL},
     {N_("/Project/quit"),NULL,GTK_SIGNAL_FUNC(gtk_main_quit),0,NULL}};
@@ -2251,7 +2256,7 @@ int main(int argc, char **argv)
       return 1;
     }
   } else if (argc==1) {
-    snprintf(buf,sizeof(buf),"%s/.map.conf",getenv("HOME"));
+    snprintf(buf,sizeof(buf),"%s/.mumpot/map.conf",getenv("HOME"));
     configfilename=buf;
   } else {
     printf(_("Usage: %s configfile\n"),argv[0]);
