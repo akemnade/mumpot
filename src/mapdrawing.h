@@ -64,7 +64,6 @@ struct mapwin {
   int disp_search;
   int gpstag;
   int gpstimertag;
-  int gpsfd;
   int follow_gps;
   int have_gpspos;
   int mouse_x, mouse_y;

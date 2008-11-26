@@ -1564,7 +1564,6 @@ static void close_gps(struct mapwin *mw)
     gdk_input_remove(mw->gpstag);
   }
   mw->gpsf=NULL;
-  mw->gpsfd=-1,
   gtk_label_set_text(GTK_LABEL(mw->gps_label),"");
 }
 
@@ -1598,7 +1597,7 @@ static int gps_timer_first(void *data)
 static int gps_timer(void *data)
 {
   struct mapwin *mw = (struct mapwin *)data;
-  if (mw->gpsfd < 0) {
+  if (mw->gpsf == NULL) {
     return FALSE;
   }
   if (!mw->have_gpspos) {
