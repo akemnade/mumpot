@@ -5,7 +5,7 @@ INCLUDES = \
 DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
 AM_YFLAGS = -d
 
-BUILT_SOURCES = mapconfig.h tagpresetfile.h
+BUILT_SOURCES = mapconfig.h osm_tagpresets.h
 
 .l.c:
 	$(LEX) $(LFLAGS) -o$@ $<
@@ -14,7 +14,7 @@ noinst_PROGRAMS = pngviewer cur_pos
 
 pngviewer_SOURCES = pngviewer.c png_io.c png_io.h 
 mumpot_SOURCES = \
-	main.c mapdrawing.c gui_common.c gui_common.h mapconfig.h mapdrawing.h png2ps.c png2ps.h png_io.c png_io.h strasse.c strasse.h findpath.c findpath.h mapconfig.y mapconfig_lex.l mapconfig_data.h printdlg.c printdlg.h create_connection.c create_connection.h osm_view.c osm_view.h osm_parse.h osm_parse.c myintl.h geometry.h geometry.c gps.c gps.h tagpresetfile.y tagpreseetfile.h tagpresetfile_lex.l
+	main.c mapdrawing.c gui_common.c gui_common.h mapconfig.h mapdrawing.h png2ps.c png2ps.h png_io.c png_io.h strasse.c strasse.h findpath.c findpath.h mapconfig.y mapconfig_lex.l mapconfig_data.h printdlg.c printdlg.h create_connection.c create_connection.h osm_view.c osm_view.h osm_parse.h osm_parse.c myintl.h geometry.h geometry.c gps.c gps.h osm_tagpresets.y osm_tagpresets.h osm_tagpresets_lex.l osm_tagpresets_data.h
 get_maprect_SOURCES= \
 	get_maprect.c geometry.c geometry.h mapdrawing.c mapdrawing.h png_io.c png_io.h strasse.c mapconfig.h strasse.h mapconfig_lex.l mapconfig.y mapconfig_data.h png2ps.c png2ps.h gps.c gps.h
 simplify_gps_SOURCES= \
