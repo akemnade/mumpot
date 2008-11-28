@@ -93,10 +93,11 @@ settag: T_SETTAG T_STRING T_STRING {
 items: {$$=NULL;} | items item { $$=g_list_append($1,$2); }
 ;
 
-item: T_POS T_NUM T_NUM menu {
+item: T_POS T_NUM T_NUM T_STRING menu {
   struct osm_presetitem *pitem=g_new0(struct osm_presetitem,1);
   pitem->x=$2;
   pitem->y=$3;
-  pitem->menu=$4;
+  pitem->name=$4;
+  pitem->menu=$5;
 };
 

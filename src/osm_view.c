@@ -37,6 +37,8 @@
 #include "osm_parse.h"
 #include "gui_common.h"
 #include "geometry.h"
+#include "osm_tagpresets_data.h"
+#include "osm_tagpresets_gui.h"
 #include "start_way.xpm"
 #include "end_way.xpm"
 #include "restart_way.xpm"
@@ -859,6 +861,7 @@ void init_osm_draw(struct mapwin *mw)
   }
   gtk_container_add(GTK_CONTAINER(mw->osm_inf->hwypopup),table);
   gtk_widget_show_all(table);
+  osm_parse_presetfile("tagpresets");
   sigmw=mw;
   signal(SIGHUP,mysigh);
   atexit(myexitf);
@@ -1213,7 +1216,17 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
   } else if (GTK_WIDGET_MAPPED(mw->osm_inf->set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination))) {
     set_destination(mw,x,y);
     return TRUE;
-  }
+  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut)) {
+    struct osm_node *nd;
+    double lon=0;
+    double lat=0;
+    point2geosec(&lon,&lat,x,y);
+    lon/=3600.0;
+    lat/=3600.0;
+    nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
+    osm_choose_tagpreset(osm_nodepresets,&nd->head.tag_list);
+    return TRUE;
+  }  
   return FALSE;
 }
 
