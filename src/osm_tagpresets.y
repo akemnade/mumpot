@@ -42,7 +42,7 @@ int tagselwrap()
   char *str;
   int num;
   struct osm_preset_menu_sect *menu;
-  struct osm_preset_item *item;
+  struct osm_presetitem *item;
   GList *list;
 }
 
@@ -79,18 +79,22 @@ menu: '{' settags '}' {
   }
 ;
 
-settags: { $$=NULL;} | settags settag { $$=g_list_append($1,$2); } 
-     ;
+settags: { $$=NULL;} | settags settag { 
+  $$=g_list_append($1,$2); 
+  } 
+;
 
 settag: T_SETTAG T_STRING T_STRING {
   char *tstr=calloc(1,strlen($2)+strlen($3)+2);
   strcpy(tstr,$2);
-  strcpy(tstr+strlen($3)+1,$3);
+  strcpy(tstr+strlen($2)+1,$3);
   $$=tstr;
 }
 ;
 
-items: {$$=NULL;} | items item { $$=g_list_append($1,$2); }
+items: {$$=NULL;} | items item { 
+  $$=g_list_append($1,$2); 
+  }
 ;
 
 item: T_POS T_NUM T_NUM T_STRING menu {
@@ -99,5 +103,6 @@ item: T_POS T_NUM T_NUM T_STRING menu {
   pitem->y=$3;
   pitem->name=$4;
   pitem->menu=$5;
+  $$=pitem;
 };
 

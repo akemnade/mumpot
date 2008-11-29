@@ -10,26 +10,20 @@
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 ***********************************************************************/
-%option prefix="tagsel"
-%option nounput
-%{
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <locale.h>
-
-#include "osm_tagpresets.h"
-#include "osm_tagpresetfile_lex.l"
-
-
-int tagpreset_lineno;
-YYTYPE tagsellval;
-
-struct osmtagpresets *osm_parse_presetfile(char *fname)
-{
-  FILE *f;
-  char buf[256];
-  setlocale(LC_NUMERIC,"C");
-  f=fopen(fname,"r");
-}
+#ifndef K_OSM_TAGPRESETS_DATA_H
+#define K_OSM_TAGPRESETS_DATA_H
+struct osm_preset_menu_sect {
+  GList *tags;
+  GList *items;
+};
+struct osm_presetitem {
+  char *name;
+  int x;
+  int y;
+  struct osm_preset_menu_sect *menu;
+};
+extern struct osm_preset_menu_sect *osm_waypresets;
+extern struct osm_preset_menu_sect *osm_nodepresets;
+int osm_parse_presetfile(char *fname);
+int tagsellex();
+#endif

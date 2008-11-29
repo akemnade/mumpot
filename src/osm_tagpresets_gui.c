@@ -58,6 +58,6 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 		       0,0);
     }
     gtk_container_add(GTK_CONTAINER(win),table);
-    gtk_widget_show(win);
+    gtk_widget_show_all(win);
   }
 }

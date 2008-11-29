@@ -692,8 +692,14 @@ static void draw_ways(struct mapwin *mw, struct osm_file *osmf,
 	  (mw->page_y < nrd->y) && (mw->page_y+mw->page_height > nrd->y)) {
 	if (set_color) {
 	  gdk_gc_set_foreground(osmgc,&node_color);
-	  gdk_draw_rectangle(mw->map->window,osmgc,1,nrd->x-mw->page_x-node->nr_ways,
-			     nrd->y-mw->page_y-node->nr_ways,2*node->nr_ways,2*node->nr_ways);
+	  if (node->nr_ways!=0) {
+	    gdk_draw_rectangle(mw->map->window,osmgc,1,nrd->x-mw->page_x-node->nr_ways,
+			       nrd->y-mw->page_y-node->nr_ways,2*node->nr_ways,2*node->nr_ways);
+	  } else {
+	    gdk_draw_line(mw->map->window,osmgc,nrd->x-mw->page_x-4,nrd->y-4-mw->page_y,nrd->x+4-mw->page_x,nrd->y+4-mw->page_y);
+	    gdk_draw_line(mw->map->window,osmgc,nrd->x+4-mw->page_x,nrd->y-4-mw->page_y,nrd->x-4-mw->page_x,
+			  nrd->y+4-mw->page_y);
+	  }
 	}
 	/* draw node */
       }
@@ -1201,6 +1207,7 @@ int osm_center_handler(struct mapwin *mw, GdkGC *mygc, int x, int y)
 
 int osm_mouse_handler(struct mapwin *mw, int x, int y)
 {
+  printf("mapped: %x\n",GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut));
   if (GTK_WIDGET_MAPPED(mw->osm_inf->start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route))) {
     set_route_start(mw,x,y);
     return TRUE;
@@ -1216,7 +1223,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
   } else if (GTK_WIDGET_MAPPED(mw->osm_inf->set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination))) {
     set_destination(mw,x,y);
     return TRUE;
-  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut)) {
+  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut))&&(osm_nodepresets)) {
     struct osm_node *nd;
     double lon=0;
     double lat=0;
