@@ -251,7 +251,7 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
     if (strncmp(gpsf->buf,"$GPRMC",6)==0) {
       char *fields[13];
       int numfields=my_split(gpsf->buf,fields,",",13);
-      if ((numfields == 13)&&(strlen(fields[3])>3)) {
+      if (((numfields == 13)||(numfields == 12))&&(strlen(fields[3])>3)) {
         gpsf->curpoint.lattsec=to_seconds(fields[3]);
         gpsf->curpoint.longsec=to_seconds(fields[5]);
         if ((fields[4])[0] == 'S')
@@ -262,7 +262,7 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
         gpsf->curpoint.date=fields[9];
         gpsf->curpoint.speed=atof(fields[7]);
         gpsf->curpoint.heading=atof(fields[8]);
-        gpsf->curpoint.state=(fields[12])[0];
+        gpsf->curpoint.state=(numfields==13)?((fields[12])[0]):'?';
 	gpsf->curpoint.start_new=gpsf->first?1:0;
         gpsproc(&gpsf->curpoint,data);
 	gpsf->first=0;
