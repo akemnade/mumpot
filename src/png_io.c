@@ -182,6 +182,9 @@ struct pixmap_info *load_gfxfile(const char *filename)
     png_set_strip_alpha(png_ptr);
     pinfo.color_type &= (~PNG_COLOR_MASK_ALPHA);
   }
+  if (pinfo.bit_depth > 8) {
+    png_set_strip_16(png_ptr);
+  }
   if (pinfo.color_type == PNG_COLOR_TYPE_GRAY) {
     int i;
     if (  pinfo.bit_depth < 8)
