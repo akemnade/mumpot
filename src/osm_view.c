@@ -100,6 +100,7 @@ struct osm_info {
   GtkWidget *end_route;
   GtkWidget *set_destination;
   GtkWidget *hwypopup;
+  struct timeval clicktime;
 };
 
 static GHashTable *color_hash;
@@ -1207,31 +1208,53 @@ int osm_center_handler(struct mapwin *mw, GdkGC *mygc, int x, int y)
 
 int osm_mouse_handler(struct mapwin *mw, int x, int y)
 {
-  printf("mapped: %x\n",GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut));
+  struct timeval tv;
+  struct timeval tvdiff;
+  gettimeofday(&tv,NULL);
+  int above_limit;
+  tvdiff.tv_sec=tv.tv_sec-mw->osm_inf->clicktime.tv_sec;
+  tvdiff.tv_usec=tv.tv_usec-mw->osm_inf->clicktime.tv_usec;
+  if (tvdiff.tv_usec < 0) {
+    tvdiff.tv_sec--;
+    tvdiff.tv_usec += 1000000;
+  }
+  above_limit=(tvdiff.tv_sec>0);
   if (GTK_WIDGET_MAPPED(mw->osm_inf->start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route))) {
-    set_route_start(mw,x,y);
+    if (above_limit) {
+      set_route_start(mw,x,y);
+      mw->osm_inf->clicktime=tv;
+    }
     return TRUE;
 
 
   } else if (GTK_WIDGET_MAPPED(mw->osm_inf->end_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route))) {
-    set_route_end(mw,x,y);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),1);
-    gtk_widget_queue_draw_area(mw->map,0,0,
-			       mw->page_width,
-			       mw->page_height);
+    if (above_limit) {
+      set_route_end(mw,x,y);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),1);
+      gtk_widget_queue_draw_area(mw->map,0,0,
+				 mw->page_width,
+				 mw->page_height);
+      mw->osm_inf->clicktime=tv;
+    }
     return TRUE;
   } else if (GTK_WIDGET_MAPPED(mw->osm_inf->set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination))) {
-    set_destination(mw,x,y);
+    if (above_limit) {
+      set_destination(mw,x,y);
+      mw->osm_inf->clicktime=tv;
+    }
     return TRUE;
   } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut))&&(osm_nodepresets)) {
-    struct osm_node *nd;
-    double lon=0;
-    double lat=0;
-    point2geosec(&lon,&lat,x,y);
-    lon/=3600.0;
-    lat/=3600.0;
-    nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
-    osm_choose_tagpreset(osm_nodepresets,&nd->head.tag_list);
+    if (above_limit) {
+      struct osm_node *nd;
+      double lon=0;
+      double lat=0;
+      point2geosec(&lon,&lat,x,y);
+      lon/=3600.0;
+      lat/=3600.0;
+      nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
+      osm_choose_tagpreset(osm_nodepresets,&nd->head.tag_list);
+      mw->osm_inf->clicktime=tv;
+    }
     return TRUE;
   }  
   return FALSE;
