@@ -714,7 +714,7 @@ static void handle_route_click(struct mapwin *mw, int x, int y)
       
       mw->has_path=findpath(mw->str_is_anfang?str->anfang_krid:str->end_krid);
     } else {
-      mw->has_path=osmroute_set_first_point(mw,mw->osm_main_file,x,y);
+      mw->has_path=osmroute_start_calculate_nodest(mw,mw->osm_main_file,x,y);
       mw->mark_str=NULL;
     }
   } else {

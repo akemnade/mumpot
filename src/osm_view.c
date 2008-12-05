@@ -101,6 +101,7 @@ struct osm_info {
   GtkWidget *set_destination;
   GtkWidget *hwypopup;
   struct timeval clicktime;
+  int route_start_node;
 };
 
 static GHashTable *color_hash;
@@ -407,7 +408,7 @@ static gboolean check_cons(gpointer key, gpointer value, gpointer data)
   return FALSE;
 }
 
-
+#ifdef TREE_DEBUG
 static void osmroute_check_consistency()
 {
   double dist=0;
@@ -417,6 +418,7 @@ static void osmroute_check_consistency()
   g_tree_traverse(ptree,check_cons,G_IN_ORDER,&dist);
 #endif
 }
+#endif
 
 static void osmroute_check_node(int nodenum,double newlen, int prevnode)
 {
@@ -435,10 +437,13 @@ static void osmroute_check_node(int nodenum,double newlen, int prevnode)
 	  return;
 	  } */
      
+#ifdef TREE_DEBUG
       osmroute_check_consistency();
+#endif
       g_tree_insert(ptree,nrd,node);
+#ifdef TREE_DEBUG
       osmroute_check_consistency();
-      
+#endif
       /*
       pfifo[pfifo_w]=nodenum;
       pfifo_w++;
@@ -449,14 +454,17 @@ static void osmroute_check_node(int nodenum,double newlen, int prevnode)
   }
 }
 
-static void osmroute_ways2fifo(int nodenum)
+static void osmroute_ways2fifo(int nodenum, int destnodenum)
 {
   GList *way_list;
   double oldlen;
   struct osm_node *node=get_osm_node(nodenum);
+  struct osm_node *destnode=destnodenum?get_osm_node(destnodenum):0;
   if (!node)
     return;
   osmroute_get_way_info(nodenum,&oldlen,NULL);
+  if (destnode)
+    oldlen-=point_dist(node->lon,node->lat,destnode->lon,destnode->lat);
   //printf("dist: %f\n",oldlen);
   for(way_list = node->way_list; way_list;way_list=g_list_next(way_list)) {
     struct osm_way *way=way_list->data;
@@ -482,7 +490,10 @@ static void osmroute_ways2fifo(int nodenum)
 	if (!node2)
 	  continue;
 	addlen+=point_dist(oldlon,oldlat,node2->lon,node2->lat);
-	osmroute_check_node(node2->head.id,oldlen+addlen,way->nodes[i-1]);
+	osmroute_check_node(node2->head.id,oldlen+addlen+
+			    ((destnode)?point_dist(node2->lon,node2->lat,
+						   destnode->lon,destnode->lat):0),
+			    way->nodes[i-1]);
 	oldlon=node2->lon;
 	oldlat=node2->lat;
       }
@@ -494,7 +505,7 @@ static void osmroute_ways2fifo(int nodenum)
 	if (!node2)
 	  continue;
 	addlen+=point_dist(oldlon,oldlat,node2->lon,node2->lat);
-	osmroute_check_node(node2->head.id,addlen+oldlen,way->nodes[i+1]);
+	osmroute_check_node(node2->head.id,addlen+oldlen+((destnode)?point_dist(node2->lon,node2->lat,destnode->lon,destnode->lat):0),way->nodes[i+1]);
 	oldlon=node2->lon;
 	oldlat=node2->lat;
       }
@@ -565,15 +576,18 @@ gboolean ptree_trav(gpointer key,
   return TRUE;
 }
 
-int osmroute_set_first_point(struct mapwin *mw,
+int osmroute_start_calculate(struct mapwin *mw,
 			     struct osm_file *osmf,
-			     int x, int y)
+			     int nnum, int destx, int desty)
 {
   struct timeval tv1;
   struct timeval tv2;
   gettimeofday(&tv1,NULL);
-  int nnum=find_nearest_node(mw,osmf,x,y,1);
-  if (nnum) {
+  int nnumdest=0;
+  if ((destx)&&(desty)) {
+    nnumdest=find_nearest_node(mw,osmf,destx,desty,1);
+  }
+  if ((nnum)&&(nnum!=nnumdest)) {
     double l;
     osmroute_get_way_info(nnum,&l,NULL);
     if (l==0)
@@ -586,14 +600,14 @@ int osmroute_set_first_point(struct mapwin *mw,
     pfifo_w=0;
 #endif
     osmroute_put_way_info(nnum,0,0);
-    osmroute_ways2fifo(nnum);
+    osmroute_ways2fifo(nnum,nnumdest);
     nnum=0;
 #ifdef USE_GTK2
     g_tree_foreach(ptree,ptree_trav,&nnum);
 #else
     g_tree_traverse(ptree,ptree_trav,G_IN_ORDER,&nnum);
 #endif
-    while(nnum) {
+    while((nnum)&&(nnum!=nnumdest)) {
       /*
       double mindist=DBL_MAX;
       int mpos=pfifo_r;
@@ -610,7 +624,7 @@ int osmroute_set_first_point(struct mapwin *mw,
       pfifo[pfifo_r]=pfifo[mpos];
       pfifo[mpos]=t; */
       g_tree_remove(ptree,get_osm_node(nnum)->user_data);
-      osmroute_ways2fifo(nnum);
+      osmroute_ways2fifo(nnum,nnumdest);
       nnum=0;
 #ifdef USE_GTK2
       g_tree_foreach(ptree,ptree_trav,&nnum);
@@ -1163,10 +1177,14 @@ static void set_destination_cb(GtkWidget *w, gpointer user_data)
 static int set_route_start(struct mapwin *mw, int x, int y)
 {
   if (mw->osm_main_file) {
-    osmroute_set_first_point(mw,mw->osm_main_file,x,y);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),0);
-    gtk_widget_set_sensitive(mw->osm_inf->end_route,1);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),1);
+    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+    if (n) {
+      mw->osm_inf->route_start_node=n;
+      
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),0);
+      gtk_widget_set_sensitive(mw->osm_inf->end_route,1);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),1);
+    }
   } 
   return 1;
 }
@@ -1175,20 +1193,35 @@ static int set_route_end(struct mapwin *mw, int x, int y)
 {
   GList *l=NULL;
   if (mw->osm_main_file) {
-  osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
-  *mw->mark_line_list=g_list_concat(*mw->mark_line_list,l);
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),0);
-  gtk_widget_set_sensitive(mw->osm_inf->end_route,0);
+    osmroute_start_calculate(mw,mw->osm_main_file,
+			     mw->osm_inf->route_start_node,
+			     x,y);
+    osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
+    *mw->mark_line_list=g_list_concat(*mw->mark_line_list,l);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),0);
+    gtk_widget_set_sensitive(mw->osm_inf->end_route,0);
   }
   return 1;
+}
+
+int osmroute_start_calculate_nodest(struct mapwin *mw,
+				    struct osm_file *osmf,
+				    int x, int y)
+{
+  int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+  return n?osmroute_start_calculate(mw,mw->osm_main_file,n,0,0):0;
 }
 
 static int set_destination(struct mapwin *mw, int x, int y)
 {
   if (mw->osm_main_file) {
-    osmroute_set_first_point(mw,mw->osm_main_file,x,y);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination),0);
-    mw->osm_inf->has_dest=1;
+    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+    if (n) {
+      osmroute_start_calculate(mw,mw->osm_main_file,n,0,0);
+      
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination),0);
+      mw->osm_inf->has_dest=1;
+    }
   }
   return 1;
 }
