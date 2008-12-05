@@ -1232,7 +1232,7 @@ int osm_center_handler(struct mapwin *mw, GdkGC *mygc, int x, int y)
   if (mw->osm_inf->has_dest)  {
     osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
     draw_line_list(mw,mygc,l);
-    g_list_free(l);
+    free_line_list(l);
     return TRUE;
   }
   return FALSE;

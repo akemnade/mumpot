@@ -100,5 +100,5 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l);
 void load_gps_line(const char *fname, GList **mll);
 void draw_marks_to_ps(GList *mark_line_list, int mx, int my,
 		      int w, int h, int fd);
-
+void free_line_list(GList *l);
 #endif

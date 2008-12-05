@@ -570,6 +570,21 @@ void point2geosec(double *longr, double *lattr, double x, double y)
   *lattr=latt;
 }
 
+/* callback for freeing a line struct */
+static void free_line(gpointer data,gpointer user_data)
+{
+  struct t_punkt32 *p = (struct t_punkt32 *)data;
+  if (p->time)
+    free(p->time);
+  free(data);
+}
+
+
+void free_line_list(GList *l)
+{
+  g_list_foreach(l,free_line,NULL);
+  g_list_free(l);
+}
 
 static void free_image_cache(char *fname)
 {

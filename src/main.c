@@ -131,7 +131,6 @@ int start_edit_y;
 
 void draw_marks(struct mapwin *mw); 
 static void add_path_to_mark_list(GList **l, int krid);
-static void free_line(gpointer data,gpointer user_data);
 static void recalc_mark_length(int offset, struct mapwin *mw);
 static int find_nearst_point(GList *l, int x, int y);
 static void add_pkt_to_list(GList **l, int x, int y);
@@ -555,8 +554,7 @@ static gboolean map_move_cb(gpointer user_data)
 	    osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x2,y2,&l);
 	  }
 	  draw_line_list(mw,mygc,l);
-	  /*	  g_list_foreach(l,free_line,NULL); */
-	  g_list_free(l);
+	  free_line_list(l);
 	}
       }
     }
@@ -690,17 +688,6 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
 }
 
 
-/* callback for freeing a line struct */
-static void free_line(gpointer data,gpointer user_data)
-{
-  struct t_punkt32 *p = (struct t_punkt32 *)data;
-  if (p->time)
-      free(p->time);
-  free(data);
-}
-
-
-
 /* handle mouse clicks with road enforcement */
 static void handle_route_click(struct mapwin *mw, int x, int y)
 {
@@ -791,8 +778,7 @@ gboolean map_click_release(GtkWidget *widget, GdkEventButton *event,
   
     } else if ((wd==0)&&(hd<=-2)) {
       mw->line_drawing=0;
-      g_list_foreach(*mw->mark_line_list,free_line,NULL);
-      g_list_free(*mw->mark_line_list);
+      free_line_list(*mw->mark_line_list);
       *mw->mark_line_list=NULL;
       reset_way_info();
       mw->has_path=0;
@@ -820,8 +806,7 @@ static void handle_start_way_click(struct mapwin *mw, GdkEventButton *event, int
   }
   if (event->button==1) {
     mw->line_drawing=1;
-    g_list_foreach(*mw->mark_line_list,free_line,NULL);
-    g_list_free(*mw->mark_line_list);
+    free_line_list(*mw->mark_line_list);
     *mw->mark_line_list=NULL;
     add_pkt_to_list(mw->mark_line_list,x,y);
     mw->mark_str=NULL;
