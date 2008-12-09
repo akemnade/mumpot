@@ -84,6 +84,7 @@ struct osm_info {
   struct osm_way *selected_way;
   struct osm_node *selected_node;
   GList *newwaypoints_start;
+  GList *newway_tags;
   char *newway_hwyclass;
   int merge_first_node;
   GtkWidget *tag_combo;
@@ -396,6 +397,7 @@ static void osmroute_put_way_info(int nodenum,double len,
   }
 }
 
+#ifdef TREE_DEBUG
 static gboolean check_cons(gpointer key, gpointer value, gpointer data)
 {
   struct node_render_data *nrd=(struct node_render_data*)key;
@@ -408,7 +410,6 @@ static gboolean check_cons(gpointer key, gpointer value, gpointer data)
   return FALSE;
 }
 
-#ifdef TREE_DEBUG
 static void osmroute_check_consistency()
 {
   double dist=0;
@@ -826,6 +827,7 @@ void init_osm_draw(struct mapwin *mw)
     g_hash_table_insert(color_hash,all_colors[i].class_name,
 			&all_colors[i].color);
   }
+
   mw->osm_inf = calloc(1,sizeof(struct osm_info));
   check_item_set_state(mw, MENU_VIEW_OSM_DATA,1);
   mw->osm_inf->display_osm=1;
@@ -966,32 +968,44 @@ static void start_way_menu_cb(GtkWidget *w, gpointer data)
   mw->osm_inf->newway_hwyclass=gtk_object_get_data(GTK_OBJECT(w),
 						    "hwyclass");
   gtk_widget_hide(mw->osm_inf->hwypopup);
-  mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut));
+}
+
+static void free_tag_list(GList *tl)
+{
+  GList *l;
+  for(l=tl;l;l=g_list_next(l)) {
+    free(l->data);
+  }
+  g_list_free(tl);
+}
+
+static void copy_tag_list(struct osm_object *obj, GList *tl)
+{
+  GList *l;
+  for(l=g_list_first(tl);l;l=g_list_next(tl)) {
+    char *tag=(char *)l->data;
+    int taglen=strlen(tag)+1;
+    set_osm_tag(obj,tag,tag+taglen);
+  }
 }
 
 static void start_way_cb(GtkWidget *w, gpointer data)
 {
-#if 0
-  int i;
-  GtkWidget *menu;
-  GtkWidget *item;
-  menu=gtk_menu_new();
-  for(i=0;i<sizeof(all_colors)/sizeof(all_colors[0]);i++) {
-    item=gtk_menu_item_new_with_label(all_colors[i].class_name);
-    gtk_menu_append(GTK_MENU(menu),item);
-    gtk_object_set_data(GTK_OBJECT(item),"hwyclass",all_colors[i].class_name);
-    gtk_signal_connect(GTK_OBJECT(item),"activate",GTK_SIGNAL_FUNC(start_way_menu_cb),data);
-  }
-  gtk_widget_show_all(menu);
-  gtk_menu_popup(GTK_MENU(menu),NULL,NULL,NULL,NULL,3,/* time */0);
-#else
   struct mapwin *mw=(struct mapwin *)data;
-  gtk_widget_show(mw->osm_inf->hwypopup);
+  if (osm_waypresets) {
+    if (mw->osm_inf->newway_tags) {
+      free_tag_list(mw->osm_inf->newway_tags);
+      mw->osm_inf->newway_tags=NULL;
+    }
+    osm_choose_tagpreset(osm_waypresets,&mw->osm_inf->newway_tags);
+  } else {
+    gtk_widget_show(mw->osm_inf->hwypopup);
+  }
   mw->osm_inf->newwaypoints_start=g_list_last(*mw->gps_line_list);
   if (mw->osm_inf->newwaypoints_start) {
     set_way_state(mw->osm_inf,1);
   }
-#endif
+  mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut));
 }
 
 
@@ -1099,6 +1113,9 @@ static void make_new_way(struct mapwin *mw)
       osmw=add_new_osm_way(mw->osm_main_file);
       if (mw->osm_inf->newway_hwyclass)
 	set_osm_tag(&osmw->head,"highway",mw->osm_inf->newway_hwyclass);
+      if (mw->osm_inf->newway_tags) {
+	copy_tag_list(&osmw->head,mw->osm_inf->newway_tags);
+      }
       for(l=g_list_first(newwaypoints);l;l=g_list_next(l)) {
 	struct t_punkt32 *pt=(struct t_punkt32 *)l->data;
 	nd=new_osm_node_from_point(mw->osm_main_file,

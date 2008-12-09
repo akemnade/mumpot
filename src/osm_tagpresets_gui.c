@@ -44,7 +44,7 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 	y=pi->y;
     }
     win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    table=gtk_table_new(x,y,TRUE);
+    table=gtk_table_new(y,x,TRUE);
     for(l=g_list_first(sect->items);l;l=g_list_next(l)) {
       struct osm_presetitem *pi = (struct osm_presetitem *)l->data;
       GtkWidget *but=gtk_button_new_with_label(pi->name);
