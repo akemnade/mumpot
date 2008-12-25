@@ -970,6 +970,7 @@ static void start_way_menu_cb(GtkWidget *w, gpointer data)
   gtk_widget_hide(mw->osm_inf->hwypopup);
 }
 
+#ifdef UNUSED
 static void free_tag_list(GList *tl)
 {
   GList *l;
@@ -978,11 +979,12 @@ static void free_tag_list(GList *tl)
   }
   g_list_free(tl);
 }
+#endif
 
 static void copy_tag_list(struct osm_object *obj, GList *tl)
 {
   GList *l;
-  for(l=g_list_first(tl);l;l=g_list_next(tl)) {
+  for(l=g_list_first(tl);l;l=g_list_next(l)) {
     char *tag=(char *)l->data;
     int taglen=strlen(tag)+1;
     set_osm_tag(obj,tag,tag+taglen);
@@ -994,7 +996,7 @@ static void start_way_cb(GtkWidget *w, gpointer data)
   struct mapwin *mw=(struct mapwin *)data;
   if (osm_waypresets) {
     if (mw->osm_inf->newway_tags) {
-      free_tag_list(mw->osm_inf->newway_tags);
+      g_list_free(mw->osm_inf->newway_tags);
       mw->osm_inf->newway_tags=NULL;
     }
     osm_choose_tagpreset(osm_waypresets,&mw->osm_inf->newway_tags);
