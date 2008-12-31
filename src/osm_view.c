@@ -583,7 +583,9 @@ int osmroute_start_calculate(struct mapwin *mw,
 {
   struct timeval tv1;
   struct timeval tv2;
+#ifndef _WIN32
   gettimeofday(&tv1,NULL);
+#endif
   int nnumdest=0;
   if ((destx)&&(desty)) {
     nnumdest=find_nearest_node(mw,osmf,destx,desty,1);
@@ -634,8 +636,10 @@ int osmroute_start_calculate(struct mapwin *mw,
 #endif
     }
     g_tree_destroy(ptree);
+#ifndef _WIN32
     gettimeofday(&tv2,NULL);
     printtimediff("calculating route in %d ms\n",&tv1,&tv2);
+#endif
     return 1;
   }
   return 0;
@@ -886,7 +890,9 @@ void init_osm_draw(struct mapwin *mw)
   gtk_widget_show_all(table);
   osm_parse_presetfile("tagpresets");
   sigmw=mw;
+#ifndef _WIN32
   signal(SIGHUP,mysigh);
+#endif
   atexit(myexitf);
 }
 
@@ -1262,7 +1268,9 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
 {
   struct timeval tv;
   struct timeval tvdiff;
+#ifndef _WIN32
   gettimeofday(&tv,NULL);
+#endif
   int above_limit;
   tvdiff.tv_sec=tv.tv_sec-mw->osm_inf->clicktime.tv_sec;
   tvdiff.tv_usec=tv.tv_usec-mw->osm_inf->clicktime.tv_usec;
@@ -1270,7 +1278,11 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
     tvdiff.tv_sec--;
     tvdiff.tv_usec += 1000000;
   }
+#ifdef _WIN32
+  above_limit=1;
+#else
   above_limit=(tvdiff.tv_sec>0);
+#endif
   if (GTK_WIDGET_MAPPED(mw->osm_inf->start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route))) {
     if (above_limit) {
       set_route_start(mw,x,y);
