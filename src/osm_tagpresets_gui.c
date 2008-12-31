@@ -10,6 +10,8 @@
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 ***********************************************************************/
+#include <stdlib.h>
+#include <string.h>
 #include <gtk/gtk.h>
 #include "osm_tagpresets_data.h"
 #include "osm_tagpresets_gui.h"
@@ -28,7 +30,17 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 			  GList **taglist)
 {
   if (sect->tags) {
-    *taglist=g_list_concat(*taglist,g_list_copy(sect->tags));
+    GList *l;
+    for(l=g_list_first(sect->tags);l;l=g_list_next(l)) {
+      char *tsrc=(char *)l->data;
+      int tlen=strlen(tsrc)+1;
+      char *tdst;
+      tlen+=strlen(tsrc+tlen);
+      tlen++;
+      tdst=malloc(tlen);
+      memcpy(tdst,tsrc,tlen);
+      *taglist=g_list_append(*taglist,tdst);
+    }
   }
   if (sect->items) {
     int x=0;
