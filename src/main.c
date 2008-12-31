@@ -1836,7 +1836,16 @@ static void download_osm_data_cb(gpointer callback_data,
     return;
   }
   setlocale(LC_NUMERIC,"C");
+#ifndef _WIN32
   url=g_strdup_printf("http://www.openstreetmap.org/api/0.5/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
+#else
+/* there seems to be broken g_strdup_printf()s out there which ignore LC_NUMERIC */
+  {
+    char b[512];
+    _snprintf(b,sizeof(b),"http://www.openstreetmap.org/api/0.5/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
+    url=strdup(b); 
+  }
+#endif
   get_http_file(url,NULL,download_osm_finished_cb,
 		download_osm_failed_cb,mw);
 }
@@ -2250,6 +2259,12 @@ int main(int argc, char **argv)
     printf(_("Usage: %s configfile\n"),argv[0]);
     return 1;
   }
+#ifdef _WIN32
+  {
+    WSADATA wsadata;
+    WSAStartup(MAKEWORD(1,1),&wsadata);
+  }
+#endif
   calc_mapoffsets();
   {
     GList *lcopy=NULL;

@@ -160,10 +160,22 @@ static int my_connectto(char *host,int port)
                                     to network order */
   memcpy((char *)&destaddr.sin_addr,ph->h_addr,ph->h_length);   
   sock=socket(AF_INET,SOCK_STREAM,0);
+#ifndef _WIN32
   fcntl(sock,F_SETFL,fcntl(sock,F_GETFL)|O_NONBLOCK);
-
+#else
+  {
+    u_long m = 1;
+    ioctlsocket(sock,FIONBIO,&m);
+  }
+#endif
   if (connect(sock,(struct sockaddr *)&destaddr,sizeof(destaddr))<0) {
-    if ((errno != EINPROGRESS) && (errno != EAGAIN)) {
+#ifdef _WIN32
+    int err = WSAGetLastError();
+    if ((err != WSAEINPROGRESS) && (err != WSAEWOULDBLOCK))
+#else
+    if ((errno != EINPROGRESS) && (errno != EAGAIN)) 
+#endif
+    {
       closesocket(sock);
       return -1;
     }
@@ -263,11 +275,21 @@ static gboolean do_http_recv(GIOChannel *source,
         
     if ((datapos=strstr(hfb->buf,"\r\n\r\n"))) {
       if (!strncmp(hfb->buf+9,"200 OK",6)) {
-	if (hfb->use_tempname)
+	if (hfb->use_tempname) {
+#ifdef _WIN32
+	  mktemp(hfb->filename);
+	  hfb->outfd=open(hfb->filename,O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,0666);
+	  printf("opened: %s\n",hfb->filename);
+#else
 	  hfb->outfd=mkstemp(hfb->filename);
-	else {
+#endif
+	} else {
 	  char *nfname=g_strdup_printf("%s.",hfb->filename);
+#ifdef _WIN32
+	  hfb->outfd=open(nfname,O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,0666);
+#else
 	  hfb->outfd=open(nfname,O_WRONLY|O_CREAT|O_TRUNC,0666);
+#endif
 	  fprintf(stderr,"opened %s\n",nfname);
 	  g_free(nfname);
 	}
@@ -297,7 +319,6 @@ static gboolean do_http_send(GIOChannel *source,
 {
   struct http_fetch_buf *hfb=(struct http_fetch_buf *)data;
   if ((send(hfb->fd,hfb->request,strlen(hfb->request),0))>0) {
-    fprintf(stderr,"request sended %s\n",hfb->request);
     g_io_add_watch(source,G_IO_IN|G_IO_HUP,do_http_recv,data);
   } else {
     if (hfb->fail_cb)
@@ -318,7 +339,11 @@ static void create_path(const char *path)
       endpos=NULL;
       break;
     }
+#ifndef _WIN32
     if (!mkdir(cpy,0777))
+#else
+    if (!mkdir(cpy))
+#endif
       break;
   }
   if (!endpos) {
@@ -331,7 +356,11 @@ static void create_path(const char *path)
   endp+=strcspn(cpy+endp,"/");
   while(cpy[endp]) {
     cpy[endp]=0;
+#ifndef _WIN32
     if (mkdir(cpy,0777))
+#else
+    if (mkdir(cpy))
+#endif
       break;
     cpy[endp]='/';
     endp++;
@@ -421,7 +450,11 @@ void get_http_file(const char *url,const char *filename,
     hfb->filename=g_strdup(filename);
     hfb->use_tempname=0;
   } else {
+#ifndef _WIN32
     hfb->filename=g_strdup("/tmp/mp.XXXXXX");
+#else
+    hfb->filename=g_strdup("mp.XXXXXX");
+#endif
     hfb->use_tempname=1;
   }
   g_hash_table_insert(http_hash,hfb->url,hfb);

@@ -899,7 +899,9 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
     fprintf(stderr,"Cannot open %s\n",fname);
     return NULL;
   }
+#ifndef _WIN32
   gettimeofday(&tv1,NULL);
+#endif
   setlocale(LC_NUMERIC,"C");
 #ifdef HAVE_BZLIB_H
   suf=strrchr(fname,'.');
@@ -948,13 +950,17 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
       free(octxt);
     }
   fclose(f);
+#ifndef _WIN32
   gettimeofday(&tv2,NULL);
   printtimediff("SAX parsing xml: %d ms\n",&tv1,&tv2);
+#endif
   if (!build_references(osmf)) {
     fprintf(stderr,"warning,: inconsistencies detected\n");
   }
+#ifndef _WIN32
   gettimeofday(&tv3,NULL);
   printtimediff("build references: %d ms\n",&tv2,&tv3);
+#endif
   return osmf;
 }
 #endif
