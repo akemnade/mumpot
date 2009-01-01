@@ -42,6 +42,13 @@ AC_CHECK_HEADERS(bzlib.h)
 AC_CHECK_LIB(bz2, BZ2_bzRead, LIBS="-lbz2 $LIBS")
 GETTEXT_PACKAGE=mumpot
 AC_SUBST(GETTEXT_PACKAGE)
+BTLIBS="-lbluetooth"
+case "$host_alias" in
+    *mingw*) 
+    LIBS="-lwsock32 $LIBS";
+    BTLIBS="" ;;
+esac
+AC_SUBST(BTLIBS)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package.])
 
 
