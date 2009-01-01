@@ -1,0 +1,97 @@
+nodepreset { 
+pos 0 0 "Shops" {
+    pos 0 0 "Bakery" { 
+      settag "shop" "bakery"
+    }
+    pos 0 1 "supermarket" {
+      settag "shop" "supermarket"
+      pos 0 0 "Edeka" { settag "name" "Edeka" }
+      pos 0 1 "Aldi" { settag "name" "Aldi" }
+      pos 0 2 "REWE" { settag "name" "REWE" }
+      pos 0 3 "extra" { settag "name" "extra" }
+      pos 0 4 "familia" { settag "name" "familia" }
+      pos 1 0 "no name" { }
+    }
+    pos 0 2 "outdoor" {
+      settag "shop" "outdoor"
+    }
+    pos 0 3 "bicycle" {
+      settag "shop" "bicycle"
+    }
+    pos 1 0 "kiosk" {
+      settag "shop" "kiosk"
+    }
+}
+pos 0 1 "Accomodation" {
+    pos 0 0 "Hotel" {
+      settag "tourism" "hotel"
+    }
+    pos 0 1 "Motel" {
+      settag "tourism" "motel"
+    }
+    pos 0 2 "Guest House" {
+      settag "tourism" "guest_house"
+    }
+    pos 0 3 "Hostel" {
+      settag "tourism" "hostel"
+    }
+    pos 1 0 "Camping Site" {
+      settag "tourism" "camp_site"
+    }
+    pos 1 1 "Caravan Site" {
+      settag "tourism" "caravan_site"
+    }
+}
+pos 0 2 "Food+Drinks" {
+    pos 0 0 "Restaurant" {
+      settag "amenity" "restaurant"
+    }
+    pos 0 1 "Fast Food" {
+      settag "amenity" "fast_foot"
+    }
+    pos 0 2 "Cafe" {
+      settag "amenity" "cafe"
+    }
+}
+pos 1 0 "Post box" {
+    settag "amenity" "post_box"
+}
+pos 1 1 "Park bench" {
+    settag "amenity" "bench"
+}
+pos 1 2 "Man made" {
+    pos 0 0 "windmill" {
+      settag "man_made" "windmill"
+    }
+    pos 0 1 "sewage" {
+      settag "man_made" "wastewater_plant"
+    }
+}
+pos 2 0  "Bank" {
+    settag "amenity" "bank"
+    pos 0 0 "with ATM" { settag "atm" "yes" }
+    pos 0 1 "without ATM" { settag "atm" "no" }
+}
+pos 2 1 "ATM" {
+    settag "amenity" "atm"
+}
+}
+
+waypreset {
+pos 0 0 "motorway" { settag "highway" "motorway" }
+pos 0 1 "trunk" { settag "highway" "trunk" }
+pos 0 2 "primary" { settag "highway" "primary" }
+pos 0 3 "secondary" { settag "highway" "secondary" }
+pos 0 4 "tertiary" { settag "highway" "tertiary" }
+pos 1 0 "unclassified" { settag "highway" "unclassified" }
+pos 1 1 "service" { settag "highway" "service" }
+pos 1 2 "residential" { settag "highway" "residential" }
+pos 1 3 "living street" { settag "highway" "living street" }
+pos 1 4 "track" { settag "highway" "track" }
+pos 2 0 "path" { settag "highway" "path" } 
+pos 2 1 "cycleway" { settag "highway" "cycleway" } 
+pos 2 2 "footway" { settag "highway" "footway" }
+pos 2 3 "pedestrian" { settag "highway" "pedestrian" }
+pos 2 4 "steps" { settag "highway" "steps" }
+}
+
