@@ -91,6 +91,7 @@ void draw_pinfo(GdkWindow *w, GdkGC *gc,struct pixmap_info *p_info,
 void get_http_file(const char *url,const char *filename,
 		   void (*finish_cb)(const char *,const char*,void *),
 		   void (*fail_cb)(const char *,const char*,void *),
+                   int (*size_check)(const char *,void *,int),
 		   void *data);
 GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata);
 GtkWidget *make_pixmap_toggle_button(struct mapwin *mw,char **xpmdata);

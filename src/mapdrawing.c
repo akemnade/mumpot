@@ -55,7 +55,14 @@ int tile_cache_size=4;
 
 static int cache_count;
 static GList *cache_list;
+/* contains the urls which are actually downloaded to avoid
+   downloading the same url multiple times at the same time */
 static GHashTable *http_hash;
+/* contains the image files which are to fetch,
+   the files are only removed on successful downloads from
+   the hash to avoid rerequesting failed tiles again and
+   again so that the tile server does not get overloaded */
+static GHashTable *tile_files_to_fetch;
 static void free_image_cache(char *fname);
 struct http_fetch_buf {
   char *request;
@@ -70,6 +77,7 @@ struct http_fetch_buf {
   void *data;
   void (*finish_cb)(const char *,const char *,void *);
   void (*fail_cb)(const char *,const char *,void *);
+  int (*size_check)(const char *,void *,int);
 };
 struct cache_entry {
   char *name;
@@ -256,8 +264,16 @@ static gboolean do_http_recv(GIOChannel *source,
     if ((l==0)&&(hfb->outfd>=0)) {
       close(hfb->outfd);
       if (!hfb->use_tempname) {
+        struct stat st;
 	char *nfname=g_strdup_printf("%s.",hfb->filename);
-	rename(nfname,hfb->filename);
+        if ((!stat(nfname,&st))&&
+           ((!hfb->size_check)||(hfb->size_check(hfb->filename,hfb->data,st.st_size)))) { 
+          if (!rename(nfname,hfb->filename)) {
+            g_hash_table_remove(tile_files_to_fetch,hfb->filename);
+          }
+        } else {
+          unlink(nfname);
+        }
 	g_free(nfname);
       }
       hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
@@ -372,37 +388,76 @@ static void create_path(const char *path)
 
 static int check_create_file(char *fullname)
 {
-  int fd=open(fullname,O_WRONLY|O_CREAT,0666);
+  int fd;
+  fd=open(fullname,O_WRONLY,0666);
   if (fd>=0) {
     close(fd);
     return 1;
   }
-  create_path(fullname);
   fd=open(fullname,O_WRONLY|O_CREAT,0666);
+  if (fd>0) {
+    close(fd);
+    unlink(fullname);
+    return 1;
+  }
+  create_path(fullname);
+  fd=open(fullname,O_WRONLY,0666);
   if (fd>=0) {
     close(fd);
+    return 1;
+  }
+  fd=open(fullname,O_WRONLY|O_CREAT,0666);
+  if (fd>0) {
+    close(fd);
+    unlink(fullname);
     return 1;
   }
   return 0;
 }
+
+/* ignore tiles if they are getting smaller or
+   have zero size */
+static int tile_size_check(const char *filename, void *data,
+                           int len)
+{
+  struct stat st;
+  if (len==0)
+    return 0;
+  stat(filename,&st);  
+  if (st.st_size> (len*3)) {
+    return 0;
+  }
+  return 1;
+}
+
 
 /* initiate a http request for a tile */
 static void get_http_tile(struct mapwin *mw,
 			  const char *url, const char *filename)
 {
   char *fullname=g_strdup_printf("%s.png",filename);
+  char *fn2;
+  if (!tile_files_to_fetch)
+    tile_files_to_fetch=g_hash_table_new(g_str_hash,g_str_equal);
+  if (g_hash_table_lookup(tile_files_to_fetch,fullname)) {
+    g_free(fullname);
+    return;
+  }
+  fn2=strdup(fullname); 
+  g_hash_table_insert(tile_files_to_fetch,fn2,fn2); 
   if (!check_create_file(fullname)) {
     g_free(fullname);
     return;
   }
-  get_http_file(url,fullname,tile_fetched,NULL,mw);
+  get_http_file(url,fullname,tile_fetched,NULL,tile_size_check,mw);
   g_free(fullname);
 }
 
 /* initiate a http request */
 void get_http_file(const char *url,const char *filename,
 			  void (*finish_cb)(const char *,const char*,void *),
-		   void (*fail_cb)(const char *,const char *,void *),void *data)
+		   void (*fail_cb)(const char *,const char *,void *),
+                   int (*size_check)(const char *, void *, int),void *data)
 {
   int i;
   struct http_fetch_buf *hfb;

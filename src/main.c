@@ -1847,7 +1847,7 @@ static void download_osm_data_cb(gpointer callback_data,
   }
 #endif
   get_http_file(url,NULL,download_osm_finished_cb,
-		download_osm_failed_cb,mw);
+		download_osm_failed_cb,NULL,mw);
 }
 
 static void change_sidebar_cb(gpointer callback_data,
