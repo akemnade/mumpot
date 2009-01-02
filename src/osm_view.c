@@ -889,7 +889,7 @@ void init_osm_draw(struct mapwin *mw)
   gtk_container_add(GTK_CONTAINER(mw->osm_inf->hwypopup),table);
   gtk_widget_show_all(table);
   if (!osm_parse_presetfile(expand_home("~/.mumpot/tagpresets")))
-    osm_parse_presetfile(DATADIR "/tagpresets");
+    osm_parse_presetfile(MUMPOT_DATADIR "/tagpresets");
   sigmw=mw;
 #ifndef _WIN32
   signal(SIGHUP,mysigh);

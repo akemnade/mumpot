@@ -16,6 +16,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h>
+#endif
+
 #include "mapconfig.h"
 #include "mapconfig_data.h"
 #define YYDEBUG 1
@@ -52,7 +57,16 @@ int yylex()
 
 char *expand_home(char *h)
 {
+#ifdef _WIN32
+    char *home=NULL;
+    char buf[MAX_PATH];
+    if (S_OK == SHGetFolderPath(NULL,CSIDL_APPDATA,
+                      NULL,0,buf)) {
+       home=buf;
+    }
+#else
     char *home=getenv("HOME");
+#endif
     if ((home)&&(strncmp(h,"~/",2)==0)) {
       char *newstr=malloc(strlen(home)+strlen(h));
       strcpy(newstr,home);

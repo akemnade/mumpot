@@ -2,7 +2,7 @@
 
 INCLUDES = \
 	@GTK_CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/pixmaps -I$(top_srcdir)/intl
-DEFS = -DLOCALEDIR=\"$(localedir)\" -DDATADIR=\"$(datadir)/mumpot\" @DEFS@
+DEFS = -DLOCALEDIR=\"$(localedir)\" -DMUMPOT_DATADIR=\"$(datadir)/mumpot\" @DEFS@
 AM_YFLAGS = -d
 
 BUILT_SOURCES = mapconfig.h osm_tagpresets.h
