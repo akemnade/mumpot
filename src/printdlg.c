@@ -21,6 +21,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <gtk/gtk.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "myintl.h"
 #define DEFAULTPRINTER _("Default printer")
 
@@ -66,6 +69,10 @@ static void free_printer_list_item(gpointer data, gpointer bla)
 static void printdlg_ok(GtkWidget *w, gpointer data)
 {
   int fd=-1;
+#ifdef _WIN32
+  int tmpfileused=0;
+  char lptmp[256];
+#endif
   struct printdlg_t *pd = (struct printdlg_t *)data;
   int start_page;
   int end_page;
@@ -123,6 +130,18 @@ static void printdlg_ok(GtkWidget *w, gpointer data)
       close(lppipe[0]);
       fd=lppipe[1];
     } 
+#else
+    memset(lptmp,0,sizeof(lptmp));
+    tmp=tempnam(NULL,"karte");
+    strcpy(lptmp,tmp);
+    strcat(lptmp,".ps");
+    printf("creating %s\n",lptmp);
+    fd=open(lptmp,O_WRONLY|O_BINARY|O_CREAT|O_TRUNC,0666);
+    if (fd>=0) {
+      tmpfileused=1;
+    } else {
+      perror("open");
+    }
 #endif
   } else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pd->commandcheck))) {
 #ifndef _WIN32
@@ -146,6 +165,13 @@ static void printdlg_ok(GtkWidget *w, gpointer data)
   if (fd>0) {
     pd->ok_cb(pd->data, start_page, end_page, fd);
     close(fd);
+#ifdef _WIN32
+    if (tmpfileused) {
+      ShellExecute(NULL,"print",lptmp,NULL,NULL,SW_SHOWNORMAL);
+      printf("printed\n");
+      /* unlink(lptmp); */
+    }
+#endif
     gtk_widget_destroy(pd->win);
     free(pd);
   }
