@@ -505,11 +505,7 @@ void get_http_file(const char *url,const char *filename,
     hfb->filename=g_strdup(filename);
     hfb->use_tempname=0;
   } else {
-#ifndef _WIN32
-    hfb->filename=g_strdup("/tmp/mp.XXXXXX");
-#else
-    hfb->filename=g_strdup("mp.XXXXXX");
-#endif
+    hfb->filename=g_strdup_printf("%s/mp.XXXXXX", g_get_tmp_dir());
     hfb->use_tempname=1;
   }
   g_hash_table_insert(http_hash,hfb->url,hfb);
