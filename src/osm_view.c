@@ -58,10 +58,8 @@
 #define MENU_OSM_DISPLAY_STREET_BORDERS _(MENU_OSM_DISPLAY_STREET_BORDERS_N)
 #define MENU_OSM_DISPLAY_TAGS_N N_("/OSM/Display tags")
 #define MENU_OSM_DISPLAY_TAGS _(MENU_OSM_DISPLAY_TAGS_N)
-#define MENU_OSM_DISPLAY_EDIT_BAR_N N_("/OSM/Mode/live edit")
-#define MENU_OSM_DISPLAY_EDIT_BAR _(MENU_OSM_DISPLAY_EDIT_BAR_N)
-#define MENU_OSM_DISPLAY_ROUTE_BAR_N N_("/OSM/Mode/routing")
-#define MENU_OSM_DISPLAY_ROUTE_BAR _(MENU_OSM_DISPLAY_ROUTE_BAR_N)
+
+
 struct way_colors {
   char *class_name;
   char *color_name;
@@ -91,16 +89,28 @@ struct osm_info {
   GtkWidget *tag_value;
   GtkWidget *tag_set;
   GHashTable *tag_hash;
-  GtkWidget *startwaybut;
-  GtkWidget *endwaybut;
-  GtkWidget *restartwaybut;
-  GtkWidget *automergebut;
   GtkWidget *editbar;
   GtkWidget *routebar;
-  GtkWidget *start_route;
-  GtkWidget *end_route;
-  GtkWidget *set_destination;
+  GtkWidget *meditbar;
+
+  struct {
+    GtkWidget *startwaybut;
+    GtkWidget *endwaybut;
+    GtkWidget *restartwaybut;
+    GtkWidget *automergebut;
+  } liveeditb;
+  struct {
+    GtkWidget *start_route;
+    GtkWidget *end_route;
+    GtkWidget *set_destination;
+   
+  } routeb;
   GtkWidget *hwypopup;
+  struct {
+    GtkWidget *selbut;
+    GtkWidget *addwaybut;
+    GtkWidget *delobjbut;
+  } editb;
   struct timeval clicktime;
   int route_start_node;
 };
@@ -269,8 +279,8 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
 
 static void set_way_state(struct osm_info *osminf,int state)
 {
-  gtk_widget_set_sensitive(osminf->endwaybut,state);
-  gtk_widget_set_sensitive(osminf->restartwaybut,state);
+  gtk_widget_set_sensitive(osminf->liveeditb.endwaybut,state);
+  gtk_widget_set_sensitive(osminf->liveeditb.restartwaybut,state);
 }
 
 
@@ -1012,7 +1022,7 @@ static void start_way_cb(GtkWidget *w, gpointer data)
   if (mw->osm_inf->newwaypoints_start) {
     set_way_state(mw->osm_inf,1);
   }
-  mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut));
+  mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->liveeditb.automergebut));
 }
 
 
@@ -1134,7 +1144,7 @@ static void make_new_way(struct mapwin *mw)
 	merge_newway_node(mw->osm_main_file,osmw,get_osm_node(osmw->nodes[0]),
 			  1.0/3600);
       }
-      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut))) {
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->liveeditb.automergebut))) {
 	merge_newway_node(mw->osm_main_file,osmw,get_osm_node(osmw->nodes[osmw->nr_nodes-1]),1.0/3600.0);
       }
       g_list_free(nds);
@@ -1159,7 +1169,7 @@ static void restart_way_cb(GtkWidget *w, gpointer data)
   make_new_way(mw);
   mw->osm_inf->newwaypoints_start=g_list_last(*mw->gps_line_list);
   if (mw->osm_inf->newwaypoints_start) {
-    mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut));
+    mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->liveeditb.automergebut));
     set_way_state(mw->osm_inf,1);
   } else {
     set_way_state(mw->osm_inf,0);
@@ -1170,9 +1180,9 @@ static void start_route_cb(GtkWidget *w,
 			   gpointer user_data)
 {
   struct osm_info *osm_inf=(struct osm_info *)user_data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->start_route))) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->end_route),FALSE);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->set_destination),FALSE);
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.start_route))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.end_route),FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.set_destination),FALSE);
   }
   osm_inf->has_dest=0;
 }
@@ -1180,9 +1190,9 @@ static void start_route_cb(GtkWidget *w,
 static void end_route_cb(GtkWidget *w, gpointer user_data)
 {
   struct osm_info *osm_inf=(struct osm_info *)user_data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->end_route))) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->start_route),FALSE);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->set_destination),FALSE);
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.end_route))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.start_route),FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.set_destination),FALSE);
   }
 
 }
@@ -1190,9 +1200,9 @@ static void end_route_cb(GtkWidget *w, gpointer user_data)
 static void set_destination_cb(GtkWidget *w, gpointer user_data)
 {
   struct osm_info *osm_inf=(struct osm_info *)user_data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->set_destination))) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->start_route),FALSE);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->end_route),FALSE);
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.set_destination))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.start_route),FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.end_route),FALSE);
   }
   osm_inf->has_dest=0;
 
@@ -1205,9 +1215,9 @@ static int set_route_start(struct mapwin *mw, int x, int y)
     if (n) {
       mw->osm_inf->route_start_node=n;
       
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),0);
-      gtk_widget_set_sensitive(mw->osm_inf->end_route,1);
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),1);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route),0);
+      gtk_widget_set_sensitive(mw->osm_inf->routeb.end_route,1);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route),1);
     }
   } 
   return 1;
@@ -1222,8 +1232,8 @@ static int set_route_end(struct mapwin *mw, int x, int y)
 			     x,y);
     osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
     *mw->mark_line_list=g_list_concat(*mw->mark_line_list,l);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),0);
-    gtk_widget_set_sensitive(mw->osm_inf->end_route,0);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route),0);
+    gtk_widget_set_sensitive(mw->osm_inf->routeb.end_route,0);
   }
   return 1;
 }
@@ -1243,7 +1253,7 @@ static int set_destination(struct mapwin *mw, int x, int y)
     if (n) {
       osmroute_start_calculate(mw,mw->osm_main_file,n,0,0);
       
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination),0);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.set_destination),0);
       mw->osm_inf->has_dest=1;
     }
   }
@@ -1282,7 +1292,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
 #else
   above_limit=(tvdiff.tv_sec>0);
 #endif
-  if (GTK_WIDGET_MAPPED(mw->osm_inf->start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route))) {
+  if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route))) {
     if (above_limit) {
       set_route_start(mw,x,y);
       mw->osm_inf->clicktime=tv;
@@ -1290,23 +1300,23 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
     return TRUE;
 
 
-  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->end_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route))) {
+  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.end_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route))) {
     if (above_limit) {
       set_route_end(mw,x,y);
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),1);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route),1);
       gtk_widget_queue_draw_area(mw->map,0,0,
 				 mw->page_width,
 				 mw->page_height);
       mw->osm_inf->clicktime=tv;
     }
     return TRUE;
-  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination))) {
+  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.set_destination))) {
     if (above_limit) {
       set_destination(mw,x,y);
       mw->osm_inf->clicktime=tv;
     }
     return TRUE;
-  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut))&&(osm_nodepresets)) {
+  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->liveeditb.startwaybut))&&(osm_nodepresets)) {
     if (above_limit) {
       struct osm_node *nd;
       double lon=0;
@@ -1323,58 +1333,103 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
   return FALSE;
 }
 
+static void osmedit_addwaybut_cb(GtkWidget *w, gpointer data)
+{
+  struct osm_info *osm_inf=(struct osm_info *)data;
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->editb.addwaybut))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->editb.selbut),FALSE);
+  }
+}
+
+static void osmedit_selbut_cb(GtkWidget *w, gpointer data)
+{
+  struct osm_info *osm_inf=(struct osm_info *)data;
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->editb.selbut))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->editb.addwaybut),FALSE);
+  }
+}
+
+static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
+{
+}
+
 void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 {
   struct sidebar_mode *sm;
   GtkTooltips *tt = gtk_tooltips_new();
   mw->osm_inf->editbar=gtk_vbox_new(TRUE,0);
-  mw->osm_inf->startwaybut=make_pixmap_button(mw,start_way);
-  mw->osm_inf->endwaybut=make_pixmap_button(mw,end_way);
-  mw->osm_inf->restartwaybut=make_pixmap_button(mw,restart_way);
-  mw->osm_inf->automergebut=make_pixmap_toggle_button(mw,automerge);
+  mw->osm_inf->liveeditb.startwaybut=make_pixmap_button(mw,start_way);
+  mw->osm_inf->liveeditb.endwaybut=make_pixmap_button(mw,end_way);
+  mw->osm_inf->liveeditb.restartwaybut=make_pixmap_button(mw,restart_way);
+  mw->osm_inf->liveeditb.automergebut=make_pixmap_toggle_button(mw,automerge);
   gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->editbar,FALSE,FALSE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->startwaybut,TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->startwaybut);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->startwaybut),"clicked",GTK_SIGNAL_FUNC(start_way_cb),mw);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->startwaybut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.startwaybut,TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->liveeditb.startwaybut);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->liveeditb.startwaybut),"clicked",GTK_SIGNAL_FUNC(start_way_cb),mw);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.startwaybut,
 		   _("start a new way"),NULL);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->endwaybut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.endwaybut,
 		     TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->endwaybut);
-  gtk_widget_set_sensitive(mw->osm_inf->startwaybut,0);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->endwaybut),"clicked",GTK_SIGNAL_FUNC(end_way_cb),mw);
-  gtk_widget_set_sensitive(mw->osm_inf->endwaybut,0);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->endwaybut,
+  gtk_widget_show(mw->osm_inf->liveeditb.endwaybut);
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.startwaybut,0);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->liveeditb.endwaybut),"clicked",GTK_SIGNAL_FUNC(end_way_cb),mw);
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.endwaybut,0);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.endwaybut,
 		   _("finish a new way"),NULL);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->restartwaybut,TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->restartwaybut);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->restartwaybut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.restartwaybut,TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->liveeditb.restartwaybut);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.restartwaybut,
 		       _("finish a way and start a new one at the same place"),NULL);
-  gtk_widget_set_sensitive(mw->osm_inf->restartwaybut,0);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->restartwaybut),"clicked",
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.restartwaybut,0);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->liveeditb.restartwaybut),"clicked",
 		     GTK_SIGNAL_FUNC(restart_way_cb),mw);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->automergebut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.automergebut,
 		     TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->automergebut);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->automergebut,
+  gtk_widget_show(mw->osm_inf->liveeditb.automergebut);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.automergebut,
 		       _("auto-merge the start/end of a way to an existing way"),NULL);
   mw->osm_inf->routebar=gtk_vbox_new(TRUE,0);
-  mw->osm_inf->start_route=make_pixmap_toggle_button(mw,start_route);
-  mw->osm_inf->end_route=make_pixmap_toggle_button(mw,end_route);
-  mw->osm_inf->set_destination=make_pixmap_toggle_button(mw,routestartgps);
+  mw->osm_inf->routeb.start_route=make_pixmap_toggle_button(mw,start_route);
+  mw->osm_inf->routeb.end_route=make_pixmap_toggle_button(mw,end_route);
+  mw->osm_inf->routeb.set_destination=make_pixmap_toggle_button(mw,routestartgps);
   gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->routebar,FALSE,FALSE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->start_route,TRUE,TRUE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->end_route,TRUE,TRUE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->set_destination,TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->start_route);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->start_route,_("set the start point for the route calculation"),NULL);
-  gtk_widget_show(mw->osm_inf->end_route);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->end_route,_("set the destination point for the route calculation"),NULL);
-  gtk_widget_show(mw->osm_inf->set_destination);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->set_destination,_("navigate to the given destination"),NULL);
-  gtk_widget_set_sensitive(mw->osm_inf->end_route,FALSE);
-  gtk_widget_set_sensitive(mw->osm_inf->start_route,FALSE);
-  gtk_widget_set_sensitive(mw->osm_inf->set_destination,FALSE);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->routeb.start_route,TRUE,TRUE,0);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->routeb.end_route,TRUE,TRUE,0);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->routeb.set_destination,TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->routeb.start_route);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->routeb.start_route,_("set the start point for the route calculation"),NULL);
+  gtk_widget_show(mw->osm_inf->routeb.end_route);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->routeb.end_route,_("set the destination point for the route calculation"),NULL);
+  gtk_widget_show(mw->osm_inf->routeb.set_destination);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->routeb.set_destination,_("navigate to the given destination"),NULL);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.end_route,FALSE);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.start_route,FALSE);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.set_destination,FALSE);
+  mw->osm_inf->meditbar=gtk_vbox_new(TRUE,0);
+  gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->meditbar,FALSE,FALSE,0);
+  mw->osm_inf->editb.selbut=gtk_toggle_button_new_with_label(" SEL ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.selbut,
+		       _("select the object to edit"),NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.selbut,TRUE,TRUE,0);
+  mw->osm_inf->editb.addwaybut=gtk_toggle_button_new_with_label(" AW ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.addwaybut,
+		       _("add a way"),NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.addwaybut,
+		     TRUE,TRUE,0);
+  mw->osm_inf->editb.delobjbut=gtk_button_new_with_label(" DEL ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.delobjbut,
+		       _("delete the currently selected object"),NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.delobjbut,
+		     TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->editb.delobjbut);
+  gtk_widget_show(mw->osm_inf->editb.addwaybut);
+  gtk_widget_show(mw->osm_inf->editb.selbut);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_selbut_cb),mw->osm_inf);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_addwaybut_cb),mw->osm_inf);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.delobjbut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_delobjbut_cb),mw->osm_inf);
   sm=calloc(sizeof(struct sidebar_mode),1);
   sm->name=_("routing");
   sm->w=mw->osm_inf->routebar;
@@ -1383,21 +1438,25 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   sm->name=_("live edit");
   sm->w=mw->osm_inf->editbar;
   mw->modelist=g_list_append(mw->modelist,sm);
+  sm=calloc(sizeof(struct sidebar_mode),1);
+  sm->name=_("editing");
+  sm->w=mw->osm_inf->meditbar;
+  mw->modelist=g_list_append(mw->modelist,sm);
   
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->start_route),"clicked",
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.start_route),"clicked",
 		     GTK_SIGNAL_FUNC(start_route_cb),mw->osm_inf);
-  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->start_route),"clicked",
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.start_route),"clicked",
 			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
 
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->end_route),"clicked",
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.end_route),"clicked",
 		     GTK_SIGNAL_FUNC(end_route_cb),mw->osm_inf);
-  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->end_route),"clicked",
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.end_route),"clicked",
 			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->set_destination),"clicked",
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.set_destination),"clicked",
 		     GTK_SIGNAL_FUNC(set_destination_cb),mw->osm_inf);
-  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->set_destination),"clicked",
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.set_destination),"clicked",
 			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
 }
@@ -1416,9 +1475,9 @@ struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_TAGS,1);
-  gtk_widget_set_sensitive(mw->osm_inf->startwaybut,1);
-  gtk_widget_set_sensitive(mw->osm_inf->start_route,1);
-  gtk_widget_set_sensitive(mw->osm_inf->set_destination,1);
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.startwaybut,1);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.start_route,1);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.set_destination,1);
 
   return osmf;
 }
