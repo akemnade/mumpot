@@ -1290,12 +1290,18 @@ int osm_center_handler(struct mapwin *mw, GdkGC *mygc, int x, int y)
 }
 
 static void get_way_dist(struct osm_way *way, int x, int y, int *md,
-			struct osm_way **minw)
+			 struct osm_way **minw, int *nodeafter)
 {
   int x1,y1,x2,y2;
   int i;
-  struct osm_node *node=get_osm_node(way->nodes[0]);
-  struct node_render_data *nrd = (struct node_render_data *)node->user_data;
+  struct osm_node *node;
+  struct node_render_data *nrd;
+  if (!way->nodes)
+    return;
+  if (way->nr_nodes == 0) {
+    return;
+  }
+  node=get_osm_node(way->nodes[0]);
   if (!node)
     return;
   nrd = (struct node_render_data *)node->user_data;
@@ -1315,20 +1321,22 @@ static void get_way_dist(struct osm_way *way, int x, int y, int *md,
     if (dist < *md) {
       *md=dist;
       *minw=way;
+      *nodeafter=i;
     }
   }
 }
 
-static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
+static struct osm_object * find_nearest_object(struct osm_file *osmf,
+					       int x, int y, int *nodeafter)
 {
+
   GList *l;
   int md=10;
   struct osm_way *minw=NULL;
   struct osm_node *minn=NULL;
-  struct osm_file *osmf = mw->osm_main_file;
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
     struct osm_way *way=(struct osm_way*)l->data;
-    get_way_dist(way,x,y,&md,&minw);
+    get_way_dist(way,x,y,&md,&minw,nodeafter);
   }
   md=md+4*3/2;
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
@@ -1342,11 +1350,17 @@ static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
       minn=node;
     }
   }
-  if (minn) {
-    mw->osm_inf->selected_object = &minn->head;
-  } else {
-    mw->osm_inf->selected_object = &minw->head;
-  }
+  if (minn)
+    return &minn->head;
+  else
+    return &minw->head;
+}
+
+static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
+{
+  int nodeafter=0;
+  mw->osm_inf->selected_object = find_nearest_object(mw->osm_main_file,
+						     x,y,&nodeafter);
   if (mw->osm_inf->selected_object)
     display_tags(mw->osm_inf,mw->osm_inf->selected_object);
   gtk_widget_queue_draw_area(mw->map,0,0,
@@ -1358,20 +1372,44 @@ static void handle_edit_addway_click(struct mapwin *mw,
 				     int x, int y)
 {
   double lon,lat;
+  int nodeafter=0;
   GList *l=NULL;
   struct osm_node *nd;
+  struct osm_object *nearest_obj;
+  struct osm_way *newway;
   mw->osm_main_file->changed=1;
   if (!mw->osm_inf->way_to_edit) {
     mw->osm_inf->way_to_edit=add_new_osm_way(mw->osm_main_file);
     osm_choose_tagpreset(osm_waypresets,set_tag_cb,
 			 (void *)mw->osm_inf->way_to_edit,mw);
   }
-  point2geosec(&lon, &lat,x,y);
-  lon=lon/3600.0;
-  lat=lat/3600.0;
-  nd=new_osm_node_from_point(mw->osm_main_file,
-			     lon,lat);
-  l=g_list_append(l,nd);
+  newway=mw->osm_inf->way_to_edit;
+  nearest_obj=find_nearest_object(mw->osm_main_file,
+				  x,y,&nodeafter);
+  if ((nearest_obj)&&(nearest_obj->type==NODE)) {
+    if ((newway->nr_nodes)&&(nearest_obj->id==newway->nodes[newway->nr_nodes-1])) {
+      return;
+    }
+    l=g_list_append(l,nearest_obj);
+  } else {
+    point2geosec(&lon, &lat,x,y);
+    lon=lon/3600.0;
+    lat=lat/3600.0;
+    nd=new_osm_node_from_point(mw->osm_main_file,
+			       lon,lat);
+    l=g_list_append(l,nd);
+    if (nodeafter) {
+      struct osm_way *mergeway=(struct osm_way *)nearest_obj;
+      struct osm_node *n1=get_osm_node(mergeway->nodes[nodeafter-1]);
+      struct osm_node *n2=get_osm_node(mergeway->nodes[nodeafter]);  
+      if (n1&&n2) {
+	move_node_between(n1->lon,n1->lat,n2->lon,n2->lat,nd);
+	osm_set_node_coords(nd,nd->lon,nd->lat);
+	osm_merge_into_way(mergeway,nodeafter,nd);
+      }
+    }
+  } 
+ 
   add_nodes_to_way(mw->osm_inf->way_to_edit,l);
   g_list_free(l);
   mw->osm_inf->selected_object=&mw->osm_inf->way_to_edit->head;
