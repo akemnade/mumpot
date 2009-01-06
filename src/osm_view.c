@@ -113,6 +113,7 @@ struct osm_info {
   } editb;
   struct timeval clicktime;
   int route_start_node;
+  struct osm_way *way_to_edit;
 };
 
 static GHashTable *color_hash;
@@ -789,27 +790,33 @@ static void select_tag_key(GtkWidget *w, gpointer user_data)
   free(k);
 }
 
+static void set_tag_cb(char *k, char *v,
+		       void *data, void *user_data)
+{
+  struct mapwin *mw = (struct mapwin *)user_data;
+  struct osm_object *obj = (struct osm_object *)data;
+  set_osm_tag(obj,k,v);
+  if (obj->type == WAY) {
+    free(((struct osm_way *)obj)->user_data);
+    ((struct osm_way *)obj)->user_data=NULL;
+  }
+  if (mw->osm_inf->selected_object)
+    display_tags(mw->osm_inf,mw->osm_inf->selected_object);
+}
+
+
+
 static void osm_set_tag_cb(GtkWidget *w, gpointer user_data)
 {
   struct mapwin *mw= (struct mapwin *)user_data;
-  char *oldv;
   char *k = gtk_editable_get_chars(GTK_EDITABLE(GTK_COMBO(mw->osm_inf->tag_combo)->entry),0,-1);
   char *v = gtk_editable_get_chars(GTK_EDITABLE(mw->osm_inf->tag_value),0,-1);
   mw->osm_main_file->changed=1;
   if (strlen(k)&&strlen(v)&&mw->osm_inf->selected_object) {
-    set_osm_tag(mw->osm_inf->selected_object,k,v);
-    
-    oldv=g_hash_table_lookup(mw->osm_inf->tag_hash,k);
-    g_hash_table_insert(mw->osm_inf->tag_hash,k,v);
-    if (oldv) {
-      free(oldv);
-      free(k);
-    }
-    if (mw->osm_inf->selected_object->id>0) {
-      xmlSetProp(mw->osm_inf->selected_object->xmlnode,(xmlChar *)"action",
-		 (xmlChar *)"modify");
-    }
+    set_tag_cb(k,v,mw->osm_inf->selected_object,mw);
   } 
+  free(k);
+  free(v);
 }
 
 static struct mapwin *sigmw;
@@ -1021,7 +1028,7 @@ static void start_way_cb(GtkWidget *w, gpointer data)
       free_tag_list(mw->osm_inf->newway_tags);
       mw->osm_inf->newway_tags=NULL;
     }
-    osm_choose_tagpreset(osm_waypresets,&mw->osm_inf->newway_tags);
+    osm_choose_tagpreset(osm_waypresets,NULL,(void *)&mw->osm_inf->newway_tags,NULL);
   } else {
     gtk_widget_show(mw->osm_inf->hwypopup);
   }
@@ -1347,6 +1354,32 @@ static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
 			     mw->page_height);
 }
 
+static void handle_edit_addway_click(struct mapwin *mw,
+				     int x, int y)
+{
+  double lon,lat;
+  GList *l=NULL;
+  struct osm_node *nd;
+  mw->osm_main_file->changed=1;
+  if (!mw->osm_inf->way_to_edit) {
+    mw->osm_inf->way_to_edit=add_new_osm_way(mw->osm_main_file);
+    osm_choose_tagpreset(osm_waypresets,set_tag_cb,
+			 (void *)mw->osm_inf->way_to_edit,mw);
+  }
+  point2geosec(&lon, &lat,x,y);
+  lon=lon/3600.0;
+  lat=lat/3600.0;
+  nd=new_osm_node_from_point(mw->osm_main_file,
+			     lon,lat);
+  l=g_list_append(l,nd);
+  add_nodes_to_way(mw->osm_inf->way_to_edit,l);
+  g_list_free(l);
+  mw->osm_inf->selected_object=&mw->osm_inf->way_to_edit->head;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
+}
+
 int osm_mouse_handler(struct mapwin *mw, int x, int y)
 {
   struct timeval tv;
@@ -1399,7 +1432,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
       lon/=3600.0;
       lat/=3600.0;
       nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
-      osm_choose_tagpreset(osm_nodepresets,&nd->head.tag_list);
+      osm_choose_tagpreset(osm_nodepresets,NULL,&nd->head.tag_list,NULL);
       mw->osm_inf->clicktime=tv;
     }
     return TRUE;
@@ -1409,6 +1442,11 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
       handle_edit_sel_click(mw,x,y);
     }
     return TRUE;
+  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->editb.addwaybut))&&
+	     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->editb.addwaybut)))) {
+    if (above_limit)
+      handle_edit_addway_click(mw,x,y);
+    return TRUE;
   }
   return FALSE;
 }
@@ -1416,6 +1454,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y)
 static void osmedit_addwaybut_cb(GtkWidget *w, gpointer data)
 {
   struct osm_info *osm_inf=(struct osm_info *)data;
+  osm_inf->way_to_edit=NULL;
   if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->editb.addwaybut))) {
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->editb.selbut),FALSE);
   }
@@ -1424,6 +1463,7 @@ static void osmedit_addwaybut_cb(GtkWidget *w, gpointer data)
 static void osmedit_selbut_cb(GtkWidget *w, gpointer data)
 {
   struct osm_info *osm_inf=(struct osm_info *)data;
+  osm_inf->way_to_edit=NULL;
   if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->editb.selbut))) {
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->editb.addwaybut),FALSE);
   }
@@ -1431,6 +1471,8 @@ static void osmedit_selbut_cb(GtkWidget *w, gpointer data)
 
 static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
 {
+  struct osm_info *osm_inf = (struct osm_info *)data;
+  osm_inf->way_to_edit=NULL;
 }
 
 void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
@@ -1510,8 +1552,13 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_selbut_cb),mw->osm_inf);
+  
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",			    
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_addwaybut_cb),mw->osm_inf);
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",			    
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.delobjbut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_delobjbut_cb),mw->osm_inf);
   sm=calloc(sizeof(struct sidebar_mode),1);
@@ -1553,6 +1600,7 @@ struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
   struct osm_file *osmf=parse_osm_file(name,0);
   if (!osmf)
     return NULL;
+  mw->osm_inf->way_to_edit=NULL;
   recalc_node_coordinates(mw,osmf);
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 1);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,1);

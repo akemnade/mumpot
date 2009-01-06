@@ -85,6 +85,7 @@ void set_osm_tag(struct osm_object *obj, char *key, char *v)
   char *knew=malloc(strlen(key)+strlen(v)+2);
   strcpy(knew,key);
   strcpy(knew+strlen(key)+1,v);
+  obj->modified=1;
   for(;l;l=g_list_next(l)) {
     char *korig=(char *)l->data;
     if (!strcmp(key,korig)) {
@@ -212,7 +213,7 @@ void add_nodes_to_way(struct osm_way *way, GList *l)
   way->nodes=realloc(way->nodes,sizeof(struct osm_node *)*way->nr_nodes);
   for(i=offset;l;l=g_list_next(l),i++) {
     struct osm_node *nd=(struct osm_node *)l->data;
-    way->nodes[offset+i]=nd->head.id;
+    way->nodes[i]=nd->head.id;
     nd->way_list=g_list_append(nd->way_list,way);
     nd->nr_ways++;
 #ifdef USE_DOM_PARSER

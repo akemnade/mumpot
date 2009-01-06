@@ -19,27 +19,36 @@ static void preset_clicked(GtkWidget *w, gpointer user_data)
 {
   struct osm_preset_menu_sect *sect=
     (struct osm_preset_menu_sect *)gtk_object_get_data(GTK_OBJECT(w),"sect");
-  GList **taglist = (GList **)gtk_object_get_data(GTK_OBJECT(w),"list");
+  void *taglist = gtk_object_get_data(GTK_OBJECT(w),"list");
   gtk_widget_destroy(GTK_WIDGET(user_data));
   if (!sect)
     return;
-  osm_choose_tagpreset(sect,taglist);
+  osm_choose_tagpreset(sect,gtk_object_get_data(GTK_OBJECT(w),"set_tag"),
+		       taglist,gtk_object_get_data(GTK_OBJECT(w),"list_data"));
 }
 
 void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
-			  GList **taglist)
+			  void (*set_tag)(char *,char *,void *,void *),
+			  void *data, void *user_data)
 {
   if (sect->tags) {
     GList *l;
     for(l=g_list_first(sect->tags);l;l=g_list_next(l)) {
       char *tsrc=(char *)l->data;
+      char *val;
       int tlen=strlen(tsrc)+1;
       char *tdst;
-      tlen+=strlen(tsrc+tlen);
+      val=tsrc+tlen;
+      tlen+=strlen(val);
       tlen++;
-      tdst=malloc(tlen);
-      memcpy(tdst,tsrc,tlen);
-      *taglist=g_list_append(*taglist,tdst);
+      if (set_tag) {
+	set_tag(tsrc,val,data,user_data);
+      } else {
+	GList **taglist = (GList **)data;
+	tdst=malloc(tlen);
+	memcpy(tdst,tsrc,tlen);
+	*taglist=g_list_append(*taglist,tdst);
+      }
     }
   }
   if (sect->items) {
@@ -61,7 +70,11 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
       struct osm_presetitem *pi = (struct osm_presetitem *)l->data;
       GtkWidget *but=gtk_button_new_with_label(pi->name);
       gtk_object_set_data(GTK_OBJECT(but),"sect",pi->menu);
-      gtk_object_set_data(GTK_OBJECT(but),"list",taglist);
+      gtk_object_set_data(GTK_OBJECT(but),"list",data);
+      gtk_object_set_data(GTK_OBJECT(but),"list_data",user_data);
+      if (set_tag) {
+	gtk_object_set_data(GTK_OBJECT(but),"set_tag",set_tag);
+      }
       gtk_signal_connect(GTK_OBJECT(but),"clicked",
 			 GTK_SIGNAL_FUNC(preset_clicked),
 			 win);
