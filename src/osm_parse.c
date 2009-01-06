@@ -61,7 +61,9 @@ static void add_created_tag(struct osm_object *obj)
 	     (xmlChar *)PACKAGE);
   xmlAddChild(nd,node);
 #else
-  obj->tag_list=g_list_append(obj->tag_list,"created_by\0" PACKAGE);
+  char *ctag=malloc(sizeof("created_by\0" PACKAGE));
+  memcpy(ctag,"created_by\0" PACKAGE,sizeof("created_by\0" PACKAGE));
+  obj->tag_list=g_list_append(obj->tag_list,ctag);
 #endif
 }
 
