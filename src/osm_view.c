@@ -1446,7 +1446,11 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
 {
   
   int above_limit;
-  above_limit=((millitime-mw->osm_inf->clicktime)>1500);
+  if (mw->osm_inf->clicktime==0) {
+    above_limit=1;
+  } else {
+    above_limit=((millitime-mw->osm_inf->clicktime)>1500);
+  }
   if (!state) {
     if ((mw->osm_inf->moving_node)&&(mw->osm_inf->selected_object)) {
       mw->osm_inf->moving_node=0;
