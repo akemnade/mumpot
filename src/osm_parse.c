@@ -203,6 +203,57 @@ struct osm_node *new_osm_node_from_point(struct osm_file *f,
   return nd;
 }
 
+static void remove_node_from_way(struct osm_way *way,
+				 struct osm_node *node)
+{
+  int i,j;
+  for(i=0,j=0;i<way->nr_nodes;i++) {
+    if (way->nodes[i]==node->head.id) {
+      node->way_list=g_list_remove(node->way_list,way);
+      node->nr_ways--;
+    } else {
+      way->nodes[j]=way->nodes[i];
+      j++;
+    }
+  }
+  way->nr_nodes=j;
+}
+
+void osm_delete_way(struct osm_file *osmf,
+		    struct osm_way *way)
+{
+  struct osm_node *node;
+  int i;
+  for(i=0;i<way->nr_nodes;i++) {
+    node=get_osm_node(way->nodes[i]);
+    node->way_list=g_list_remove(node->way_list,way);
+    node->nr_ways--;
+    if (node->nr_ways==0) {
+      osmf->nodes=g_list_remove(osmf->nodes,node);
+      free_osm_node(way->nodes[i]);
+    }
+  }
+  free_osm_way(way->head.id);
+  osmf->ways=g_list_remove(osmf->ways,way);
+  osmf->changed=1;
+}
+
+void osm_delete_node(struct osm_file *osmf,
+		     struct osm_node *node)
+{
+  GList *l;
+  for(l=g_list_first(node->way_list);l;l=g_list_next(l)) {
+    struct osm_way *way=(struct osm_way *)l->data;
+    remove_node_from_way(way,node);
+    if (way->nr_nodes<2) {
+      osm_delete_way(osmf,way);
+    }
+  }
+  osmf->nodes=g_list_remove(osmf->nodes,node);
+  free_osm_node(node->head.id);
+  osmf->changed=1;
+}
+
 void add_nodes_to_way(struct osm_way *way, GList *l)
 {
   int offset=way->nr_nodes;
@@ -257,7 +308,9 @@ void free_osm_way(int id)
 {
   struct osm_way *obj = get_osm_way(id);
   if (obj) {
-    free(obj->nodes);
+    if (obj->nodes) {
+      free(obj->nodes);
+    }
     g_mem_chunk_free(way_chunk,obj);
   }
   put_obj_id(NULL,id);
