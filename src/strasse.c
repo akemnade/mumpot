@@ -10,7 +10,9 @@
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 ***********************************************************************/
-
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <unistd.h>
 #ifdef _WIN32
 #include <winsock.h>
