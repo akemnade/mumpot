@@ -21,9 +21,10 @@
 #include <string.h>
 #include <locale.h>
 #include <glib.h>
+#include "myintl.h"
 #include "osm_tagpresets.h"
 
-
+extern void tagselparse(FILE *f);
 int tagpreset_lineno;
 YYSTYPE tagsellval;
 
@@ -43,8 +44,12 @@ static char *delbracket(char *str)
 {   
   char *b;
   if (str[0]=='_') {
+    char *bb;
     b=strdup(str+3);
     b[strlen(b+2)]=0;
+    bb=strdup(_(b));
+    free(b); 
+    b=bb;
   } else {
     b=strdup(str+1);
     b[strlen(b+1)]=0;
