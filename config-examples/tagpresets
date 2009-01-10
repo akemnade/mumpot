@@ -1,78 +1,78 @@
 nodepreset { 
-pos 0 0 "Shops" {
-    pos 0 0 "Bakery" { 
+pos 0 0 _("Shops") {
+    pos 0 0 _("bakery") { 
       settag "shop" "bakery"
     }
-    pos 0 1 "supermarket" {
+    pos 0 1 _("supermarket") {
       settag "shop" "supermarket"
       pos 0 0 "Edeka" { settag "name" "Edeka" }
       pos 0 1 "Aldi" { settag "name" "Aldi" }
       pos 0 2 "REWE" { settag "name" "REWE" }
       pos 0 3 "extra" { settag "name" "extra" }
       pos 0 4 "familia" { settag "name" "familia" }
-      pos 1 0 "no name" { }
+      pos 1 0 _("no name") { }
     }
-    pos 0 2 "outdoor" {
+    pos 0 2 _("outdoor") {
       settag "shop" "outdoor"
     }
-    pos 0 3 "bicycle" {
+    pos 0 3 _("bicycle") {
       settag "shop" "bicycle"
     }
-    pos 1 0 "kiosk" {
+    pos 1 0 _("kiosk") {
       settag "shop" "kiosk"
     }
 }
-pos 0 1 "Accomodation" {
-    pos 0 0 "Hotel" {
+pos 0 1 _("Accommodation") {
+    pos 0 0 _("Hotel") {
       settag "tourism" "hotel"
     }
-    pos 0 1 "Motel" {
+    pos 0 1 _("Motel") {
       settag "tourism" "motel"
     }
-    pos 0 2 "Guest House" {
+    pos 0 2 _("Guest House") {
       settag "tourism" "guest_house"
     }
-    pos 0 3 "Hostel" {
+    pos 0 3 _("Hostel") {
       settag "tourism" "hostel"
     }
-    pos 1 0 "Camping Site" {
+    pos 1 0 _("Camping Site") {
       settag "tourism" "camp_site"
     }
-    pos 1 1 "Caravan Site" {
+    pos 1 1 _("Caravan Site") {
       settag "tourism" "caravan_site"
     }
 }
-pos 0 2 "Food+Drinks" {
+pos 0 2 _("Food+Drinks") {
     pos 0 0 "Restaurant" {
       settag "amenity" "restaurant"
     }
-    pos 0 1 "Fast Food" {
+    pos 0 1 _("Fast Food") {
       settag "amenity" "fast_foot"
     }
-    pos 0 2 "Cafe" {
+    pos 0 2 _("Cafe") {
       settag "amenity" "cafe"
     }
 }
-pos 1 0 "Post box" {
+pos 1 0 _("Post box") {
     settag "amenity" "post_box"
 }
-pos 1 1 "Park bench" {
+pos 1 1 _("Park bench") {
     settag "amenity" "bench"
 }
-pos 1 2 "Man made" {
-    pos 0 0 "windmill" {
+pos 1 2 _("Man made") {
+    pos 0 0 _("windmill") {
       settag "man_made" "windmill"
     }
-    pos 0 1 "sewage" {
+    pos 0 1 _("sewage") {
       settag "man_made" "wastewater_plant"
     }
 }
-pos 2 0  "Bank" {
+pos 2 0  _("Bank") {
     settag "amenity" "bank"
-    pos 0 0 "with ATM" { settag "atm" "yes" }
-    pos 0 1 "without ATM" { settag "atm" "no" }
+    pos 0 0 _("with ATM") { settag "atm" "yes" }
+    pos 0 1 _("without ATM") { settag "atm" "no" }
 }
-pos 2 1 "ATM" {
+pos 2 1 _("ATM") {
     settag "amenity" "atm"
 }
 }
