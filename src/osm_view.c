@@ -1615,7 +1615,7 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.selbut,TRUE,TRUE,0);
   mw->osm_inf->editb.addwaybut=gtk_toggle_button_new_with_label(" AW ");
   gtk_tooltips_set_tip(tt,mw->osm_inf->editb.addwaybut,
-		       _("add a way"),NULL);
+		       _("add a new way"),NULL);
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.addwaybut,
 		     TRUE,TRUE,0);
   mw->osm_inf->editb.delobjbut=gtk_button_new_with_label(" DEL ");

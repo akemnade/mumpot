@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mumpot 0.3.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-12-30 23:25+0100\n"
+"POT-Creation-Date: 2009-01-10 20:04+0100\n"
 "PO-Revision-Date: 2008-11-23 13:18+0100\n"
 "Last-Translator: Felix A. Hässig\n"
 "Language-Team: Chinese\n"
@@ -36,31 +36,31 @@ msgstr "/观看/更小"
 msgid "/View/Zoom in"
 msgstr "/观看/更大"
 
-#: src/main.c:345 src/printdlg.c:210 src/create_connection.c:362
+#: src/main.c:345 src/printdlg.c:236 src/create_connection.c:362
 msgid "OK"
 msgstr "好的"
 
-#: src/main.c:1365
+#: src/main.c:1367
 msgid "select a name for the new nmea file"
 msgstr "请选择新nmea档案的名字"
 
-#: src/main.c:1449
+#: src/main.c:1451
 msgid "select a gps file"
 msgstr "请挑选GPS档案"
 
-#: src/main.c:1480
+#: src/main.c:1482
 msgid "select an osm file"
 msgstr "请挑选OSM档案"
 
-#: src/main.c:1500
+#: src/main.c:1502
 msgid "save OSM data"
 msgstr "保存OSM数据"
 
-#: src/main.c:1563
+#: src/main.c:1565
 msgid "Lost GPS connection"
 msgstr "GPS联系被打断了"
 
-#: src/main.c:1768
+#: src/main.c:1770
 #, c-format
 msgid ""
 "%s %s\n"
@@ -72,15 +72,15 @@ msgid ""
 "There is NO WARRANTY, to the extent permitted by law."
 msgstr ""
 
-#: src/main.c:1791
+#: src/main.c:1793
 msgid "downloading OSM data failed"
 msgstr "下载OSM数据没成功"
 
-#: src/main.c:1801
+#: src/main.c:1803
 msgid "downloading OSM data finished"
 msgstr "下载OSM数据完成了"
 
-#: src/main.c:1835
+#: src/main.c:1837
 msgid ""
 "No area selected,\n"
 " draw some lines around the area \n"
@@ -91,186 +91,186 @@ msgstr ""
 " 要么画线印迹你想知道其OSM数据的地区，要么挑选准确的画线\n"
 " "
 
-#: src/main.c:1867
+#: src/main.c:1878
 msgid "/Help/About"
 msgstr "/求助/关于本软件"
 
-#: src/main.c:1869
+#: src/main.c:1880
 msgid "/Project/Printing/mark page in scale 1:50000"
 msgstr "/项目/打印/挑选大小为1：50000的地区"
 
-#: src/main.c:1870
+#: src/main.c:1881
 msgid "/Project/Printing/mark page in scale 1:25000"
 msgstr "/项目/打印/挑选大小为1：25000的地区"
 
-#: src/main.c:1871
+#: src/main.c:1882
 msgid "/Project/Printing/mark page in scale 1:100000"
 msgstr "/项目/打印/挑选大小为1：100000的地区"
 
-#: src/main.c:1872
+#: src/main.c:1883
 msgid "/Project/Printing/mark page in scale 1:200000"
 msgstr "/项目/打印/挑选大小为1:200000的地区"
 
-#: src/main.c:1873
+#: src/main.c:1884
 msgid "/Project/Printing/mark page in scale 1:1000000"
 msgstr "/项目/打印/挑选大小为1：1000000的地区"
 
-#: src/main.c:1874
+#: src/main.c:1885
 msgid "/Project/Printing/delete marked areas"
 msgstr "/项目/打印/删掉挑选的地区"
 
-#: src/main.c:1875
+#: src/main.c:1886
 msgid "/Project/Printing/print marked areas"
 msgstr "/项目/打印/把被挑选的地区打印出来"
 
-#: src/main.c:1876
+#: src/main.c:1887
 msgid "/Project/Printing/delete marked area"
 msgstr "/项目/打印/删掉挑选的地区"
 
-#: src/main.c:1877
+#: src/main.c:1888
 msgid "/Project/save route (current layer)"
 msgstr "/项目/保存目前的道路"
 
-#: src/main.c:1878
+#: src/main.c:1889
 msgid "/Project/load GPS data"
 msgstr "/项目/打开GPS数据"
 
-#: src/main.c:1879
+#: src/main.c:1890
 msgid "/Project/load OSM data"
 msgstr "/项目/打开OSM数据"
 
-#: src/main.c:1880
+#: src/main.c:1891
 msgid "/Project/download OSM data for selected region"
 msgstr "/项目/下载涉及到专门地区的OSM数据"
 
-#: src/main.c:1881
+#: src/main.c:1892
 msgid "/Project/save OSM data"
 msgstr "/项目/保存OSM数据"
 
-#: src/main.c:1883
+#: src/main.c:1894
 msgid "/Project/Connect to GPS receiver"
 msgstr "/项目/跟GPS接收机联系起来"
 
-#: src/main.c:1889 src/main.c:1890 src/main.c:1891 src/main.c:1892
-#: src/main.c:1893
+#: src/main.c:1900 src/main.c:1901 src/main.c:1902 src/main.c:1903
+#: src/main.c:1904
 msgid "/View/Select line layer/0"
 msgstr "/观看/挑选画线/第零个"
 
-#: src/main.c:1890
+#: src/main.c:1901
 msgid "/View/Select line layer/1"
 msgstr "/观看/挑选画线/第一个"
 
-#: src/main.c:1891
+#: src/main.c:1902
 msgid "/View/Select line layer/2"
 msgstr "/观看/挑选画线/第二个"
 
-#: src/main.c:1892
+#: src/main.c:1903
 msgid "/View/Select line layer/3"
 msgstr "/观看/挑选画线/第三个"
 
-#: src/main.c:1893
+#: src/main.c:1904
 msgid "/View/Select line layer/4 (live gps)"
 msgstr "/观看/挑选画线/第四个（立刻GPS）"
 
-#: src/main.c:1895 src/main.c:1896 src/main.c:1897
+#: src/main.c:1906 src/main.c:1907 src/main.c:1908
 msgid "/View/Request tiles/request missing"
 msgstr "/观看/请求地图部分/请求缺乏的部分"
 
-#: src/main.c:1896
+#: src/main.c:1907
 msgid "/View/Request tiles/request never"
 msgstr "/观看/请求地图部分/从来不请求部分"
 
-#: src/main.c:1897
+#: src/main.c:1908
 msgid "/View/Request tiles/older than one day"
 msgstr "/观看/请求地图部分/比一天要老"
 
-#: src/main.c:1898
+#: src/main.c:1909
 msgid "/View/Disconnect GPS"
 msgstr "/观看/打断GPS联系"
 
-#: src/main.c:1901
+#: src/main.c:1912
 msgid "/Project/quit"
 msgstr "/项目/退出"
 
-#: src/main.c:1931 src/main.c:1936
+#: src/main.c:1942 src/main.c:1947
 #, c-format
 msgid "/View/Mode/%s"
 msgstr "/观看/观看方式/%s"
 
-#: src/main.c:1977
+#: src/main.c:1988
 msgid "Name"
 msgstr "名称"
 
-#: src/main.c:1977
+#: src/main.c:1988
 msgid "is in"
 msgstr "在于"
 
-#: src/main.c:2036
+#: src/main.c:2047
 msgid "file name"
 msgstr "数据名称"
 
-#: src/main.c:2040
+#: src/main.c:2051
 msgid "place name:"
 msgstr "地方的名字"
 
-#: src/main.c:2044
+#: src/main.c:2055
 msgid "search"
 msgstr "寻找"
 
-#: src/main.c:2126
+#: src/main.c:2137
 msgid "Move mode"
 msgstr "动作方式"
 
-#: src/main.c:2132
+#: src/main.c:2143
 msgid "pan mode"
 msgstr "全自由"
 
-#: src/main.c:2138
+#: src/main.c:2149
 msgid "route drawing mode"
 msgstr "画路线"
 
-#: src/main.c:2239 src/main.c:2246 src/main.c:2250
+#: src/main.c:2250 src/main.c:2257 src/main.c:2261
 #, c-format
 msgid "Usage: %s configfile\n"
 msgstr "用法： %s configfile\n"
 
-#: src/printdlg.c:25
+#: src/printdlg.c:28
 msgid "Default printer"
 msgstr "标准打印机"
 
-#: src/printdlg.c:180
+#: src/printdlg.c:206
 msgid "Print"
 msgstr "打印"
 
-#: src/printdlg.c:185
+#: src/printdlg.c:211
 msgid "to printer: "
 msgstr "挑选打印机： "
 
-#: src/printdlg.c:196
+#: src/printdlg.c:222
 msgid "Print to file: "
 msgstr "在档案中打印"
 
-#: src/printdlg.c:202
+#: src/printdlg.c:228
 msgid "Print with the following command: "
 msgstr "用下面的命令打印"
 
-#: src/printdlg.c:206
+#: src/printdlg.c:232
 msgid "Print range"
 msgstr "打印范围"
 
-#: src/printdlg.c:214 src/create_connection.c:366
+#: src/printdlg.c:240 src/create_connection.c:366
 msgid "Cancel"
 msgstr "取消"
 
-#: src/printdlg.c:220
+#: src/printdlg.c:246
 msgid "all pages"
 msgstr "所有的叶子"
 
-#: src/printdlg.c:224
+#: src/printdlg.c:250
 msgid "Page from: "
 msgstr "从这个叶子开始： "
 
-#: src/printdlg.c:228
+#: src/printdlg.c:254
 msgid "to: "
 msgstr "到这个叶子： "
 
@@ -294,53 +294,62 @@ msgstr "/OSM/显示街边"
 msgid "/OSM/Display tags"
 msgstr "/OSM/显示标签"
 
-#: src/osm_view.c:61
-msgid "/OSM/Mode/live edit"
-msgstr "/OSM/方式/立刻编程"
-
-#: src/osm_view.c:63
-msgid "/OSM/Mode/routing"
-msgstr "/OSM/方式/打算出来道路"
-
-#: src/osm_view.c:858
+#: src/osm_view.c:887
 msgid "set"
 msgstr "定好了"
 
-#: src/osm_view.c:1329
+#: src/osm_view.c:1572
 msgid "start a new way"
 msgstr "开始新道路"
 
-#: src/osm_view.c:1337
+#: src/osm_view.c:1580
 msgid "finish a new way"
 msgstr "结束新道路"
 
-#: src/osm_view.c:1341
+#: src/osm_view.c:1584
 msgid "finish a way and start a new one at the same place"
 msgstr "结束一条道路，在一样的地方开始新道路"
 
-#: src/osm_view.c:1349
+#: src/osm_view.c:1592
 msgid "auto-merge the start/end of a way to an existing way"
 msgstr "把一条道路的开始结束点根已经存在的道路整合起来"
 
-#: src/osm_view.c:1359
+#: src/osm_view.c:1602
 msgid "set the start point for the route calculation"
 msgstr "定好道路打算的开始点"
 
-#: src/osm_view.c:1361
+#: src/osm_view.c:1604
 msgid "set the destination point for the route calculation"
 msgstr "定好道路打算的结束点"
 
-#: src/osm_view.c:1363
+#: src/osm_view.c:1606
 msgid "navigate to the given destination"
 msgstr "跳到目的地"
 
-#: src/osm_view.c:1368
+#: src/osm_view.c:1614
+msgid "select the object to edit"
+msgstr ""
+
+#: src/osm_view.c:1618
+#, fuzzy
+msgid "add a new way"
+msgstr "开始新道路"
+
+#: src/osm_view.c:1623
+msgid "delete the currently selected object"
+msgstr ""
+
+#: src/osm_view.c:1645
 msgid "routing"
 msgstr "打算道路"
 
-#: src/osm_view.c:1372
+#: src/osm_view.c:1649
 msgid "live edit"
 msgstr "立刻编程"
+
+#: src/osm_view.c:1653
+msgid "editing"
+msgstr ""
 
 #: src/create_connection.c:72
 #, c-format
@@ -395,3 +404,116 @@ msgstr "Port"
 #: src/create_connection.c:372
 msgid "Creating GPS connection failed"
 msgstr "建立GPS联系没成功"
+
+#: config-examples/tagpresets:2
+msgid "Shops"
+msgstr ""
+
+#: config-examples/tagpresets:3
+msgid "bakery"
+msgstr ""
+
+#: config-examples/tagpresets:6
+msgid "supermarket"
+msgstr ""
+
+#: config-examples/tagpresets:13
+#, fuzzy
+msgid "no name"
+msgstr "数据名称"
+
+#: config-examples/tagpresets:15
+msgid "outdoor"
+msgstr ""
+
+#: config-examples/tagpresets:18
+msgid "bicycle"
+msgstr ""
+
+#: config-examples/tagpresets:21
+msgid "kiosk"
+msgstr ""
+
+#: config-examples/tagpresets:25
+msgid "Accommodation"
+msgstr ""
+
+#: config-examples/tagpresets:26
+msgid "Hotel"
+msgstr ""
+
+#: config-examples/tagpresets:29
+msgid "Motel"
+msgstr ""
+
+#: config-examples/tagpresets:32
+msgid "Guest House"
+msgstr ""
+
+#: config-examples/tagpresets:35
+msgid "Hostel"
+msgstr ""
+
+#: config-examples/tagpresets:38
+msgid "Camping Site"
+msgstr ""
+
+#: config-examples/tagpresets:41
+msgid "Caravan Site"
+msgstr ""
+
+#: config-examples/tagpresets:45
+msgid "Food+Drinks"
+msgstr ""
+
+#: config-examples/tagpresets:49
+msgid "Fast Food"
+msgstr ""
+
+#: config-examples/tagpresets:52
+#, fuzzy
+msgid "Cafe"
+msgstr "取消"
+
+#: config-examples/tagpresets:56
+msgid "Post box"
+msgstr ""
+
+#: config-examples/tagpresets:59
+msgid "Park bench"
+msgstr ""
+
+#: config-examples/tagpresets:62
+#, fuzzy
+msgid "Man made"
+msgstr "全自由"
+
+#: config-examples/tagpresets:63
+msgid "windmill"
+msgstr ""
+
+#: config-examples/tagpresets:66
+msgid "sewage"
+msgstr ""
+
+#: config-examples/tagpresets:70
+msgid "Bank"
+msgstr ""
+
+#: config-examples/tagpresets:72
+msgid "with ATM"
+msgstr ""
+
+#: config-examples/tagpresets:73
+msgid "without ATM"
+msgstr ""
+
+#: config-examples/tagpresets:75
+msgid "ATM"
+msgstr ""
+
+#~ msgid "/OSM/Mode/live edit"
+#~ msgstr "/OSM/方式/立刻编程"
+
+#~ msgid "/OSM/Mode/routing"
+#~ msgstr "/OSM/方式/打算出来道路"
