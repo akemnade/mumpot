@@ -75,6 +75,9 @@ pos 2 0  _("Bank") {
 pos 2 1 _("ATM") {
     settag "amenity" "atm"
 }
+pos 2 2 _("Playground") {
+    settag "leisure" "playground"
+}
 }
 
 waypreset {
