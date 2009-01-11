@@ -486,7 +486,9 @@ static gboolean map_move_cb(gpointer user_data)
     gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->vadj));
     return FALSE;
   } 
- 
+  if (!((GTK_WIDGET_MAPPED(mw->linemode_but))&&
+        (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->linemode_but)))))
+    return FALSE;
   gdk_gc_set_foreground(mygc,&mark_red);
   gdk_gc_set_line_attributes(mygc,5,
 			     GDK_LINE_SOLID,
