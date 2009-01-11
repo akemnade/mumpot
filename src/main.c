@@ -434,12 +434,6 @@ void draw_marks(struct mapwin *mw)
       draw_marks_cb(rect_to_edit,mw);
     }
   }
-  gdk_gc_set_foreground(mygc,&gps_color);
-  for(i=0;i<MAX_LINE_LIST;i++) {
-    if (mw->all_line_lists[i]==*(mw->mark_line_list))
-      continue;
-    draw_line_list(mw,mygc,mw->all_line_lists[i]);
-  }  
   gdk_gc_set_foreground(mygc,&mark_red);
   draw_line_list(mw,mygc,*mw->mark_line_list);
 }
@@ -1023,6 +1017,7 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 gboolean
 expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
+  int i;
   struct mapwin *mw=data;
   if (!mygc)
     return TRUE;
@@ -1040,6 +1035,12 @@ expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 		    mw->page_height);
   }
   /*  mapwin_draw(mw,widget->style->fg_gc[widget->state]); */
+  gdk_gc_set_foreground(mygc,&gps_color);
+  for(i=0;i<MAX_LINE_LIST;i++) {
+    if (mw->all_line_lists[i]==*(mw->mark_line_list))
+      continue;
+    draw_line_list(mw,mygc,mw->all_line_lists[i]);
+  }  
   if (mw->osm_main_file)
     draw_osm(mw,mw->osm_main_file,mygc);
   draw_marks(mw);

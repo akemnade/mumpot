@@ -1339,7 +1339,7 @@ static struct osm_object * find_nearest_object(struct osm_file *osmf,
     struct osm_way *way=(struct osm_way*)l->data;
     get_way_dist(way,x,y,&md,&minw,nodeafter);
   }
-  md=md+4*3/2;
+  md=md+10*3/2;
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
     int dist;
     struct osm_node *node = (struct osm_node *)l->data;
