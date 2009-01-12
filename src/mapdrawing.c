@@ -159,14 +159,23 @@ static int my_connectto(char *host,int port)
   int sock;
   struct hostent *ph;
   struct sockaddr_in destaddr;
-  ph=gethostbyname(host);
-  if (!ph) return -1;
-  destaddr.sin_family=ph->h_addrtype;  /* Uebertragen der besorgten 
-                                          Informationen */
-  destaddr.sin_port=htons(port);   /* htons dreht die Bytes in die
-                                    Netzwerkreihenfolge = host
-                                    to network order */
-  memcpy((char *)&destaddr.sin_addr,ph->h_addr,ph->h_length);   
+  struct sockaddr_in *stored_addr;
+  static GHashTable *dnshash;
+  if (!dnshash)
+    dnshash=g_hash_table_new(g_str_hash,g_str_equal);
+  stored_addr=g_hash_table_lookup(dnshash,host);
+  if (stored_addr) {
+    destaddr=*stored_addr;
+  } else {
+    ph=gethostbyname(host);
+    if (!ph) return -1;
+    destaddr.sin_family=ph->h_addrtype; 
+    memcpy((char *)&destaddr.sin_addr,ph->h_addr,ph->h_length);
+    stored_addr=malloc(sizeof(struct sockaddr_in));
+    *stored_addr=destaddr;
+    g_hash_table_insert(dnshash,strdup(host),stored_addr);
+  }
+  destaddr.sin_port=htons(port); 
   sock=socket(AF_INET,SOCK_STREAM,0);
 #ifndef _WIN32
   fcntl(sock,F_SETFL,fcntl(sock,F_GETFL)|O_NONBLOCK);
