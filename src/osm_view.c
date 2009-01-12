@@ -927,6 +927,9 @@ static void toggle_osm_view(gpointer callback_data, guint callback_action,
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_osm = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
 }
 
 static void toggle_select_center(gpointer callback_data, guint callback_action,
@@ -941,6 +944,9 @@ static void toggle_display_nodes(gpointer callback_data, guint callback_action,
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_nodes = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
 }
 
 static void toggle_display_street_borders(gpointer callback_data, guint callback_action,
@@ -948,6 +954,9 @@ static void toggle_display_street_borders(gpointer callback_data, guint callback
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_street_borders = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height); 
 }
 
 static void toggle_display_tags(gpointer callback_data, guint callback_action,
