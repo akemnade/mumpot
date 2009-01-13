@@ -2219,6 +2219,40 @@ static void add_path_to_mark_list(GList **l, int krid)
   *l=g_list_concat(*l,l2);
 }
 
+static void restart_prog(GtkWidget *w,gpointer data)
+{
+  char *prog=(char *)data;
+  execlp(prog,prog,NULL);
+}
+
+/* quick hack to choose a configuration */
+static void config_chooser()
+{
+  GtkWidget *win;
+  GtkWidget *vbox;
+  GtkWidget *but;
+  win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title(GTK_WINDOW(win),_("Choose a map"));
+  
+  vbox=gtk_vbox_new(TRUE,0);
+  gtk_container_add(GTK_CONTAINER(win),vbox);
+  but=gtk_button_new_with_label(_("OSM Tiles@home"));
+  gtk_box_pack_start(GTK_BOX(vbox),but,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-tah");
+  but=gtk_button_new_with_label(_("OSM Mapnik"));
+  gtk_box_pack_start(GTK_BOX(vbox),but,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-mapnik");
+  but=gtk_button_new_with_label(_("OSM Cyclemap"));
+  gtk_box_pack_start(GTK_BOX(vbox),but,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-cyclemap");
+  gtk_widget_show_all(win);
+  gtk_main();
+  exit(1);
+}
+
 int main(int argc, char **argv)
 {
   char buf[512];
@@ -2261,6 +2295,9 @@ int main(int argc, char **argv)
     return 1;
   }
   if (!parse_mapconfig(configfilename)) { 
+    if (argc==1) {
+      config_chooser();
+    }
     printf(_("Usage: %s configfile\n"),argv[0]);
     return 1;
   }
