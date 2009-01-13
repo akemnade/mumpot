@@ -56,6 +56,8 @@
 #define MENU_OSM_DISPLAY_NODES _(MENU_OSM_DISPLAY_NODES_N)
 #define MENU_OSM_DISPLAY_STREET_BORDERS_N N_("/OSM/Display street borders")
 #define MENU_OSM_DISPLAY_STREET_BORDERS _(MENU_OSM_DISPLAY_STREET_BORDERS_N)
+#define MENU_OSM_DISPLAY_ALL_WAYS_N N_("/OSM/Display non-street ways")
+#define MENU_OSM_DISPLAY_ALL_WAYS MENU_OSM_DISPLAY_ALL_WAYS_N
 #define MENU_OSM_DISPLAY_TAGS_N N_("/OSM/Display tags")
 #define MENU_OSM_DISPLAY_TAGS _(MENU_OSM_DISPLAY_TAGS_N)
 
@@ -77,6 +79,7 @@ struct osm_info {
   int autoselect_center;
   int display_tags;
   int display_editbar;
+  int display_all_ways;
   int has_dest;
   double min_distance;
   struct osm_object *selected_object;
@@ -119,19 +122,24 @@ struct osm_info {
 
 static GHashTable *color_hash;
 
-static struct way_colors all_colors[]={{"motorway","blue"},
-				       {"motorway_link","blue"},
-				       {"primary","red"},
-				       {"secondary","orange"},
-				       {"tertiary","yellow"},
-				       {"unclassified","LightGray"},
-				       {"residential","LightGray"},
-				       {"track","brown"},
-				       {"cycleway","violet"},
-				       {"footway","green"},
-				       {"service","LightGray"},
-				       {"pedestrian","SpringGreen"},
-				       {"steps","green"}
+static struct way_colors all_colors[]={
+  {"default","gray50"},
+  {"motorway","blue"},
+  {"motorway_link","blue"},
+  {"primary","red"},
+  {"secondary","orange"},
+  {"tertiary","yellow"},
+  {"unclassified","LightGray"},
+  {"residential","LightGray"},
+  {"track","brown"},
+  {"path","sandy brown"},
+  {"living_street","PaleGreen"},
+  {"cycleway","violet"},
+  {"footway","green"},
+  {"service","LightGray"},
+  {"pedestrian","SpringGreen"},
+  {"steps","green"},
+				       
 };
 
 struct way_render_data {
@@ -207,8 +215,11 @@ static struct way_render_data *get_way_render_data(struct osm_way *way)
       if (hwyclass)
 	wrd->color = (GdkColor *)g_hash_table_lookup(color_hash, hwyclass);
       if (!wrd->color) {
+	wrd->color = &all_colors[0].color;
 	fprintf(stderr,"no color for %s\n",hwyclass);
       }
+    } else {
+      wrd->color = &all_colors[0].color;
     }
   }
   return (struct way_render_data *)way->user_data;
@@ -228,8 +239,14 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
     
   if (wrd->processed)
     return;
-  if (!way->street)
-    return;
+  if (!way->street) {
+    if (mw->osm_inf->selected_object != &way->head) {
+      if (!set_color)
+	return;
+      if (!mw->osm_inf->display_all_ways) 
+	return;
+    }
+  }
   wrd->processed=1;
  
   node = get_osm_node(way->nodes[0]);
@@ -865,10 +882,13 @@ void init_osm_draw(struct mapwin *mw)
   check_item_set_state(mw, MENU_OSM_DISPLAY_NODES,0);
   mw->osm_inf->display_street_borders=0;
   check_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,0);
+  mw->osm_inf->display_all_ways=0;
+  check_item_set_state(mw, MENU_OSM_DISPLAY_ALL_WAYS,0);
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 0);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,0);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,0);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,0);
+  menu_item_set_state(mw, MENU_OSM_DISPLAY_ALL_WAYS,0);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_TAGS,0);
   gdk_color_black(cmap,&black_color);
   gdk_color_parse("red",&node_color);
@@ -954,6 +974,16 @@ static void toggle_display_street_borders(gpointer callback_data, guint callback
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_street_borders = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height); 
+}
+
+static void toggle_display_all_ways(gpointer callback_data, guint callback_action,
+					  GtkWidget *w)
+{
+  struct mapwin *mw = (struct mapwin *)callback_data;
+  mw->osm_inf->display_all_ways = GTK_CHECK_MENU_ITEM(w)->active;
   gtk_widget_queue_draw_area(mw->map,0,0,
 			     mw->page_width,
 			     mw->page_height); 
@@ -1394,8 +1424,9 @@ static void handle_edit_addway_click(struct mapwin *mw,
   mw->osm_main_file->changed=1;
   if (!mw->osm_inf->way_to_edit) {
     mw->osm_inf->way_to_edit=add_new_osm_way(mw->osm_main_file);
-    osm_choose_tagpreset(osm_waypresets,set_tag_cb,
-			 (void *)mw->osm_inf->way_to_edit,mw);
+    if (osm_waypresets)
+      osm_choose_tagpreset(osm_waypresets,set_tag_cb,
+			   (void *)mw->osm_inf->way_to_edit,mw);
   }
   newway=mw->osm_inf->way_to_edit;
   nearest_obj=find_nearest_object(mw->osm_main_file,
@@ -1690,11 +1721,13 @@ struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
   if (!osmf)
     return NULL;
   mw->osm_inf->way_to_edit=NULL;
+  mw->osm_inf->selected_object=NULL;
   recalc_node_coordinates(mw,osmf);
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 1);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,1);
+  menu_item_set_state(mw, MENU_OSM_DISPLAY_ALL_WAYS,1),
   menu_item_set_state(mw, MENU_OSM_DISPLAY_TAGS,1);
   gtk_widget_set_sensitive(mw->osm_inf->liveeditb.startwaybut,1);
   gtk_widget_set_sensitive(mw->osm_inf->routeb.start_route,1);
@@ -1715,7 +1748,9 @@ GtkItemFactoryEntry *get_osm_menu_items(int *n_osm_items)
      "<CheckItem>"},
     {MENU_OSM_DISPLAY_NODES_N,NULL,GTK_SIGNAL_FUNC(toggle_display_nodes),
      0,"<CheckItem>"},
-    {MENU_OSM_DISPLAY_STREET_BORDERS_N, NULL, GTK_SIGNAL_FUNC(toggle_display_street_borders),
+    {MENU_OSM_DISPLAY_STREET_BORDERS_N, NULL, GTK_SIGNAL_FUNC(toggle_display_street_borders), 
+     0,"<CheckItem>"},
+    {MENU_OSM_DISPLAY_ALL_WAYS_N, NULL, GTK_SIGNAL_FUNC(toggle_display_all_ways),
      0,"<CheckItem>"},
     /*    {MENU_OSM_DISPLAY_EDIT_BAR_N, NULL, GTK_SIGNAL_FUNC(toggle_display_bar),0,"<RadioItem>"},
 	  {MENU_OSM_DISPLAY_ROUTE_BAR_N, NULL, GTK_SIGNAL_FUNC(toggle_display_bar),1, MENU_OSM_DISPLAY_EDIT_BAR_N}, */
