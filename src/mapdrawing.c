@@ -55,7 +55,14 @@ int tile_cache_size=64;
 
 static int cache_count;
 static GList *cache_list;
+/* contains the urls which are actually downloaded to avoid
+   downloading the same url multiple times at the same time */
 static GHashTable *http_hash;
+/* contains the image files which are to fetch,
+   the files are only removed on successful downloads from
+   the hash to avoid rerequesting failed tiles again and
+   again so that the tile server does not get overloaded */
+static GHashTable *tile_files_to_fetch;
 static void free_image_cache(char *fname);
 extern GdkColor speedcolor[256];
 struct http_fetch_buf {
@@ -71,6 +78,7 @@ struct http_fetch_buf {
   void *data;
   void (*finish_cb)(const char *,const char *,void *);
   void (*fail_cb)(const char *,const char *,void *);
+  int (*size_check)(const char *,void *,int);
 };
 struct cache_entry {
   char *name;
@@ -152,19 +160,40 @@ static int my_connectto(char *host,int port)
   int sock;
   struct hostent *ph;
   struct sockaddr_in destaddr;
-  ph=gethostbyname(host);
-  if (!ph) return -1;
-  destaddr.sin_family=ph->h_addrtype;  /* Uebertragen der besorgten 
-                                          Informationen */
-  destaddr.sin_port=htons(port);   /* htons dreht die Bytes in die
-                                    Netzwerkreihenfolge = host
-                                    to network order */
-  memcpy((char *)&destaddr.sin_addr,ph->h_addr,ph->h_length);   
+  struct sockaddr_in *stored_addr;
+  static GHashTable *dnshash;
+  if (!dnshash)
+    dnshash=g_hash_table_new(g_str_hash,g_str_equal);
+  stored_addr=g_hash_table_lookup(dnshash,host);
+  if (stored_addr) {
+    destaddr=*stored_addr;
+  } else {
+    ph=gethostbyname(host);
+    if (!ph) return -1;
+    destaddr.sin_family=ph->h_addrtype; 
+    memcpy((char *)&destaddr.sin_addr,ph->h_addr,ph->h_length);
+    stored_addr=malloc(sizeof(struct sockaddr_in));
+    *stored_addr=destaddr;
+    g_hash_table_insert(dnshash,strdup(host),stored_addr);
+  }
+  destaddr.sin_port=htons(port); 
   sock=socket(AF_INET,SOCK_STREAM,0);
+#ifndef _WIN32
   fcntl(sock,F_SETFL,fcntl(sock,F_GETFL)|O_NONBLOCK);
-
+#else
+  {
+    u_long m = 1;
+    ioctlsocket(sock,FIONBIO,&m);
+  }
+#endif
   if (connect(sock,(struct sockaddr *)&destaddr,sizeof(destaddr))<0) {
-    if ((errno != EINPROGRESS) && (errno != EAGAIN)) {
+#ifdef _WIN32
+    int err = WSAGetLastError();
+    if ((err != WSAEINPROGRESS) && (err != WSAEWOULDBLOCK))
+#else
+    if ((errno != EINPROGRESS) && (errno != EAGAIN)) 
+#endif
+    {
       closesocket(sock);
       return -1;
     }
@@ -254,8 +283,16 @@ static gboolean do_http_recv(GIOChannel *source,
     if ((l==0)&&(hfb->outfd>=0)) {
       close(hfb->outfd);
       if (!hfb->use_tempname) {
+        struct stat st;
 	char *nfname=g_strdup_printf("%s.",hfb->filename);
-	rename(nfname,hfb->filename);
+        if ((!stat(nfname,&st))&&
+           ((!hfb->size_check)||(hfb->size_check(hfb->filename,hfb->data,st.st_size)))) { 
+          if (!rename(nfname,hfb->filename)) {
+            g_hash_table_remove(tile_files_to_fetch,hfb->filename);
+          }
+        } else {
+          unlink(nfname);
+        }
 	g_free(nfname);
       }
       hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
@@ -273,11 +310,21 @@ static gboolean do_http_recv(GIOChannel *source,
         
     if ((datapos=strstr(hfb->buf,"\r\n\r\n"))) {
       if (!strncmp(hfb->buf+9,"200 OK",6)) {
-	if (hfb->use_tempname)
+	if (hfb->use_tempname) {
+#ifdef _WIN32
+	  mktemp(hfb->filename);
+	  hfb->outfd=open(hfb->filename,O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,0666);
+	  printf("opened: %s\n",hfb->filename);
+#else
 	  hfb->outfd=mkstemp(hfb->filename);
-	else {
+#endif
+	} else {
 	  char *nfname=g_strdup_printf("%s.",hfb->filename);
+#ifdef _WIN32
+	  hfb->outfd=open(nfname,O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,0666);
+#else
 	  hfb->outfd=open(nfname,O_WRONLY|O_CREAT|O_TRUNC,0666);
+#endif
 	  fprintf(stderr,"opened %s\n",nfname);
 	  g_free(nfname);
 	}
@@ -307,7 +354,6 @@ static gboolean do_http_send(GIOChannel *source,
 {
   struct http_fetch_buf *hfb=(struct http_fetch_buf *)data;
   if ((send(hfb->fd,hfb->request,strlen(hfb->request),0))>0) {
-    fprintf(stderr,"request sended %s\n",hfb->request);
     g_io_add_watch(source,G_IO_IN|G_IO_HUP,do_http_recv,data);
   } else {
     if (hfb->fail_cb)
@@ -328,7 +374,11 @@ static void create_path(const char *path)
       endpos=NULL;
       break;
     }
+#ifndef _WIN32
     if (!mkdir(cpy,0777))
+#else
+    if (!mkdir(cpy))
+#endif
       break;
   }
   if (!endpos) {
@@ -341,7 +391,11 @@ static void create_path(const char *path)
   endp+=strcspn(cpy+endp,"/");
   while(cpy[endp]) {
     cpy[endp]=0;
+#ifndef _WIN32
     if (mkdir(cpy,0777))
+#else
+    if (mkdir(cpy))
+#endif
       break;
     cpy[endp]='/';
     endp++;
@@ -353,37 +407,76 @@ static void create_path(const char *path)
 
 static int check_create_file(char *fullname)
 {
-  int fd=open(fullname,O_WRONLY|O_CREAT,0666);
+  int fd;
+  fd=open(fullname,O_WRONLY,0666);
   if (fd>=0) {
     close(fd);
     return 1;
   }
-  create_path(fullname);
   fd=open(fullname,O_WRONLY|O_CREAT,0666);
+  if (fd>0) {
+    close(fd);
+    unlink(fullname);
+    return 1;
+  }
+  create_path(fullname);
+  fd=open(fullname,O_WRONLY,0666);
   if (fd>=0) {
     close(fd);
+    return 1;
+  }
+  fd=open(fullname,O_WRONLY|O_CREAT,0666);
+  if (fd>0) {
+    close(fd);
+    unlink(fullname);
     return 1;
   }
   return 0;
 }
+
+/* ignore tiles if they are getting smaller or
+   have zero size */
+static int tile_size_check(const char *filename, void *data,
+                           int len)
+{
+  struct stat st;
+  if (len==0)
+    return 0;
+  stat(filename,&st);  
+  if (st.st_size> (len*3)) {
+    return 0;
+  }
+  return 1;
+}
+
 
 /* initiate a http request for a tile */
 static void get_http_tile(struct mapwin *mw,
 			  const char *url, const char *filename)
 {
   char *fullname=g_strdup_printf("%s.png",filename);
+  char *fn2;
+  if (!tile_files_to_fetch)
+    tile_files_to_fetch=g_hash_table_new(g_str_hash,g_str_equal);
+  if (g_hash_table_lookup(tile_files_to_fetch,fullname)) {
+    g_free(fullname);
+    return;
+  }
+  fn2=strdup(fullname); 
+  g_hash_table_insert(tile_files_to_fetch,fn2,fn2); 
   if (!check_create_file(fullname)) {
     g_free(fullname);
     return;
   }
-  get_http_file(url,fullname,tile_fetched,NULL,mw);
+  get_http_file(url,fullname,tile_fetched,NULL,tile_size_check,mw);
   g_free(fullname);
 }
 
 /* initiate a http request */
 void get_http_file(const char *url,const char *filename,
 			  void (*finish_cb)(const char *,const char*,void *),
-		   void (*fail_cb)(const char *,const char *,void *),void *data)
+		   void (*fail_cb)(const char *,const char *,void *),
+                   int (*size_check)(const char *, void *, int),void *data)
 {
   int i;
   struct http_fetch_buf *hfb;
@@ -431,7 +524,7 @@ void get_http_file(const char *url,const char *filename,
     hfb->filename=g_strdup(filename);
     hfb->use_tempname=0;
   } else {
-    hfb->filename=g_strdup("/tmp/mp.XXXXXX");
+    hfb->filename=g_strdup_printf("%s/mp.XXXXXX", g_get_tmp_dir());
     hfb->use_tempname=1;
   }
   g_hash_table_insert(http_hash,hfb->url,hfb);
@@ -580,6 +673,21 @@ void point2geosec(double *longr, double *lattr, double x, double y)
   *lattr=latt;
 }
 
+/* callback for freeing a line struct */
+static void free_line(gpointer data,gpointer user_data)
+{
+  struct t_punkt32 *p = (struct t_punkt32 *)data;
+  if (p->time)
+    free(p->time);
+  free(data);
+}
+
+
+void free_line_list(GList *l)
+{
+  g_list_foreach(l,free_line,NULL);
+  g_list_free(l);
+}
 
 static void free_image_cache(char *fname)
 {

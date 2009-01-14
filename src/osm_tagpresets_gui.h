@@ -15,6 +15,7 @@
 
 
 void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
-			  GList **taglist);
+			  void (*set_tag)(char *,char *,void *,void *),
+			  void *taglist,void *user_data);
 
 #endif

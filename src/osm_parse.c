@@ -61,7 +61,9 @@ static void add_created_tag(struct osm_object *obj)
 	     (xmlChar *)PACKAGE);
   xmlAddChild(nd,node);
 #else
-  obj->tag_list=g_list_append(obj->tag_list,"created_by\0" PACKAGE);
+  char *ctag=malloc(sizeof("created_by\0" PACKAGE));
+  memcpy(ctag,"created_by\0" PACKAGE,sizeof("created_by\0" PACKAGE));
+  obj->tag_list=g_list_append(obj->tag_list,ctag);
 #endif
 }
 
@@ -85,6 +87,7 @@ void set_osm_tag(struct osm_object *obj, char *key, char *v)
   char *knew=malloc(strlen(key)+strlen(v)+2);
   strcpy(knew,key);
   strcpy(knew+strlen(key)+1,v);
+  obj->modified=1;
   for(;l;l=g_list_next(l)) {
     char *korig=(char *)l->data;
     if (!strcmp(key,korig)) {
@@ -200,6 +203,57 @@ struct osm_node *new_osm_node_from_point(struct osm_file *f,
   return nd;
 }
 
+static void remove_node_from_way(struct osm_way *way,
+				 struct osm_node *node)
+{
+  int i,j;
+  for(i=0,j=0;i<way->nr_nodes;i++) {
+    if (way->nodes[i]==node->head.id) {
+      node->way_list=g_list_remove(node->way_list,way);
+      node->nr_ways--;
+    } else {
+      way->nodes[j]=way->nodes[i];
+      j++;
+    }
+  }
+  way->nr_nodes=j;
+}
+
+void osm_delete_way(struct osm_file *osmf,
+		    struct osm_way *way)
+{
+  struct osm_node *node;
+  int i;
+  for(i=0;i<way->nr_nodes;i++) {
+    node=get_osm_node(way->nodes[i]);
+    node->way_list=g_list_remove(node->way_list,way);
+    node->nr_ways--;
+    if (node->nr_ways==0) {
+      osmf->nodes=g_list_remove(osmf->nodes,node);
+      free_osm_node(way->nodes[i]);
+    }
+  }
+  free_osm_way(way->head.id);
+  osmf->ways=g_list_remove(osmf->ways,way);
+  osmf->changed=1;
+}
+
+void osm_delete_node(struct osm_file *osmf,
+		     struct osm_node *node)
+{
+  GList *l;
+  for(l=g_list_first(node->way_list);l;l=g_list_next(l)) {
+    struct osm_way *way=(struct osm_way *)l->data;
+    remove_node_from_way(way,node);
+    if (way->nr_nodes<2) {
+      osm_delete_way(osmf,way);
+    }
+  }
+  osmf->nodes=g_list_remove(osmf->nodes,node);
+  free_osm_node(node->head.id);
+  osmf->changed=1;
+}
+
 void add_nodes_to_way(struct osm_way *way, GList *l)
 {
   int offset=way->nr_nodes;
@@ -212,7 +266,7 @@ void add_nodes_to_way(struct osm_way *way, GList *l)
   way->nodes=realloc(way->nodes,sizeof(struct osm_node *)*way->nr_nodes);
   for(i=offset;l;l=g_list_next(l),i++) {
     struct osm_node *nd=(struct osm_node *)l->data;
-    way->nodes[offset+i]=nd->head.id;
+    way->nodes[i]=nd->head.id;
     nd->way_list=g_list_append(nd->way_list,way);
     nd->nr_ways++;
 #ifdef USE_DOM_PARSER
@@ -254,7 +308,9 @@ void free_osm_way(int id)
 {
   struct osm_way *obj = get_osm_way(id);
   if (obj) {
-    free(obj->nodes);
+    if (obj->nodes) {
+      free(obj->nodes);
+    }
     g_mem_chunk_free(way_chunk,obj);
   }
   put_obj_id(NULL,id);
@@ -899,7 +955,9 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
     fprintf(stderr,"Cannot open %s\n",fname);
     return NULL;
   }
+#ifndef _WIN32
   gettimeofday(&tv1,NULL);
+#endif
   setlocale(LC_NUMERIC,"C");
 #ifdef HAVE_BZLIB_H
   suf=strrchr(fname,'.');
@@ -948,13 +1006,17 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
       free(octxt);
     }
   fclose(f);
+#ifndef _WIN32
   gettimeofday(&tv2,NULL);
   printtimediff("SAX parsing xml: %d ms\n",&tv1,&tv2);
+#endif
   if (!build_references(osmf)) {
     fprintf(stderr,"warning,: inconsistencies detected\n");
   }
+#ifndef _WIN32
   gettimeofday(&tv3,NULL);
   printtimediff("build references: %d ms\n",&tv2,&tv3);
+#endif
   return osmf;
 }
 #endif

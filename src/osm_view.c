@@ -56,12 +56,12 @@
 #define MENU_OSM_DISPLAY_NODES _(MENU_OSM_DISPLAY_NODES_N)
 #define MENU_OSM_DISPLAY_STREET_BORDERS_N N_("/OSM/Display street borders")
 #define MENU_OSM_DISPLAY_STREET_BORDERS _(MENU_OSM_DISPLAY_STREET_BORDERS_N)
+#define MENU_OSM_DISPLAY_ALL_WAYS_N N_("/OSM/Display non-street ways")
+#define MENU_OSM_DISPLAY_ALL_WAYS MENU_OSM_DISPLAY_ALL_WAYS_N
 #define MENU_OSM_DISPLAY_TAGS_N N_("/OSM/Display tags")
 #define MENU_OSM_DISPLAY_TAGS _(MENU_OSM_DISPLAY_TAGS_N)
-#define MENU_OSM_DISPLAY_EDIT_BAR_N N_("/OSM/Mode/live edit")
-#define MENU_OSM_DISPLAY_EDIT_BAR _(MENU_OSM_DISPLAY_EDIT_BAR_N)
-#define MENU_OSM_DISPLAY_ROUTE_BAR_N N_("/OSM/Mode/routing")
-#define MENU_OSM_DISPLAY_ROUTE_BAR _(MENU_OSM_DISPLAY_ROUTE_BAR_N)
+
+
 struct way_colors {
   char *class_name;
   char *color_name;
@@ -79,44 +79,67 @@ struct osm_info {
   int autoselect_center;
   int display_tags;
   int display_editbar;
+  int display_all_ways;
   int has_dest;
   double min_distance;
-  struct osm_way *selected_way;
+  struct osm_object *selected_object;
   struct osm_node *selected_node;
   GList *newwaypoints_start;
+  GList *newway_tags;
   char *newway_hwyclass;
   int merge_first_node;
   GtkWidget *tag_combo;
   GtkWidget *tag_value;
   GtkWidget *tag_set;
   GHashTable *tag_hash;
-  GtkWidget *startwaybut;
-  GtkWidget *endwaybut;
-  GtkWidget *restartwaybut;
-  GtkWidget *automergebut;
   GtkWidget *editbar;
   GtkWidget *routebar;
-  GtkWidget *start_route;
-  GtkWidget *end_route;
-  GtkWidget *set_destination;
+  GtkWidget *meditbar;
+
+  struct {
+    GtkWidget *startwaybut;
+    GtkWidget *endwaybut;
+    GtkWidget *restartwaybut;
+    GtkWidget *automergebut;
+  } liveeditb;
+  struct {
+    GtkWidget *start_route;
+    GtkWidget *end_route;
+    GtkWidget *set_destination;
+   
+  } routeb;
   GtkWidget *hwypopup;
+  struct {
+    GtkWidget *selbut;
+    GtkWidget *addwaybut;
+    GtkWidget *delobjbut;
+  } editb;
+  int clicktime;
+  int moving_node;
+  int route_start_node;
+  struct osm_way *way_to_edit;
 };
 
 static GHashTable *color_hash;
 
-static struct way_colors all_colors[]={{"motorway","blue"},
-				       {"motorway_link","blue"},
-				       {"primary","red"},
-				       {"secondary","orange"},
-				       {"tertiary","yellow"},
-				       {"unclassified","LightGray"},
-				       {"residential","LightGray"},
-				       {"track","brown"},
-				       {"cycleway","violet"},
-				       {"footway","green"},
-				       {"service","LightGray"},
-				       {"pedestrian","SpringGreen"},
-				       {"steps","green"}
+static struct way_colors all_colors[]={
+  {"default","gray50"},
+  {"motorway","blue"},
+  {"motorway_link","blue"},
+  {"primary","red"},
+  {"secondary","orange"},
+  {"tertiary","yellow"},
+  {"unclassified","LightGray"},
+  {"residential","LightGray"},
+  {"track","brown"},
+  {"path","sandy brown"},
+  {"living_street","PaleGreen"},
+  {"cycleway","violet"},
+  {"footway","green"},
+  {"service","LightGray"},
+  {"pedestrian","SpringGreen"},
+  {"steps","green"},
+				       
 };
 
 struct way_render_data {
@@ -192,8 +215,11 @@ static struct way_render_data *get_way_render_data(struct osm_way *way)
       if (hwyclass)
 	wrd->color = (GdkColor *)g_hash_table_lookup(color_hash, hwyclass);
       if (!wrd->color) {
+	wrd->color = &all_colors[0].color;
 	fprintf(stderr,"no color for %s\n",hwyclass);
       }
+    } else {
+      wrd->color = &all_colors[0].color;
     }
   }
   return (struct way_render_data *)way->user_data;
@@ -213,8 +239,14 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
     
   if (wrd->processed)
     return;
-  if (!way->street)
-    return;
+  if (!way->street) {
+    if (mw->osm_inf->selected_object != &way->head) {
+      if (!set_color)
+	return;
+      if (!mw->osm_inf->display_all_ways) 
+	return;
+    }
+  }
   wrd->processed=1;
  
   node = get_osm_node(way->nodes[0]);
@@ -252,7 +284,7 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
 			    mw->page_height/2);
       if (dist < mw->osm_inf->min_distance) {
 	mw->osm_inf->min_distance = dist;
-	mw->osm_inf->selected_way = way;
+	mw->osm_inf->selected_object = &way->head;
       }
     }
     gdk_draw_line(mw->map->window,osmgc,
@@ -266,8 +298,8 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
 
 static void set_way_state(struct osm_info *osminf,int state)
 {
-  gtk_widget_set_sensitive(osminf->endwaybut,state);
-  gtk_widget_set_sensitive(osminf->restartwaybut,state);
+  gtk_widget_set_sensitive(osminf->liveeditb.endwaybut,state);
+  gtk_widget_set_sensitive(osminf->liveeditb.restartwaybut,state);
 }
 
 
@@ -300,7 +332,7 @@ static void tag_hash_free(gpointer key, gpointer value,
 }
 
 static void display_tags(struct osm_info *osmf,
-			 struct osm_way *way)
+			 struct osm_object *way)
 {
   xmlNodePtr node;
   GList *keys=NULL;
@@ -309,8 +341,8 @@ static void display_tags(struct osm_info *osmf,
     g_hash_table_destroy(osmf->tag_hash);
   }
   osmf->tag_hash=g_hash_table_new(g_str_hash,g_str_equal);
-  if (way->head.xmlnode) {
-    node = way->head.xmlnode->children;
+  if (way->xmlnode) {
+    node = way->xmlnode->children;
     while(node) {
       node=next_el_node(node);
       if (!node)
@@ -332,8 +364,8 @@ static void display_tags(struct osm_info *osmf,
       }
       node=node->next;
     }
-  } else if (way->head.tag_list) {
-    GList *l=way->head.tag_list;
+  } else if (way->tag_list) {
+    GList *l=way->tag_list;
     for(;l;l=g_list_next(l)) {
       char *t=(char *)l->data;
       char *k=strdup(t);
@@ -394,6 +426,7 @@ static void osmroute_put_way_info(int nodenum,double len,
   }
 }
 
+#ifdef TREE_DEBUG
 static gboolean check_cons(gpointer key, gpointer value, gpointer data)
 {
   struct node_render_data *nrd=(struct node_render_data*)key;
@@ -406,7 +439,6 @@ static gboolean check_cons(gpointer key, gpointer value, gpointer data)
   return FALSE;
 }
 
-
 static void osmroute_check_consistency()
 {
   double dist=0;
@@ -416,6 +448,7 @@ static void osmroute_check_consistency()
   g_tree_traverse(ptree,check_cons,G_IN_ORDER,&dist);
 #endif
 }
+#endif
 
 static void osmroute_check_node(int nodenum,double newlen, int prevnode)
 {
@@ -434,10 +467,13 @@ static void osmroute_check_node(int nodenum,double newlen, int prevnode)
 	  return;
 	  } */
      
+#ifdef TREE_DEBUG
       osmroute_check_consistency();
+#endif
       g_tree_insert(ptree,nrd,node);
+#ifdef TREE_DEBUG
       osmroute_check_consistency();
-      
+#endif
       /*
       pfifo[pfifo_w]=nodenum;
       pfifo_w++;
@@ -448,14 +484,17 @@ static void osmroute_check_node(int nodenum,double newlen, int prevnode)
   }
 }
 
-static void osmroute_ways2fifo(int nodenum)
+static void osmroute_ways2fifo(int nodenum, int destnodenum)
 {
   GList *way_list;
   double oldlen;
   struct osm_node *node=get_osm_node(nodenum);
+  struct osm_node *destnode=destnodenum?get_osm_node(destnodenum):0;
   if (!node)
     return;
   osmroute_get_way_info(nodenum,&oldlen,NULL);
+  if (destnode)
+    oldlen-=point_dist(node->lon,node->lat,destnode->lon,destnode->lat);
   //printf("dist: %f\n",oldlen);
   for(way_list = node->way_list; way_list;way_list=g_list_next(way_list)) {
     struct osm_way *way=way_list->data;
@@ -481,7 +520,10 @@ static void osmroute_ways2fifo(int nodenum)
 	if (!node2)
 	  continue;
 	addlen+=point_dist(oldlon,oldlat,node2->lon,node2->lat);
-	osmroute_check_node(node2->head.id,oldlen+addlen,way->nodes[i-1]);
+	osmroute_check_node(node2->head.id,oldlen+addlen+
+			    ((destnode)?point_dist(node2->lon,node2->lat,
+						   destnode->lon,destnode->lat):0),
+			    way->nodes[i-1]);
 	oldlon=node2->lon;
 	oldlat=node2->lat;
       }
@@ -493,7 +535,7 @@ static void osmroute_ways2fifo(int nodenum)
 	if (!node2)
 	  continue;
 	addlen+=point_dist(oldlon,oldlat,node2->lon,node2->lat);
-	osmroute_check_node(node2->head.id,addlen+oldlen,way->nodes[i+1]);
+	osmroute_check_node(node2->head.id,addlen+oldlen+((destnode)?point_dist(node2->lon,node2->lat,destnode->lon,destnode->lat):0),way->nodes[i+1]);
 	oldlon=node2->lon;
 	oldlat=node2->lat;
       }
@@ -564,15 +606,20 @@ gboolean ptree_trav(gpointer key,
   return TRUE;
 }
 
-int osmroute_set_first_point(struct mapwin *mw,
+int osmroute_start_calculate(struct mapwin *mw,
 			     struct osm_file *osmf,
-			     int x, int y)
+			     int nnum, int destx, int desty)
 {
   struct timeval tv1;
   struct timeval tv2;
+#ifndef _WIN32
   gettimeofday(&tv1,NULL);
-  int nnum=find_nearest_node(mw,osmf,x,y,1);
-  if (nnum) {
+#endif
+  int nnumdest=0;
+  if ((destx)&&(desty)) {
+    nnumdest=find_nearest_node(mw,osmf,destx,desty,1);
+  }
+  if ((nnum)&&(nnum!=nnumdest)) {
     double l;
     osmroute_get_way_info(nnum,&l,NULL);
     if (l==0)
@@ -585,14 +632,14 @@ int osmroute_set_first_point(struct mapwin *mw,
     pfifo_w=0;
 #endif
     osmroute_put_way_info(nnum,0,0);
-    osmroute_ways2fifo(nnum);
+    osmroute_ways2fifo(nnum,nnumdest);
     nnum=0;
 #ifdef USE_GTK2
     g_tree_foreach(ptree,ptree_trav,&nnum);
 #else
     g_tree_traverse(ptree,ptree_trav,G_IN_ORDER,&nnum);
 #endif
-    while(nnum) {
+    while((nnum)&&(nnum!=nnumdest)) {
       /*
       double mindist=DBL_MAX;
       int mpos=pfifo_r;
@@ -609,7 +656,7 @@ int osmroute_set_first_point(struct mapwin *mw,
       pfifo[pfifo_r]=pfifo[mpos];
       pfifo[mpos]=t; */
       g_tree_remove(ptree,get_osm_node(nnum)->user_data);
-      osmroute_ways2fifo(nnum);
+      osmroute_ways2fifo(nnum,nnumdest);
       nnum=0;
 #ifdef USE_GTK2
       g_tree_foreach(ptree,ptree_trav,&nnum);
@@ -618,8 +665,10 @@ int osmroute_set_first_point(struct mapwin *mw,
 #endif
     }
     g_tree_destroy(ptree);
+#ifndef _WIN32
     gettimeofday(&tv2,NULL);
     printtimediff("calculating route in %d ms\n",&tv1,&tv2);
+#endif
     return 1;
   }
   return 0;
@@ -671,7 +720,7 @@ static void draw_ways(struct mapwin *mw, struct osm_file *osmf,
 {
   GList *lnodes;
   GList *lway;
-  struct osm_way *old_sel_way = mw->osm_inf->selected_way;
+  struct osm_object *old_sel_obj = mw->osm_inf->selected_object;
   reset_processed(osmf); 
   lnodes = g_list_first(osmf->nodes);
   mw->osm_inf->min_distance=10;
@@ -705,20 +754,27 @@ static void draw_ways(struct mapwin *mw, struct osm_file *osmf,
       }
     }
   }
-  if ((set_color)&&(mw->osm_inf->selected_way)) {
-    struct way_render_data *wrd=get_way_render_data(mw->osm_inf->selected_way);
-    wrd->processed=0;;
+  if ((set_color)&&(mw->osm_inf->selected_object)) {
     gdk_gc_set_foreground(osmgc,&black_color);
     gdk_gc_set_line_attributes(osmgc,5,
 			       GDK_LINE_SOLID,
 			       GDK_CAP_BUTT,
 			       GDK_JOIN_BEVEL);
-    draw_way(mw,mw->osm_inf->selected_way,osmgc,0);
-    if (old_sel_way != mw->osm_inf->selected_way) {
-      old_sel_way = mw->osm_inf->selected_way;
-      if (old_sel_way) {
-	display_tags(mw->osm_inf,old_sel_way);
-      }
+    if (mw->osm_inf->selected_object->type == WAY) {
+      struct way_render_data *wrd=get_way_render_data((struct osm_way *)mw->osm_inf->selected_object);
+      wrd->processed=0;
+      draw_way(mw,(struct osm_way *)mw->osm_inf->selected_object,osmgc,0);
+    } else {
+      struct node_render_data *nrd = (struct node_render_data *)((struct osm_node *)mw->osm_inf->selected_object)->user_data;
+      gdk_draw_line(mw->map->window,osmgc,nrd->x-mw->page_x-4,nrd->y-4-mw->page_y,nrd->x+4-mw->page_x,nrd->y+4-mw->page_y);
+      gdk_draw_line(mw->map->window,osmgc,nrd->x+4-mw->page_x,nrd->y-4-mw->page_y,nrd->x-4-mw->page_x,
+		    nrd->y+4-mw->page_y);
+    }
+    if (old_sel_obj != mw->osm_inf->selected_object) {
+      old_sel_obj = mw->osm_inf->selected_object;
+      if (old_sel_obj) {
+	display_tags(mw->osm_inf,old_sel_obj);
+      } 
     }
   }
 }
@@ -752,27 +808,33 @@ static void select_tag_key(GtkWidget *w, gpointer user_data)
   free(k);
 }
 
+static void set_tag_cb(char *k, char *v,
+		       void *data, void *user_data)
+{
+  struct mapwin *mw = (struct mapwin *)user_data;
+  struct osm_object *obj = (struct osm_object *)data;
+  set_osm_tag(obj,k,v);
+  if (obj->type == WAY) {
+    free(((struct osm_way *)obj)->user_data);
+    ((struct osm_way *)obj)->user_data=NULL;
+  }
+  if (mw->osm_inf->selected_object)
+    display_tags(mw->osm_inf,mw->osm_inf->selected_object);
+}
+
+
+
 static void osm_set_tag_cb(GtkWidget *w, gpointer user_data)
 {
   struct mapwin *mw= (struct mapwin *)user_data;
-  char *oldv;
   char *k = gtk_editable_get_chars(GTK_EDITABLE(GTK_COMBO(mw->osm_inf->tag_combo)->entry),0,-1);
   char *v = gtk_editable_get_chars(GTK_EDITABLE(mw->osm_inf->tag_value),0,-1);
   mw->osm_main_file->changed=1;
-  if (strlen(k)&&strlen(v)&&mw->osm_inf->selected_way) {
-    set_osm_tag(&mw->osm_inf->selected_way->head,k,v);
-    
-    oldv=g_hash_table_lookup(mw->osm_inf->tag_hash,k);
-    g_hash_table_insert(mw->osm_inf->tag_hash,k,v);
-    if (oldv) {
-      free(oldv);
-      free(k);
-    }
-    if (mw->osm_inf->selected_way->head.id>0) {
-      xmlSetProp(mw->osm_inf->selected_way->head.xmlnode,(xmlChar *)"action",
-		 (xmlChar *)"modify");
-    }
+  if (strlen(k)&&strlen(v)&&mw->osm_inf->selected_object) {
+    set_tag_cb(k,v,mw->osm_inf->selected_object,mw);
   } 
+  free(k);
+  free(v);
 }
 
 static struct mapwin *sigmw;
@@ -811,6 +873,7 @@ void init_osm_draw(struct mapwin *mw)
     g_hash_table_insert(color_hash,all_colors[i].class_name,
 			&all_colors[i].color);
   }
+
   mw->osm_inf = calloc(1,sizeof(struct osm_info));
   check_item_set_state(mw, MENU_VIEW_OSM_DATA,1);
   mw->osm_inf->display_osm=1;
@@ -819,10 +882,13 @@ void init_osm_draw(struct mapwin *mw)
   check_item_set_state(mw, MENU_OSM_DISPLAY_NODES,0);
   mw->osm_inf->display_street_borders=0;
   check_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,0);
+  mw->osm_inf->display_all_ways=0;
+  check_item_set_state(mw, MENU_OSM_DISPLAY_ALL_WAYS,0);
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 0);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,0);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,0);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,0);
+  menu_item_set_state(mw, MENU_OSM_DISPLAY_ALL_WAYS,0);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_TAGS,0);
   gdk_color_black(cmap,&black_color);
   gdk_color_parse("red",&node_color);
@@ -867,9 +933,12 @@ void init_osm_draw(struct mapwin *mw)
   }
   gtk_container_add(GTK_CONTAINER(mw->osm_inf->hwypopup),table);
   gtk_widget_show_all(table);
-  osm_parse_presetfile("tagpresets");
+  if (!osm_parse_presetfile(expand_home("~/.mumpot/tagpresets")))
+    osm_parse_presetfile(MUMPOT_DATADIR "/tagpresets");
   sigmw=mw;
+#ifndef _WIN32
   signal(SIGHUP,mysigh);
+#endif
   atexit(myexitf);
 }
 
@@ -878,6 +947,9 @@ static void toggle_osm_view(gpointer callback_data, guint callback_action,
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_osm = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
 }
 
 static void toggle_select_center(gpointer callback_data, guint callback_action,
@@ -892,6 +964,9 @@ static void toggle_display_nodes(gpointer callback_data, guint callback_action,
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_nodes = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
 }
 
 static void toggle_display_street_borders(gpointer callback_data, guint callback_action,
@@ -899,6 +974,19 @@ static void toggle_display_street_borders(gpointer callback_data, guint callback
 {
   struct mapwin *mw = (struct mapwin *)callback_data;
   mw->osm_inf->display_street_borders = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height); 
+}
+
+static void toggle_display_all_ways(gpointer callback_data, guint callback_action,
+					  GtkWidget *w)
+{
+  struct mapwin *mw = (struct mapwin *)callback_data;
+  mw->osm_inf->display_all_ways = GTK_CHECK_MENU_ITEM(w)->active;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height); 
 }
 
 static void toggle_display_tags(gpointer callback_data, guint callback_action,
@@ -951,32 +1039,44 @@ static void start_way_menu_cb(GtkWidget *w, gpointer data)
   mw->osm_inf->newway_hwyclass=gtk_object_get_data(GTK_OBJECT(w),
 						    "hwyclass");
   gtk_widget_hide(mw->osm_inf->hwypopup);
-  mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut));
+}
+
+static void free_tag_list(GList *tl)
+{
+  GList *l;
+  for(l=tl;l;l=g_list_next(l)) {
+    free(l->data);
+  }
+  g_list_free(tl);
+}
+
+static void copy_tag_list(struct osm_object *obj, GList *tl)
+{
+  GList *l;
+  for(l=g_list_first(tl);l;l=g_list_next(l)) {
+    char *tag=(char *)l->data;
+    int taglen=strlen(tag)+1;
+    set_osm_tag(obj,tag,tag+taglen);
+  }
 }
 
 static void start_way_cb(GtkWidget *w, gpointer data)
 {
-#if 0
-  int i;
-  GtkWidget *menu;
-  GtkWidget *item;
-  menu=gtk_menu_new();
-  for(i=0;i<sizeof(all_colors)/sizeof(all_colors[0]);i++) {
-    item=gtk_menu_item_new_with_label(all_colors[i].class_name);
-    gtk_menu_append(GTK_MENU(menu),item);
-    gtk_object_set_data(GTK_OBJECT(item),"hwyclass",all_colors[i].class_name);
-    gtk_signal_connect(GTK_OBJECT(item),"activate",GTK_SIGNAL_FUNC(start_way_menu_cb),data);
-  }
-  gtk_widget_show_all(menu);
-  gtk_menu_popup(GTK_MENU(menu),NULL,NULL,NULL,NULL,3,/* time */0);
-#else
   struct mapwin *mw=(struct mapwin *)data;
-  gtk_widget_show(mw->osm_inf->hwypopup);
+  if (osm_waypresets) {
+    if (mw->osm_inf->newway_tags) {
+      free_tag_list(mw->osm_inf->newway_tags);
+      mw->osm_inf->newway_tags=NULL;
+    }
+    osm_choose_tagpreset(osm_waypresets,NULL,(void *)&mw->osm_inf->newway_tags,NULL);
+  } else {
+    gtk_widget_show(mw->osm_inf->hwypopup);
+  }
   mw->osm_inf->newwaypoints_start=g_list_last(*mw->gps_line_list);
   if (mw->osm_inf->newwaypoints_start) {
     set_way_state(mw->osm_inf,1);
   }
-#endif
+  mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->liveeditb.automergebut));
 }
 
 
@@ -1084,6 +1184,9 @@ static void make_new_way(struct mapwin *mw)
       osmw=add_new_osm_way(mw->osm_main_file);
       if (mw->osm_inf->newway_hwyclass)
 	set_osm_tag(&osmw->head,"highway",mw->osm_inf->newway_hwyclass);
+      if (mw->osm_inf->newway_tags) {
+	copy_tag_list(&osmw->head,mw->osm_inf->newway_tags);
+      }
       for(l=g_list_first(newwaypoints);l;l=g_list_next(l)) {
 	struct t_punkt32 *pt=(struct t_punkt32 *)l->data;
 	nd=new_osm_node_from_point(mw->osm_main_file,
@@ -1095,7 +1198,7 @@ static void make_new_way(struct mapwin *mw)
 	merge_newway_node(mw->osm_main_file,osmw,get_osm_node(osmw->nodes[0]),
 			  1.0/3600);
       }
-      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut))) {
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->liveeditb.automergebut))) {
 	merge_newway_node(mw->osm_main_file,osmw,get_osm_node(osmw->nodes[osmw->nr_nodes-1]),1.0/3600.0);
       }
       g_list_free(nds);
@@ -1104,7 +1207,9 @@ static void make_new_way(struct mapwin *mw)
   }
   
   mw->osm_inf->newwaypoints_start=NULL;
-  
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
 }
 
 static void end_way_cb(GtkWidget *w, gpointer data)
@@ -1120,7 +1225,7 @@ static void restart_way_cb(GtkWidget *w, gpointer data)
   make_new_way(mw);
   mw->osm_inf->newwaypoints_start=g_list_last(*mw->gps_line_list);
   if (mw->osm_inf->newwaypoints_start) {
-    mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->automergebut));
+    mw->osm_inf->merge_first_node=gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->liveeditb.automergebut));
     set_way_state(mw->osm_inf,1);
   } else {
     set_way_state(mw->osm_inf,0);
@@ -1131,9 +1236,9 @@ static void start_route_cb(GtkWidget *w,
 			   gpointer user_data)
 {
   struct osm_info *osm_inf=(struct osm_info *)user_data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->start_route))) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->end_route),FALSE);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->set_destination),FALSE);
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.start_route))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.end_route),FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.set_destination),FALSE);
   }
   osm_inf->has_dest=0;
 }
@@ -1141,9 +1246,9 @@ static void start_route_cb(GtkWidget *w,
 static void end_route_cb(GtkWidget *w, gpointer user_data)
 {
   struct osm_info *osm_inf=(struct osm_info *)user_data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->end_route))) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->start_route),FALSE);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->set_destination),FALSE);
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.end_route))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.start_route),FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.set_destination),FALSE);
   }
 
 }
@@ -1151,9 +1256,9 @@ static void end_route_cb(GtkWidget *w, gpointer user_data)
 static void set_destination_cb(GtkWidget *w, gpointer user_data)
 {
   struct osm_info *osm_inf=(struct osm_info *)user_data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->set_destination))) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->start_route),FALSE);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->end_route),FALSE);
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.set_destination))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.start_route),FALSE);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->routeb.end_route),FALSE);
   }
   osm_inf->has_dest=0;
 
@@ -1162,10 +1267,14 @@ static void set_destination_cb(GtkWidget *w, gpointer user_data)
 static int set_route_start(struct mapwin *mw, int x, int y)
 {
   if (mw->osm_main_file) {
-    osmroute_set_first_point(mw,mw->osm_main_file,x,y);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),0);
-    gtk_widget_set_sensitive(mw->osm_inf->end_route,1);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),1);
+    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+    if (n) {
+      mw->osm_inf->route_start_node=n;
+      
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route),0);
+      gtk_widget_set_sensitive(mw->osm_inf->routeb.end_route,1);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route),1);
+    }
   } 
   return 1;
 }
@@ -1174,20 +1283,35 @@ static int set_route_end(struct mapwin *mw, int x, int y)
 {
   GList *l=NULL;
   if (mw->osm_main_file) {
-  osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
-  *mw->mark_line_list=g_list_concat(*mw->mark_line_list,l);
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route),0);
-  gtk_widget_set_sensitive(mw->osm_inf->end_route,0);
+    osmroute_start_calculate(mw,mw->osm_main_file,
+			     mw->osm_inf->route_start_node,
+			     x,y);
+    osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
+    *mw->mark_line_list=g_list_concat(*mw->mark_line_list,l);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route),0);
+    gtk_widget_set_sensitive(mw->osm_inf->routeb.end_route,0);
   }
   return 1;
+}
+
+int osmroute_start_calculate_nodest(struct mapwin *mw,
+				    struct osm_file *osmf,
+				    int x, int y)
+{
+  int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+  return n?osmroute_start_calculate(mw,mw->osm_main_file,n,0,0):0;
 }
 
 static int set_destination(struct mapwin *mw, int x, int y)
 {
   if (mw->osm_main_file) {
-    osmroute_set_first_point(mw,mw->osm_main_file,x,y);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination),0);
-    mw->osm_inf->has_dest=1;
+    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+    if (n) {
+      osmroute_start_calculate(mw,mw->osm_main_file,n,0,0);
+      
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.set_destination),0);
+      mw->osm_inf->has_dest=1;
+    }
   }
   return 1;
 }
@@ -1198,43 +1322,277 @@ int osm_center_handler(struct mapwin *mw, GdkGC *mygc, int x, int y)
   if (mw->osm_inf->has_dest)  {
     osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x,y,&l);
     draw_line_list(mw,mygc,l);
-    g_list_free(l);
+    free_line_list(l);
     return TRUE;
   }
   return FALSE;
   
 }
 
-int osm_mouse_handler(struct mapwin *mw, int x, int y)
+static void get_way_dist(struct osm_way *way, int x, int y, int *md,
+			 struct osm_way **minw, int *nodeafter)
 {
-  printf("mapped: %x\n",GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut));
-  if (GTK_WIDGET_MAPPED(mw->osm_inf->start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route))) {
-    set_route_start(mw,x,y);
+  int x1,y1,x2,y2;
+  int i;
+  struct osm_node *node;
+  struct node_render_data *nrd;
+  if (!way->nodes)
+    return;
+  if (way->nr_nodes == 0) {
+    return;
+  }
+  node=get_osm_node(way->nodes[0]);
+  if (!node)
+    return;
+  nrd = (struct node_render_data *)node->user_data;
+  x2=nrd->x;
+  y2=nrd->y;
+  for(i=1;i<way->nr_nodes;i++) {
+    int dist;
+    x1=x2;
+    y1=y2;
+    node=get_osm_node(way->nodes[i]);
+    if (!node)
+      return;
+    nrd = (struct node_render_data *)node->user_data;
+    x2=nrd->x;
+    y2=nrd->y;
+    dist = (int) get_distance_r(x1,y1,x2,y2,x,y);
+    if (dist < *md) {
+      *md=dist;
+      *minw=way;
+      *nodeafter=i;
+    }
+  }
+}
+
+static struct osm_object * find_nearest_object(struct osm_file *osmf,
+					       int x, int y, int *nodeafter)
+{
+
+  GList *l;
+  int md=10;
+  struct osm_way *minw=NULL;
+  struct osm_node *minn=NULL;
+  for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
+    struct osm_way *way=(struct osm_way*)l->data;
+    get_way_dist(way,x,y,&md,&minw,nodeafter);
+  }
+  md=md+10*3/2;
+  for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
+    int dist;
+    struct osm_node *node = (struct osm_node *)l->data;
+    struct node_render_data *nrd = (struct node_render_data *) node->user_data;
+    dist=abs(nrd->x-x);
+    dist+=abs(nrd->y-y);
+    if (dist < md) {
+      md=dist;
+      minn=node;
+    }
+  }
+  if (minn)
+    return &minn->head;
+  else
+    return &minw->head;
+}
+
+static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
+{
+  int nodeafter=0;
+  mw->osm_inf->selected_object = find_nearest_object(mw->osm_main_file,
+						     x,y,&nodeafter);
+  
+  if (mw->osm_inf->selected_object) {
+    display_tags(mw->osm_inf,mw->osm_inf->selected_object);
+    if (mw->osm_inf->selected_object->type == NODE)
+      mw->osm_inf->moving_node=1;
+  }
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
+}
+
+static void handle_edit_addway_click(struct mapwin *mw,
+				     int x, int y)
+{
+  double lon,lat;
+  int nodeafter=0;
+  GList *l=NULL;
+  struct osm_node *nd;
+  struct osm_object *nearest_obj;
+  struct osm_way *newway;
+  mw->osm_main_file->changed=1;
+  if (!mw->osm_inf->way_to_edit) {
+    mw->osm_inf->way_to_edit=add_new_osm_way(mw->osm_main_file);
+    if (osm_waypresets)
+      osm_choose_tagpreset(osm_waypresets,set_tag_cb,
+			   (void *)mw->osm_inf->way_to_edit,mw);
+  }
+  newway=mw->osm_inf->way_to_edit;
+  nearest_obj=find_nearest_object(mw->osm_main_file,
+				  x,y,&nodeafter);
+  if ((nearest_obj)&&(nearest_obj->type==NODE)) {
+    if ((newway->nr_nodes)&&(nearest_obj->id==newway->nodes[newway->nr_nodes-1])) {
+      return;
+    }
+    l=g_list_append(l,nearest_obj);
+  } else {
+    point2geosec(&lon, &lat,x,y);
+    lon=lon/3600.0;
+    lat=lat/3600.0;
+    nd=new_osm_node_from_point(mw->osm_main_file,
+			       lon,lat);
+    l=g_list_append(l,nd);
+    if (nodeafter) {
+      struct osm_way *mergeway=(struct osm_way *)nearest_obj;
+      struct osm_node *n1=get_osm_node(mergeway->nodes[nodeafter-1]);
+      struct osm_node *n2=get_osm_node(mergeway->nodes[nodeafter]);  
+      if (n1&&n2) {
+	move_node_between(n1->lon,n1->lat,n2->lon,n2->lat,nd);
+	osm_set_node_coords(nd,nd->lon,nd->lat);
+	osm_merge_into_way(mergeway,nodeafter,nd);
+      }
+    }
+  } 
+ 
+  add_nodes_to_way(mw->osm_inf->way_to_edit,l);
+  g_list_free(l);
+  mw->osm_inf->selected_object=&mw->osm_inf->way_to_edit->head;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
+}
+
+static void handle_node_move(struct mapwin *mw, int x, int y)
+{
+  double nx,ny;
+  double lon,lat;
+  struct osm_node *node=(struct osm_node *)
+    mw->osm_inf->selected_object;
+  geosec2point(&nx,&ny,node->lon*3600.0,node->lat*3600.0);
+  nx=x-mw->mouse_x+nx;
+  ny=y-mw->mouse_y+ny;
+  point2geosec(&lon,&lat,nx,ny);
+  lon/=3600.0;
+  lat/=3600.0;
+  osm_set_node_coords(node,lon,lat);
+  init_node_render_data(node);
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
+}
+
+int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
+{
+  
+  int above_limit;
+  if (mw->osm_inf->clicktime==0) {
+    above_limit=1;
+  } else {
+    above_limit=((millitime-mw->osm_inf->clicktime)>1500);
+  }
+  if (!state) {
+    if ((mw->osm_inf->moving_node)&&(mw->osm_inf->selected_object)) {
+      mw->osm_inf->moving_node=0;
+      if (above_limit) {
+	handle_node_move(mw,x,y);
+      }
+      return TRUE; 
+    } else {
+      return FALSE;
+    }
+  }
+  mw->osm_inf->moving_node=0;
+  if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route))) {
+    if (above_limit) {
+      set_route_start(mw,x,y);
+      mw->osm_inf->clicktime=millitime;
+    }
     return TRUE;
 
 
-  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->end_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->end_route))) {
-    set_route_end(mw,x,y);
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->start_route),1);
-    gtk_widget_queue_draw_area(mw->map,0,0,
-			       mw->page_width,
-			       mw->page_height);
+  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.end_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route))) {
+    if (above_limit) {
+      set_route_end(mw,x,y);
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route),1);
+      gtk_widget_queue_draw_area(mw->map,0,0,
+				 mw->page_width,
+				 mw->page_height);
+      mw->osm_inf->clicktime=millitime;
+    }
     return TRUE;
-  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->set_destination))) {
-    set_destination(mw,x,y);
+  } else if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.set_destination))) {
+    if (above_limit) {
+      set_destination(mw,x,y);
+      mw->osm_inf->clicktime=millitime;
+    }
     return TRUE;
-  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->startwaybut))&&(osm_nodepresets)) {
-    struct osm_node *nd;
-    double lon=0;
-    double lat=0;
-    point2geosec(&lon,&lat,x,y);
-    lon/=3600.0;
-    lat/=3600.0;
-    nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
-    osm_choose_tagpreset(osm_nodepresets,&nd->head.tag_list);
+  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->liveeditb.startwaybut))&&(osm_nodepresets)) {
+    if (above_limit) {
+      struct osm_node *nd;
+      double lon=0;
+      double lat=0;
+      point2geosec(&lon,&lat,x,y);
+      lon/=3600.0;
+      lat/=3600.0;
+      nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
+      osm_choose_tagpreset(osm_nodepresets,NULL,&nd->head.tag_list,NULL);
+      mw->osm_inf->clicktime=millitime;
+    }
     return TRUE;
-  }  
+  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->editb.selbut))&&
+	     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->editb.selbut)))) {
+    if (above_limit) {
+      handle_edit_sel_click(mw,x,y);
+      mw->osm_inf->clicktime=millitime;
+    }
+    return TRUE;
+  } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->editb.addwaybut))&&
+	     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->editb.addwaybut)))) {
+    if (above_limit) {
+      handle_edit_addway_click(mw,x,y);
+      mw->osm_inf->clicktime=millitime;
+    }
+    return TRUE;
+  }
   return FALSE;
+}
+
+static void osmedit_addwaybut_cb(GtkWidget *w, gpointer data)
+{
+  struct osm_info *osm_inf=(struct osm_info *)data;
+  osm_inf->way_to_edit=NULL;
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->editb.addwaybut))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->editb.selbut),FALSE);
+  }
+}
+
+static void osmedit_selbut_cb(GtkWidget *w, gpointer data)
+{
+  struct osm_info *osm_inf=(struct osm_info *)data;
+  osm_inf->way_to_edit=NULL;
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(osm_inf->editb.selbut))) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(osm_inf->editb.addwaybut),FALSE);
+  }
+}
+
+static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
+{
+  struct mapwin *mw = (struct mapwin *)data;
+  mw->osm_inf->way_to_edit=NULL;
+  if (mw->osm_inf->selected_object == NULL)
+    return;
+  if (mw->osm_inf->selected_object->type == WAY) {
+    osm_delete_way(mw->osm_main_file,
+		   (struct osm_way *)mw->osm_inf->selected_object);
+  } else {
+    osm_delete_node(mw->osm_main_file,
+		    (struct osm_node *)mw->osm_inf->selected_object);
+  }
+  mw->osm_inf->selected_object=NULL;
+  gtk_widget_queue_draw_area(mw->map,0,0,
+			     mw->page_width,
+			     mw->page_height);
 }
 
 void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
@@ -1242,53 +1600,87 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   struct sidebar_mode *sm;
   GtkTooltips *tt = gtk_tooltips_new();
   mw->osm_inf->editbar=gtk_vbox_new(TRUE,0);
-  mw->osm_inf->startwaybut=make_pixmap_button(mw,start_way);
-  mw->osm_inf->endwaybut=make_pixmap_button(mw,end_way);
-  mw->osm_inf->restartwaybut=make_pixmap_button(mw,restart_way);
-  mw->osm_inf->automergebut=make_pixmap_toggle_button(mw,automerge);
+  mw->osm_inf->liveeditb.startwaybut=make_pixmap_button(mw,start_way);
+  mw->osm_inf->liveeditb.endwaybut=make_pixmap_button(mw,end_way);
+  mw->osm_inf->liveeditb.restartwaybut=make_pixmap_button(mw,restart_way);
+  mw->osm_inf->liveeditb.automergebut=make_pixmap_toggle_button(mw,automerge);
   gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->editbar,FALSE,FALSE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->startwaybut,TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->startwaybut);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->startwaybut),"clicked",GTK_SIGNAL_FUNC(start_way_cb),mw);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->startwaybut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.startwaybut,TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->liveeditb.startwaybut);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->liveeditb.startwaybut),"clicked",GTK_SIGNAL_FUNC(start_way_cb),mw);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.startwaybut,
 		   _("start a new way"),NULL);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->endwaybut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.endwaybut,
 		     TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->endwaybut);
-  gtk_widget_set_sensitive(mw->osm_inf->startwaybut,0);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->endwaybut),"clicked",GTK_SIGNAL_FUNC(end_way_cb),mw);
-  gtk_widget_set_sensitive(mw->osm_inf->endwaybut,0);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->endwaybut,
+  gtk_widget_show(mw->osm_inf->liveeditb.endwaybut);
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.startwaybut,0);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->liveeditb.endwaybut),"clicked",GTK_SIGNAL_FUNC(end_way_cb),mw);
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.endwaybut,0);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.endwaybut,
 		   _("finish a new way"),NULL);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->restartwaybut,TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->restartwaybut);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->restartwaybut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.restartwaybut,TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->liveeditb.restartwaybut);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.restartwaybut,
 		       _("finish a way and start a new one at the same place"),NULL);
-  gtk_widget_set_sensitive(mw->osm_inf->restartwaybut,0);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->restartwaybut),"clicked",
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.restartwaybut,0);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->liveeditb.restartwaybut),"clicked",
 		     GTK_SIGNAL_FUNC(restart_way_cb),mw);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->automergebut,
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->editbar),mw->osm_inf->liveeditb.automergebut,
 		     TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->automergebut);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->automergebut,
+  gtk_widget_show(mw->osm_inf->liveeditb.automergebut);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->liveeditb.automergebut,
 		       _("auto-merge the start/end of a way to an existing way"),NULL);
   mw->osm_inf->routebar=gtk_vbox_new(TRUE,0);
-  mw->osm_inf->start_route=make_pixmap_toggle_button(mw,start_route);
-  mw->osm_inf->end_route=make_pixmap_toggle_button(mw,end_route);
-  mw->osm_inf->set_destination=make_pixmap_toggle_button(mw,routestartgps);
+  mw->osm_inf->routeb.start_route=make_pixmap_toggle_button(mw,start_route);
+  mw->osm_inf->routeb.end_route=make_pixmap_toggle_button(mw,end_route);
+  mw->osm_inf->routeb.set_destination=make_pixmap_toggle_button(mw,routestartgps);
   gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->routebar,FALSE,FALSE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->start_route,TRUE,TRUE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->end_route,TRUE,TRUE,0);
-  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->set_destination,TRUE,TRUE,0);
-  gtk_widget_show(mw->osm_inf->start_route);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->start_route,_("set the start point for the route calculation"),NULL);
-  gtk_widget_show(mw->osm_inf->end_route);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->end_route,_("set the destination point for the route calculation"),NULL);
-  gtk_widget_show(mw->osm_inf->set_destination);
-  gtk_tooltips_set_tip(tt,mw->osm_inf->set_destination,_("navigate to the given destination"),NULL);
-  gtk_widget_set_sensitive(mw->osm_inf->end_route,FALSE);
-  gtk_widget_set_sensitive(mw->osm_inf->start_route,FALSE);
-  gtk_widget_set_sensitive(mw->osm_inf->set_destination,FALSE);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->routeb.start_route,TRUE,TRUE,0);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->routeb.end_route,TRUE,TRUE,0);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->routebar),mw->osm_inf->routeb.set_destination,TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->routeb.start_route);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->routeb.start_route,_("set the start point for the route calculation"),NULL);
+  gtk_widget_show(mw->osm_inf->routeb.end_route);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->routeb.end_route,_("set the destination point for the route calculation"),NULL);
+  gtk_widget_show(mw->osm_inf->routeb.set_destination);
+  gtk_tooltips_set_tip(tt,mw->osm_inf->routeb.set_destination,_("navigate to the given destination"),NULL);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.end_route,FALSE);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.start_route,FALSE);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.set_destination,FALSE);
+  mw->osm_inf->meditbar=gtk_vbox_new(TRUE,0);
+  gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->meditbar,FALSE,FALSE,0);
+  mw->osm_inf->editb.selbut=gtk_toggle_button_new_with_label(" SEL ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.selbut,
+		       _("select the object to edit"),NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.selbut,TRUE,TRUE,0);
+  mw->osm_inf->editb.addwaybut=gtk_toggle_button_new_with_label(" AW ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.addwaybut,
+		       _("add a new way"),NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.addwaybut,
+		     TRUE,TRUE,0);
+  mw->osm_inf->editb.delobjbut=gtk_button_new_with_label(" DEL ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.delobjbut,
+		       _("delete the currently selected object"),NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.delobjbut,
+		     TRUE,TRUE,0);
+  gtk_widget_show(mw->osm_inf->editb.delobjbut);
+  gtk_widget_show(mw->osm_inf->editb.addwaybut);
+  gtk_widget_show(mw->osm_inf->editb.selbut);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.delobjbut,0);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.selbut,0);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.addwaybut,0);
+
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_selbut_cb),mw->osm_inf);
+  
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",			    
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_addwaybut_cb),mw->osm_inf);
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",			    
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.delobjbut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_delobjbut_cb),mw);
   sm=calloc(sizeof(struct sidebar_mode),1);
   sm->name=_("routing");
   sm->w=mw->osm_inf->routebar;
@@ -1297,21 +1689,25 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   sm->name=_("live edit");
   sm->w=mw->osm_inf->editbar;
   mw->modelist=g_list_append(mw->modelist,sm);
+  sm=calloc(sizeof(struct sidebar_mode),1);
+  sm->name=_("editing");
+  sm->w=mw->osm_inf->meditbar;
+  mw->modelist=g_list_append(mw->modelist,sm);
   
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->start_route),"clicked",
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.start_route),"clicked",
 		     GTK_SIGNAL_FUNC(start_route_cb),mw->osm_inf);
-  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->start_route),"clicked",
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.start_route),"clicked",
 			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
 
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->end_route),"clicked",
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.end_route),"clicked",
 		     GTK_SIGNAL_FUNC(end_route_cb),mw->osm_inf);
-  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->end_route),"clicked",
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.end_route),"clicked",
 			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
-  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->set_destination),"clicked",
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.set_destination),"clicked",
 		     GTK_SIGNAL_FUNC(set_destination_cb),mw->osm_inf);
-  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->set_destination),"clicked",
+  gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.set_destination),"clicked",
 			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
 }
@@ -1324,15 +1720,21 @@ struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
   struct osm_file *osmf=parse_osm_file(name,0);
   if (!osmf)
     return NULL;
+  mw->osm_inf->way_to_edit=NULL;
+  mw->osm_inf->selected_object=NULL;
   recalc_node_coordinates(mw,osmf);
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 1);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_STREET_BORDERS,1);
+  menu_item_set_state(mw, MENU_OSM_DISPLAY_ALL_WAYS,1),
   menu_item_set_state(mw, MENU_OSM_DISPLAY_TAGS,1);
-  gtk_widget_set_sensitive(mw->osm_inf->startwaybut,1);
-  gtk_widget_set_sensitive(mw->osm_inf->start_route,1);
-  gtk_widget_set_sensitive(mw->osm_inf->set_destination,1);
+  gtk_widget_set_sensitive(mw->osm_inf->liveeditb.startwaybut,1);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.start_route,1);
+  gtk_widget_set_sensitive(mw->osm_inf->routeb.set_destination,1);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.delobjbut,1);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.selbut,1);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.addwaybut,1);
 
   return osmf;
 }
@@ -1346,7 +1748,9 @@ GtkItemFactoryEntry *get_osm_menu_items(int *n_osm_items)
      "<CheckItem>"},
     {MENU_OSM_DISPLAY_NODES_N,NULL,GTK_SIGNAL_FUNC(toggle_display_nodes),
      0,"<CheckItem>"},
-    {MENU_OSM_DISPLAY_STREET_BORDERS_N, NULL, GTK_SIGNAL_FUNC(toggle_display_street_borders),
+    {MENU_OSM_DISPLAY_STREET_BORDERS_N, NULL, GTK_SIGNAL_FUNC(toggle_display_street_borders), 
+     0,"<CheckItem>"},
+    {MENU_OSM_DISPLAY_ALL_WAYS_N, NULL, GTK_SIGNAL_FUNC(toggle_display_all_ways),
      0,"<CheckItem>"},
     /*    {MENU_OSM_DISPLAY_EDIT_BAR_N, NULL, GTK_SIGNAL_FUNC(toggle_display_bar),0,"<RadioItem>"},
 	  {MENU_OSM_DISPLAY_ROUTE_BAR_N, NULL, GTK_SIGNAL_FUNC(toggle_display_bar),1, MENU_OSM_DISPLAY_EDIT_BAR_N}, */

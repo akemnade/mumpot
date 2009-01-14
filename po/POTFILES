@@ -2,4 +2,5 @@
      ../src/printdlg.c \
      ../src/osm_parse.c \
      ../src/osm_view.c \
-     ../src/create_connection.c
+     ../src/create_connection.c \
+     ../config-examples/tagpresets

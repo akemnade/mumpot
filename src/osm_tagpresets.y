@@ -13,6 +13,9 @@
 
 %name-prefix="tagsel"
 %{
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +52,6 @@ int tagselwrap()
 %token T_POS T_WAYPRESET T_NODEPRESET T_SETTAG
 %token <str> T_STRING
 %token <num> T_NUM
-%type <list> settags items
 %type <str> settag 
 %type <menu> menu
 %type <item> item
@@ -66,23 +68,21 @@ T_WAYPRESET menu { osm_waypresets=$2; } |
 T_NODEPRESET menu { osm_nodepresets=$2; }
      ;
 
-menu: '{' settags '}' {
+menu: '{' {
   struct osm_preset_menu_sect *m=g_new0(struct osm_preset_menu_sect,1);
-  m->tags=$2;
-  $$=m;
-}
-  |
-  '{' items  '}' {
-    struct osm_preset_menu_sect *m=g_new0(struct osm_preset_menu_sect,1);
-    m->items=$2;
-    $$=m;
-  }
+  $<menu>$=m;
+} menulines  '}' { 
+  $$=$<menu>2; }  
 ;
 
-settags: { $$=NULL;} | settags settag { 
-  $$=g_list_append($1,$2); 
-  } 
+menulines: | menulines settag {
+  $<menu>0->tags=g_list_append($<menu>0->tags,$2);
+}
+| menulines item {
+  $<menu>0->items=g_list_append($<menu>0->items,$2);
+}
 ;
+
 
 settag: T_SETTAG T_STRING T_STRING {
   char *tstr=calloc(1,strlen($2)+strlen($3)+2);
@@ -92,10 +92,6 @@ settag: T_SETTAG T_STRING T_STRING {
 }
 ;
 
-items: {$$=NULL;} | items item { 
-  $$=g_list_append($1,$2); 
-  }
-;
 
 item: T_POS T_NUM T_NUM T_STRING menu {
   struct osm_presetitem *pitem=g_new0(struct osm_presetitem,1);

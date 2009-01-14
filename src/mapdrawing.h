@@ -91,6 +91,7 @@ void draw_pinfo(GdkWindow *w, GdkGC *gc,struct pixmap_info *p_info,
 void get_http_file(const char *url,const char *filename,
 		   void (*finish_cb)(const char *,const char*,void *),
 		   void (*fail_cb)(const char *,const char*,void *),
+                   int (*size_check)(const char *,void *,int),
 		   void *data);
 GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata);
 GtkWidget *make_pixmap_toggle_button(struct mapwin *mw,char **xpmdata);
@@ -100,5 +101,5 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l);
 void load_gps_line(const char *fname, GList **mll);
 void draw_marks_to_ps(GList *mark_line_list, int mx, int my,
 		      int w, int h, int fd);
-
+void free_line_list(GList *l);
 #endif

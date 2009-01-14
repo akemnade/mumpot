@@ -62,7 +62,8 @@ struct osm_way *new_osm_way(int id);
 struct osm_way *get_osm_way(int id);
 struct osm_node *new_osm_node(int id);
 struct osm_node *get_osm_node(int id);
-void free_osm_obj(int id);
+void free_osm_way(int id);
+void free_osm_node(int id);
 struct osm_file * parse_osm_file(const char *fname, int all_ways);
 void free_osm_file(struct osm_file *f);
 xmlNodePtr next_el_node(xmlNodePtr node);
@@ -77,6 +78,10 @@ void osm_merge_into_way(struct osm_way *mergeway, int pos,
 void osm_merge_node(struct osm_file *osmf,
 		    struct osm_node *mergeto, 
 		    struct osm_node *mergefrom);
+void osm_delete_way(struct osm_file *osmf,
+		    struct osm_way *way);
+void osm_delete_node(struct osm_file *osmf,
+		     struct osm_node *node);
 void osm_set_node_coords(struct osm_node *node,double lon, double lat);
 int save_osm_file(const char *fname, struct osm_file *osmf);
 void printtimediff(const char *format,const struct timeval *tvstart, const struct timeval *tvend);

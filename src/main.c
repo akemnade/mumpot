@@ -132,7 +132,6 @@ int start_edit_y;
 
 void draw_marks(struct mapwin *mw); 
 static void add_path_to_mark_list(GList **l, int krid);
-static void free_line(gpointer data,gpointer user_data);
 static void recalc_mark_length(int offset, struct mapwin *mw);
 static int find_nearst_point(GList *l, int x, int y);
 static void add_pkt_to_list(GList **l, int x, int y);
@@ -436,12 +435,6 @@ void draw_marks(struct mapwin *mw)
       draw_marks_cb(rect_to_edit,mw);
     }
   }
-  gdk_gc_set_foreground(mygc,&gps_color);
-  for(i=0;i<MAX_LINE_LIST;i++) {
-    if (mw->all_line_lists[i]==*(mw->mark_line_list))
-      continue;
-    draw_line_list(mw,mygc,mw->all_line_lists[i]);
-  }  
   gdk_gc_set_foreground(mygc,&mark_red);
   draw_line_list(mw,mygc,*mw->mark_line_list);
 }
@@ -494,7 +487,9 @@ static gboolean map_move_cb(gpointer user_data)
     gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->vadj));
     return FALSE;
   } 
- 
+  if (!((GTK_WIDGET_MAPPED(mw->linemode_but))&&
+        (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->linemode_but)))))
+    return FALSE;
   gdk_gc_set_foreground(mygc,&mark_red);
   gdk_gc_set_line_attributes(mygc,5,
 			     GDK_LINE_SOLID,
@@ -556,8 +551,7 @@ static gboolean map_move_cb(gpointer user_data)
 	    osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x2,y2,&l);
 	  }
 	  draw_line_list(mw,mygc,l);
-	  /*	  g_list_foreach(l,free_line,NULL); */
-	  g_list_free(l);
+	  free_line_list(l);
 	}
       }
     }
@@ -691,17 +685,6 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
 }
 
 
-/* callback for freeing a line struct */
-static void free_line(gpointer data,gpointer user_data)
-{
-  struct t_punkt32 *p = (struct t_punkt32 *)data;
-  if (p->time)
-      free(p->time);
-  free(data);
-}
-
-
-
 /* handle mouse clicks with road enforcement */
 static void handle_route_click(struct mapwin *mw, int x, int y)
 {
@@ -715,7 +698,7 @@ static void handle_route_click(struct mapwin *mw, int x, int y)
       
       mw->has_path=findpath(mw->str_is_anfang?str->anfang_krid:str->end_krid);
     } else {
-      mw->has_path=osmroute_set_first_point(mw,mw->osm_main_file,x,y);
+      mw->has_path=osmroute_start_calculate_nodest(mw,mw->osm_main_file,x,y);
       mw->mark_str=NULL;
     }
   } else {
@@ -775,6 +758,8 @@ gboolean map_click_release(GtkWidget *widget, GdkEventButton *event,
   y=(int)event->y;
   x+=mw->page_x;
   y+=mw->page_y;
+  if (osm_mouse_handler(mw,x,y,event->time,0))
+    return TRUE;
   if (mouse_state==PANNING) {
     handle_pan_release(mw,event,x,y);
   } else if (mouse_state==IN_WAY) {
@@ -792,8 +777,7 @@ gboolean map_click_release(GtkWidget *widget, GdkEventButton *event,
   
     } else if ((wd==0)&&(hd<=-2)) {
       mw->line_drawing=0;
-      g_list_foreach(*mw->mark_line_list,free_line,NULL);
-      g_list_free(*mw->mark_line_list);
+      free_line_list(*mw->mark_line_list);
       *mw->mark_line_list=NULL;
       reset_way_info();
       mw->has_path=0;
@@ -821,8 +805,7 @@ static void handle_start_way_click(struct mapwin *mw, GdkEventButton *event, int
   }
   if (event->button==1) {
     mw->line_drawing=1;
-    g_list_foreach(*mw->mark_line_list,free_line,NULL);
-    g_list_free(*mw->mark_line_list);
+    free_line_list(*mw->mark_line_list);
     *mw->mark_line_list=NULL;
     add_pkt_to_list(mw->mark_line_list,x,y);
     mw->mark_str=NULL;
@@ -1014,7 +997,7 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
     gtk_selection_owner_set(mw->map,GDK_SELECTION_PRIMARY,GDK_CURRENT_TIME);
     return TRUE;
   }
-  if (osm_mouse_handler(mw,x,y))
+  if (osm_mouse_handler(mw,x,y,event->time,1))
     return TRUE;
   switch(mouse_state) {
   case START_WAY: handle_start_way_click(mw,event,x,y); break;
@@ -1037,6 +1020,7 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 gboolean
 expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
+  int i;
   struct mapwin *mw=data;
   if (!mygc)
     return TRUE;
@@ -1054,6 +1038,12 @@ expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
 		    mw->page_height);
   }
   /*  mapwin_draw(mw,widget->style->fg_gc[widget->state]); */
+  gdk_gc_set_foreground(mygc,&gps_color);
+  for(i=0;i<MAX_LINE_LIST;i++) {
+    if (mw->all_line_lists[i]==*(mw->mark_line_list))
+      continue;
+    draw_line_list(mw,mygc,mw->all_line_lists[i]);
+  }  
   if (mw->osm_main_file)
     draw_osm(mw,mw->osm_main_file,mygc);
   draw_marks(mw);
@@ -1852,9 +1842,18 @@ static void download_osm_data_cb(gpointer callback_data,
     return;
   }
   setlocale(LC_NUMERIC,"C");
+#ifndef _WIN32
   url=g_strdup_printf("http://www.openstreetmap.org/api/0.5/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
+#else
+/* there seems to be broken g_strdup_printf()s out there which ignore LC_NUMERIC */
+  {
+    char b[512];
+    _snprintf(b,sizeof(b),"http://www.openstreetmap.org/api/0.5/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
+    url=strdup(b); 
+  }
+#endif
   get_http_file(url,NULL,download_osm_finished_cb,
-		download_osm_failed_cb,mw);
+		download_osm_failed_cb,NULL,mw);
 }
 
 static void change_sidebar_cb(gpointer callback_data,
@@ -2221,6 +2220,40 @@ static void add_path_to_mark_list(GList **l, int krid)
   *l=g_list_concat(*l,l2);
 }
 
+static void restart_prog(GtkWidget *w,gpointer data)
+{
+  char *prog=(char *)data;
+  execlp(prog,prog,NULL);
+}
+
+/* quick hack to choose a configuration */
+static void config_chooser()
+{
+  GtkWidget *win;
+  GtkWidget *vbox;
+  GtkWidget *but;
+  win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title(GTK_WINDOW(win),_("Choose a map"));
+  
+  vbox=gtk_vbox_new(TRUE,0);
+  gtk_container_add(GTK_CONTAINER(win),vbox);
+  but=gtk_button_new_with_label(_("OSM Tiles@home"));
+  gtk_box_pack_start(GTK_BOX(vbox),but,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-tah");
+  but=gtk_button_new_with_label(_("OSM Mapnik"));
+  gtk_box_pack_start(GTK_BOX(vbox),but,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-mapnik");
+  but=gtk_button_new_with_label(_("OSM Cyclemap"));
+  gtk_box_pack_start(GTK_BOX(vbox),but,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-cyclemap");
+  gtk_widget_show_all(win);
+  gtk_main();
+  exit(1);
+}
+
 int main(int argc, char **argv)
 {
   char buf[512];
@@ -2264,9 +2297,18 @@ int main(int argc, char **argv)
     return 1;
   }
   if (!parse_mapconfig(configfilename)) { 
+    if (argc==1) {
+      config_chooser();
+    }
     printf(_("Usage: %s configfile\n"),argv[0]);
     return 1;
   }
+#ifdef _WIN32
+  {
+    WSADATA wsadata;
+    WSAStartup(MAKEWORD(1,1),&wsadata);
+  }
+#endif
   calc_mapoffsets();
   {
     GList *lcopy=NULL;

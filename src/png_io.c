@@ -10,6 +10,9 @@
  warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
 ***********************************************************************/
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <png.h>
 #include <stdlib.h>
@@ -181,6 +184,9 @@ struct pixmap_info *load_gfxfile(const char *filename)
   if (num_channels == 4) {
     png_set_strip_alpha(png_ptr);
     pinfo.color_type &= (~PNG_COLOR_MASK_ALPHA);
+  }
+  if (pinfo.bit_depth > 8) {
+    png_set_strip_16(png_ptr);
   }
   if (pinfo.color_type == PNG_COLOR_TYPE_GRAY) {
     int i;

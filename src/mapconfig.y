@@ -12,10 +12,18 @@
 ***********************************************************************/
 %name-prefix="kconfy"
 %{
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h>
+#endif
+
 #include "mapconfig.h"
 #include "mapconfig_data.h"
 #define YYDEBUG 1
@@ -50,15 +58,23 @@ int yylex()
   return ret;
 }
 
-static char *expand_home(char *h)
+char *expand_home(char *h)
 {
+#ifdef _WIN32
+    char *home=NULL;
+    char buf[MAX_PATH];
+    if (S_OK == SHGetFolderPath(NULL,CSIDL_APPDATA,
+                      NULL,0,buf)) {
+       home=buf;
+    }
+#else
     char *home=getenv("HOME");
+#endif
     if ((home)&&(strncmp(h,"~/",2)==0)) {
       char *newstr=malloc(strlen(home)+strlen(h));
       strcpy(newstr,home);
       strcat(newstr,"/");
       strcat(newstr,h+2);
-      free(h);
       return newstr;
     } else {
       return h;
@@ -106,8 +122,11 @@ configline: /* nothing */
 configexp:
    /*§ load the given place file list */
     T_PLACEFILE T_STRING {
-  globalmap.placefilelist=g_list_append(globalmap.placefilelist,expand_home($2));
-   }
+      char *exph=expand_home($2);
+      globalmap.placefilelist=g_list_append(globalmap.placefilelist,exph);
+      if ($2 != exph)
+	free($2);
+    }
    /*§ specify the start place by lattitude/longitude */
    | T_STARTPLACE lattitude longitude {
      globalmap.startlatt=$2;
@@ -191,7 +210,10 @@ mapline: /* nothing */
      § both must appear
      § printf modifiers are allowed (0, - and 0-9) */
    | T_FILEPATTERN T_STRING {
-     $<map>-3->filepattern=expand_home($2);
+     char *exph=expand_home($2);
+     $<map>-3->filepattern=exph;
+     if (exph!=$2)
+       free($2);
    }
    ; 
 

@@ -65,6 +65,7 @@ extern int kconflex();
 extern struct t_globalmap globalmap;
 int parse_mapconfig(const char *fname);
 int parse_coords(char *coordstr, double *lattitude, double *longitude);
+char *expand_home(char *home);
 struct t_map *map_new(char *name);
 
 #endif

@@ -24,10 +24,11 @@ void append_osm_bottom_line(struct mapwin *mw);
 void append_osm_edit_line(struct mapwin *mw,GtkWidget *box);
 
 void osm_map_moved(struct mapwin *mw);
-int osmroute_set_first_point(struct mapwin *mw,
-			     struct osm_file *osmf,
-			     int x, int y);
-int osm_mouse_handler(struct mapwin *mw, int x, int y);
+int osmroute_start_calculate_nodest(struct mapwin *mw,
+				    struct osm_file *osmf,
+				    int x, int y);
+int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state);
+
 int osm_center_handler(struct mapwin *mw, GdkGC *mygc, int x, int y);
 void osmroute_add_path(struct mapwin *mw,
 		       struct osm_file *osmf, void (*path_to_lines)(double lon, double lat, void *data), int x, int y, void *data);
