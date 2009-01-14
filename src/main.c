@@ -88,6 +88,7 @@ static GdkColor mark_red;
 static GdkColor mark_white;
 static GdkColor crosshair_color;
 static GdkColor gps_color;
+GdkColor speedcolor[256];
 static char *clip_coord_buf;
 static char last_coord_buf[80];
 
@@ -2224,6 +2225,7 @@ int main(int argc, char **argv)
 {
   char buf[512];
   GList *l;
+  int i;
 #ifdef USE_IMLIB
   GdkImlibInitParams imlibinit={
     PARAMS_REMAP | PARAMS_FASTRENDER | PARAMS_HIQUALITY,
@@ -2293,6 +2295,45 @@ int main(int argc, char **argv)
   gdk_color_parse("violet",&crosshair_color);
   gdk_color_alloc(cmap,&crosshair_color);
   gps_color = crosshair_color;
+  for(i=0;i<256;i++) {
+    int hs=i*5/256; /* leave out violet -> red transition */
+    int f=(i*5)%256;
+    switch (hs) {
+    case 0:
+      speedcolor[i].red=65535;
+      speedcolor[i].green=256*f;
+      speedcolor[i].blue=0;
+      break;
+    case 1:
+      speedcolor[i].red=256*(255-f);
+      speedcolor[i].green=65535;
+      speedcolor[i].blue=0;
+      break;
+    case 2:
+      speedcolor[i].red=0;
+      speedcolor[i].green=65535;
+      speedcolor[i].blue=256*f;
+      break;
+    case 3:
+      speedcolor[i].red=0;
+      speedcolor[i].green=256*(255-f);
+      speedcolor[i].blue=65535;
+      break;
+    case 4:
+      speedcolor[i].red=256*f;
+      speedcolor[i].green=0;
+      speedcolor[i].blue=65535;
+      break;
+    default:
+      speedcolor[i].red=65535;
+      speedcolor[i].green=0;
+      speedcolor[i].blue=65535;
+      
+    }
+    gdk_color_alloc(cmap,&speedcolor[i]);
+    printf("%08x",speedcolor[i].pixel);
+  }
+  
   if ((globalmap.first)&&(!globalmap.zoomable)) {
     menu_item_set_state(mw,PATH_ZOOM_OUT,0);
     menu_item_set_state(mw,PATH_ZOOM_IN,0);
