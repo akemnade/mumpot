@@ -53,6 +53,8 @@ int tile_cache_size=4;
 #define M_PI_2         1.57079632679489661923
 #endif
 
+#define MAX_HTTP_REQUESTS 8
+
 static int cache_count;
 static GList *cache_list;
 /* contains the urls which are actually downloaded to avoid
@@ -63,6 +65,9 @@ static GHashTable *http_hash;
    the hash to avoid rerequesting failed tiles again and
    again so that the tile server does not get overloaded */
 static GHashTable *tile_files_to_fetch;
+static GList *tile_fetch_queue;
+static GList *request_list;
+static int running_requests=0;
 static void free_image_cache(char *fname);
 struct http_fetch_buf {
   char *request;
@@ -89,6 +94,8 @@ struct cache_entry {
   int count;
   time_t mtime;
 };
+
+static void check_request_queue();
 /* compare the number of the image cache entry */
 static gint compare_cache(gconstpointer a, gconstpointer b)
 {
@@ -123,8 +130,10 @@ static void cleanup_http_buf(struct http_fetch_buf *hfb)
     if (closesocket(hfb->fd)) {
       perror("close: ");
     }
+    running_requests--;
   }
   g_free(hfb);
+  check_request_queue();
 }
 
 GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata)
@@ -245,6 +254,7 @@ static void tile_fetched(const char *url, const char *filename,
 {
   char *nfname=g_strdup(filename);
   char *dot;
+  GList *l=g_list_find(tile_fetch_queue,url);
   struct mapwin *mw=(struct mapwin *)data;
   dot=strrchr(nfname,'.');
   if (dot) {
@@ -258,7 +268,11 @@ static void tile_fetched(const char *url, const char *filename,
 			     mw->page_height);
   mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
 	      mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
-
+  
+  if (l) {
+    free(l->data);
+    tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);  
+  }
 }
 
 /* do http recv */
@@ -432,7 +446,8 @@ static int tile_size_check(const char *filename, void *data,
   struct stat st;
   if (len==0)
     return 0;
-  stat(filename,&st);  
+  if (stat(filename,&st))
+    return 1;
   if (st.st_size> (len*3)) {
     return 0;
   }
@@ -442,7 +457,8 @@ static int tile_size_check(const char *filename, void *data,
 
 /* initiate a http request for a tile */
 static void get_http_tile(struct mapwin *mw,
-			  const char *url, const char *filename)
+			  const char *url, const char *filename,
+			  int do_queue)
 {
   char *fullname=g_strdup_printf("%s.png",filename);
   char *fn2;
@@ -459,30 +475,22 @@ static void get_http_tile(struct mapwin *mw,
     return;
   }
   get_http_file(url,fullname,tile_fetched,NULL,tile_size_check,mw);
+  if (do_queue) {
+    tile_fetch_queue=g_list_append(tile_fetch_queue,strdup(url));
+  }
   g_free(fullname);
 }
 
-/* initiate a http request */
-void get_http_file(const char *url,const char *filename,
-			  void (*finish_cb)(const char *,const char*,void *),
-		   void (*fail_cb)(const char *,const char *,void *),
-                   int (*size_check)(const char *, void *, int),void *data)
+
+static void start_http_request(struct http_fetch_buf *hfb)
 {
   int i;
-  struct http_fetch_buf *hfb;
   char hostname[512];
   const char *hostn;
   const char *slash;
   int sock;
   int port;
-  if (!http_hash) {
-    http_hash = g_hash_table_new(g_str_hash,g_str_equal);
-  }
-  if (g_hash_table_lookup(http_hash,url)) {
-    return;
-  }
-
-  hostn=url+sizeof("http://")-1;
+  hostn=hfb->url+sizeof("http://")-1;
   for(i=0;(i<511)&&(hostn[i]!=':')&&(hostn[i]!='/');i++)
     hostname[i]=hostn[i];
   hostname[i]=0;
@@ -497,18 +505,60 @@ void get_http_file(const char *url,const char *filename,
   }
   sock=my_connectto(hostname,port);
   if (sock<0) {
-    if (fail_cb)
-      fail_cb(url,filename,data);
+    if (hfb->fail_cb)
+      hfb->fail_cb(hfb->url,hfb->filename,hfb->data);
+    cleanup_http_buf(hfb);
     return;
   }
-  hfb=g_new0(struct http_fetch_buf,1);
-  hfb->outfd=-1;
+  running_requests++;
+  hfb->fd=sock;
   hfb->request=g_strdup_printf("%s %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s %s\r\n\r\n",
 			       "GET",slash,hostname,PACKAGE,VERSION);
+#ifdef _WIN32
+  hfb->ioc=g_io_channel_win32_new_stream_socket(hfb->fd);
+#else
+  hfb->ioc=g_io_channel_unix_new(hfb->fd);
+#endif
+  g_io_add_watch(hfb->ioc,
+		 G_IO_OUT|G_IO_HUP,
+		 do_http_send,hfb);
+}
+
+static void check_request_queue()
+{
+  while ((running_requests < MAX_HTTP_REQUESTS)&&(request_list)) {
+    struct http_fetch_buf *hfb=(struct http_fetch_buf *)
+      g_list_first(request_list)->data;
+    request_list=g_list_remove_link(request_list,g_list_first(request_list));
+    start_http_request(hfb);
+  }
+}
+
+
+/* initiate a http request */
+void get_http_file(const char *url,const char *filename,
+			  void (*finish_cb)(const char *,const char*,void *),
+		   void (*fail_cb)(const char *,const char *,void *),
+                   int (*size_check)(const char *, void *, int),void *data)
+{
+  struct http_fetch_buf *hfb;
+  
+  if (!http_hash) {
+    http_hash = g_hash_table_new(g_str_hash,g_str_equal);
+  }
+  if (g_hash_table_lookup(http_hash,url)) {
+    return;
+  }
+
+ 
+  hfb=g_new0(struct http_fetch_buf,1);
+  hfb->outfd=-1;
+
   hfb->url=g_strdup(url);
-  hfb->fd=sock;
+  hfb->fd=-1;
   hfb->finish_cb=finish_cb;
   hfb->fail_cb=fail_cb;
+  hfb->size_check=size_check;
   hfb->data=data;
   if (filename) {
     hfb->filename=g_strdup(filename);
@@ -518,15 +568,8 @@ void get_http_file(const char *url,const char *filename,
     hfb->use_tempname=1;
   }
   g_hash_table_insert(http_hash,hfb->url,hfb);
-#ifdef _WIN32
-  hfb->ioc=g_io_channel_win32_new_stream_socket(hfb->fd);
-#else
-  hfb->ioc=g_io_channel_unix_new(hfb->fd);
-#endif
-  g_io_add_watch(hfb->ioc,
-		 G_IO_OUT|G_IO_HUP,
-		 do_http_send,hfb);
-  
+  request_list=g_list_append(request_list,hfb);
+  check_request_queue();
 }
 
 
@@ -993,7 +1036,7 @@ int mapwin_draw(struct mapwin *mw,
 #endif
 		if (get_mapfilename(url,sizeof(url),
 				    map, map->url, x_page, y_page)) {
-		  get_http_tile(mw,url,filename);
+		  get_http_tile(mw,url,filename,0);
 #if 0
 		  /* HACK */
 		  snprintf(cmd,sizeof(cmd),"mkdir -p $(dirname %s) || true ; [ ! -f %s.lck ] && ( touch %s.lck ; wget '%s' -O %s.png ; rm %s.lck ) & ",filename,filename,filename,url,filename,filename);
