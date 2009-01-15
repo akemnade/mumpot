@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: mumpot 0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-01-14 08:31+0100\n"
-"PO-Revision-Date: 2008-11-11 08:29+0100\n"
+"PO-Revision-Date: 2009-01-15 08:29+0100\n"
 "Last-Translator: Georgy Baudart <georgyatbaweticdotbe>\n"
 "Language-Team: French\n"
 "MIME-Version: 1.0\n"
@@ -193,7 +193,7 @@ msgstr "/Affichage/Se déconnecter du GPS"
 
 #: src/main.c:1915
 msgid "/Project/quit"
-msgstr "/Projet/quitter"
+msgstr "/Projet/Quitter"
 
 #: src/main.c:1945 src/main.c:1950
 #, c-format
@@ -202,11 +202,11 @@ msgstr "/Affichage/Mode/%s"
 
 #: src/main.c:1991
 msgid "Name"
-msgstr ""
+msgstr "Nom"
 
 #: src/main.c:1991
 msgid "is in"
-msgstr ""
+msgstr "est dans"
 
 #: src/main.c:2050
 msgid "file name"
@@ -226,7 +226,7 @@ msgstr "Mode déplacement"
 
 #: src/main.c:2146
 msgid "pan mode"
-msgstr ""
+msgstr "Mode pan"
 
 #: src/main.c:2152
 msgid "route drawing mode"
@@ -234,19 +234,19 @@ msgstr "Editeur de tracé"
 
 #: src/main.c:2235
 msgid "Choose a map"
-msgstr ""
+msgstr "Choisir une carte"
 
 #: src/main.c:2239
 msgid "OSM Tiles@home"
-msgstr ""
+msgstr "OSM Tiles@home"
 
 #: src/main.c:2243
 msgid "OSM Mapnik"
-msgstr ""
+msgstr "OSM Mapnik"
 
 #: src/main.c:2247
 msgid "OSM Cyclemap"
-msgstr ""
+msgstr "OSM Cyclemap"
 
 #: src/main.c:2287 src/main.c:2294 src/main.c:2301
 #, c-format
@@ -287,7 +287,7 @@ msgstr "Toutes les pages"
 
 #: src/printdlg.c:250
 msgid "Page from: "
-msgstr "De page: "
+msgstr "De la page: "
 
 #: src/printdlg.c:254
 msgid "to: "
@@ -299,20 +299,20 @@ msgstr "/OSM/Montrer les données OSM"
 
 #: src/osm_view.c:53
 msgid "/OSM/Auto-Select way in center"
-msgstr "/OSM/Choisir directement le centre du chemin"
+msgstr "/OSM/Choisir automatiquement le centre du chemin"
 
 #: src/osm_view.c:55
 msgid "/OSM/Display nodes"
-msgstr "/OSM/Montrer intersection"
+msgstr "/OSM/Montrer intersections"
 
 #: src/osm_view.c:57
 msgid "/OSM/Display street borders"
 msgstr "/OSM/Montrer bord de route"
 
 #: src/osm_view.c:59
-#, fuzzy
+
 msgid "/OSM/Display non-street ways"
-msgstr "/OSM/Montrer bord de route"
+msgstr "/OSM/Montrer les routes non-carrossables"
 
 #: src/osm_view.c:61
 msgid "/OSM/Display tags"
@@ -320,7 +320,7 @@ msgstr "/OSM/Montrer propriétés"
 
 #: src/osm_view.c:907
 msgid "set"
-msgstr ""
+msgstr "Fixer"
 
 #: src/osm_view.c:1612
 msgid "start a new way"
@@ -352,16 +352,15 @@ msgstr "Naviguer vers le point de destination"
 
 #: src/osm_view.c:1654
 msgid "select the object to edit"
-msgstr ""
+msgstr "Sélectionnier l'objet à éditer"
 
 #: src/osm_view.c:1658
-#, fuzzy
 msgid "add a new way"
-msgstr "Commencer un nouveau chemin"
+msgstr "Ajouter un nouveau chemin"
 
 #: src/osm_view.c:1663
 msgid "delete the currently selected object"
-msgstr ""
+msgstr "Effacer l'objet sélectionné"
 
 #: src/osm_view.c:1685
 msgid "routing"
@@ -373,7 +372,7 @@ msgstr "Mode édition directe"
 
 #: src/osm_view.c:1693
 msgid "editing"
-msgstr ""
+msgstr "Editer"
 
 #: src/create_connection.c:72
 #, c-format
@@ -395,7 +394,7 @@ msgstr "Bluetooth"
 
 #: src/create_connection.c:306
 msgid "Serial"
-msgstr "serie"
+msgstr "Serie"
 
 #: src/create_connection.c:307
 msgid "Type of connection:"
@@ -411,19 +410,19 @@ msgstr "Baudrate:"
 
 #: src/create_connection.c:331
 msgid "Bluetooth address:"
-msgstr "Adresse Bluetooth"
+msgstr "Adresse Bluetooth:"
 
 #: src/create_connection.c:337
 msgid "Channel:"
-msgstr "Canal"
+msgstr "Canal:"
 
 #: src/create_connection.c:346
 msgid "IP/Hostname:"
-msgstr ""
+msgstr "IP/Nom d'hôte:"
 
 #: src/create_connection.c:353
 msgid "Port:"
-msgstr ""
+msgstr "Port:"
 
 #: src/create_connection.c:372
 msgid "Creating GPS connection failed"
@@ -431,113 +430,111 @@ msgstr "Connection au GPS échouée"
 
 #: config-examples/tagpresets:2
 msgid "Shops"
-msgstr ""
+msgstr "Magasin"
 
 #: config-examples/tagpresets:3
 msgid "bakery"
-msgstr ""
+msgstr "Boulangerie"
 
 #: config-examples/tagpresets:6
 msgid "supermarket"
-msgstr ""
+msgstr "Grande Surface"
 
 #: config-examples/tagpresets:13
-#, fuzzy
 msgid "no name"
-msgstr "Nom du fichier"
+msgstr "Pas de nom"
 
 #: config-examples/tagpresets:15
 msgid "outdoor"
-msgstr ""
+msgstr "Extérieur"
 
 #: config-examples/tagpresets:18
 msgid "bicycle"
-msgstr ""
+msgstr "Vélo"
 
 #: config-examples/tagpresets:21
 msgid "kiosk"
-msgstr ""
+msgstr "Kiosque"
 
 #: config-examples/tagpresets:25
 msgid "Accommodation"
-msgstr ""
+msgstr "Hébergement"
 
 #: config-examples/tagpresets:26
 msgid "Hotel"
-msgstr ""
+msgstr "Hôtel"
 
 #: config-examples/tagpresets:29
 msgid "Motel"
-msgstr ""
+msgstr "Motel"
 
 #: config-examples/tagpresets:32
 msgid "Guest House"
-msgstr ""
+msgstr "Gîtes"
 
 #: config-examples/tagpresets:35
 msgid "Hostel"
-msgstr ""
+msgstr "Foyer"
 
 #: config-examples/tagpresets:38
 msgid "Camping Site"
-msgstr ""
+msgstr "Camping"
 
 #: config-examples/tagpresets:41
 msgid "Caravan Site"
-msgstr ""
+msgstr "Caravaning"
 
 #: config-examples/tagpresets:45
 msgid "Food+Drinks"
-msgstr ""
+msgstr "Restauration"
 
 #: config-examples/tagpresets:49
 msgid "Fast Food"
-msgstr ""
+msgstr "Restauration rapide"
 
 #: config-examples/tagpresets:52
-#, fuzzy
 msgid "Cafe"
-msgstr "Annuler"
+msgstr "Café"
 
 #: config-examples/tagpresets:56
 msgid "Post box"
-msgstr ""
+msgstr "Boîte postal"
 
 #: config-examples/tagpresets:59
 msgid "Park bench"
-msgstr ""
+msgstr "Banc public"
 
 #: config-examples/tagpresets:62
 msgid "Man made"
-msgstr ""
+msgstr "Monument"
 
 #: config-examples/tagpresets:63
 msgid "windmill"
-msgstr ""
+msgstr "Moulin à vent"
 
 #: config-examples/tagpresets:66
 msgid "sewage"
-msgstr ""
+msgstr "Station d'épuration"
 
 #: config-examples/tagpresets:70
 msgid "Bank"
-msgstr ""
+msgstr "Banque"
 
 #: config-examples/tagpresets:72
 msgid "with ATM"
-msgstr ""
+msgstr "Avec ATM"
 
 #: config-examples/tagpresets:73
 msgid "without ATM"
-msgstr ""
+msgstr "Sans ATM"
 
 #: config-examples/tagpresets:75
 msgid "ATM"
-msgstr ""
+msgstr "ATM"
 
 #: config-examples/tagpresets:78
 msgid "Playground"
-msgstr ""
+msgstr "Plaine de jeu"
 
 #~ msgid "/OSM/Mode/live edit"
 #~ msgstr "/OSM/Mode/Mode édition directe"
