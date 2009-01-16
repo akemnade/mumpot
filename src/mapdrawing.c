@@ -69,6 +69,7 @@ static GList *tile_fetch_queue;
 static GList *request_list;
 static int running_requests=0;
 static void free_image_cache(char *fname);
+int tile_request_mode=1;
 struct http_fetch_buf {
   char *request;
   int fd;
@@ -299,7 +300,8 @@ static gboolean do_http_recv(GIOChannel *source,
         }
 	g_free(nfname);
       }
-      hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
+      if (hfb->finish_cb)
+	hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
       hfb->outfd=-1;
     }
     
@@ -474,7 +476,7 @@ static void get_http_tile(struct mapwin *mw,
     g_free(fullname);
     return;
   }
-  get_http_file(url,fullname,tile_fetched,NULL,tile_size_check,mw);
+  get_http_file(url,fullname,mw?tile_fetched:NULL,NULL,tile_size_check,mw);
   if (do_queue) {
     tile_fetch_queue=g_list_append(tile_fetch_queue,strdup(url));
   }
@@ -1028,25 +1030,12 @@ int mapwin_draw(struct mapwin *mw,
 	      tcount++;
 	    }
 	    if (map->url) {
-	      if (((mw->request_mode>1)&&(now-mtime>mw->request_mode))||
-		  ((mw->request_mode==1)&&(!src)&&(!mtime))) {
+	      if (((tile_request_mode>1)&&(now-mtime>tile_request_mode))||
+		  ((tile_request_mode==1)&&(!src)&&(!mtime))) {
 		char url[512];
-#if 0
-		char cmd[2048];
-#endif
 		if (get_mapfilename(url,sizeof(url),
 				    map, map->url, x_page, y_page)) {
 		  get_http_tile(mw,url,filename,0);
-#if 0
-		  /* HACK */
-		  snprintf(cmd,sizeof(cmd),"mkdir -p $(dirname %s) || true ; [ ! -f %s.lck ] && ( touch %s.lck ; wget '%s' -O %s.png ; rm %s.lck ) & ",filename,filename,filename,url,filename,filename);
-		  system(cmd); 
-#ifdef _WIN32
-		  Sleep(200);
-#else
-		  usleep(200000);
-#endif
-#endif
 		}
 	      }
 	    }
@@ -1173,6 +1162,8 @@ static void draw2pinfo_real(struct pixmap_info *pinfo,struct t_map *map,
       while(dest_x<pinfo->width)
 	{
 	  char filename[512];
+	  time_t mtime;
+	  time_t now=time(NULL);
 	  int x_page=src_x/map->tilewidth;
 	  int xoffset=src_x%map->tilewidth;
 	  if (xoffset<0) {
@@ -1181,58 +1172,77 @@ static void draw2pinfo_real(struct pixmap_info *pinfo,struct t_map *map,
 	    xoffset+=map->tilewidth;
 	    
 	  }
+	  mtime=0;
 	  snprintf(filename,sizeof(filename),
 		   "karte%03d/%03d",y_page,x_page);
 	  if (get_mapfilename(filename,sizeof(filename),
-			      map,map->filepattern,x_page,y_page)&&
-	      ((src=load_image(filename)))) {
-	    int i,j;
-	    unsigned char  color_conv[256];
-	    if (pinfo->row_len==0) {
-	      init_pinfo_bitdata(pinfo,src);
-	    }
-	    for(i=0;(pinfo->bit_depth<=8)&&(i<src->num_palette);i++) {
-	      int found=0;
-	      for(j=0;j<pinfo->num_palette;j++) {
-		if (src->gdk_palette[i]==pinfo->gdk_palette[j]) {
-		  color_conv[i]=j;
-		  found=1;
-		  break;
+			      map,map->filepattern,x_page,y_page)) {
+
+	    if ((src=load_image_mtime(filename,&mtime))) {
+	      int i,j;
+	      unsigned char  color_conv[256];
+	      if (pinfo->row_len==0) {
+		init_pinfo_bitdata(pinfo,src);
+	      }
+	      for(i=0;(pinfo->bit_depth<=8)&&(i<src->num_palette);i++) {
+		int found=0;
+		for(j=0;j<pinfo->num_palette;j++) {
+		  if (src->gdk_palette[i]==pinfo->gdk_palette[j]) {
+		    color_conv[i]=j;
+		    found=1;
+		    break;
+		  }
+		}
+		if (!found) {
+		  if (pinfo->num_palette<256) {
+		    color_conv[i]=pinfo->num_palette;
+		    pinfo->gdk_palette[pinfo->num_palette]=src->gdk_palette[i];
+		    pinfo->num_palette++;
+		  } else {
+		    break;
+		  }
 		}
 	      }
-	      if (!found) {
-		if (pinfo->num_palette<256) {
-		  color_conv[i]=pinfo->num_palette;
-		  pinfo->gdk_palette[pinfo->num_palette]=src->gdk_palette[i];
-		  pinfo->num_palette++;
-		} else {
-		  break;
-		}
+	      if (((i==0)||(i!=src->num_palette))&&(pinfo->bit_depth<=8)) {
+		free(pinfo->row_pointers[0]);
+		init_pinfo_bitdata_parm(pinfo,24,PNG_COLOR_TYPE_RGB);
+		pinfo->num_palette=0;
+		draw2pinfo_real(pinfo,map,sx,sy,dx,dy,width,height);
+		return;
 	      }
-	    }
-	    if (((i==0)||(i!=src->num_palette))&&(pinfo->bit_depth<=8)) {
-	      free(pinfo->row_pointers[0]);
-	      init_pinfo_bitdata_parm(pinfo,24,PNG_COLOR_TYPE_RGB);
-	      pinfo->num_palette=0;
-	      draw2pinfo_real(pinfo,map,sx,sy,dx,dy,width,height);
-	      return;
-	    }
-	    for(;i<256;i++)
-	      color_conv[i]=0;
-	    blt_pinfo(src,pinfo,color_conv,xoffset,yoffset,dest_x,dest_y,
-		      MIN(width+dx-dest_x,map->tilewidth-xoffset),
-		      MIN(height+dy-dest_y,
-			  map->tileheight-yoffset));
-	  } else {
-	    if (map->next) {
-	      draw2pinfo_real(pinfo,map->next,src_x-map->xoffset,
-			      src_y-map->yoffset,dest_x,dest_y,
-			      MIN(width+dx-dest_x,map->tilewidth-xoffset),
-			      MIN(height+dy-dest_y,
-				  map->tileheight-yoffset));
-	      
+	      for(;i<256;i++)
+		color_conv[i]=0;
+	      blt_pinfo(src,pinfo,color_conv,xoffset,yoffset,dest_x,dest_y,
+			MIN(width+dx-dest_x,map->tilewidth-xoffset),
+			MIN(height+dy-dest_y,
+			    map->tileheight-yoffset));
 	    } else {
-	      /*  clear */
+	      char url[512];
+	      if ((map->url)&&(get_mapfilename(url,sizeof(url),map,map->url,
+					       x_page,y_page))) {
+		get_http_tile(NULL,url,filename,1);
+		
+	      }
+	      if (map->next) {
+		draw2pinfo_real(pinfo,map->next,src_x-map->xoffset,
+				src_y-map->yoffset,dest_x,dest_y,
+				MIN(width+dx-dest_x,map->tilewidth-xoffset),
+				MIN(height+dy-dest_y,
+				    map->tileheight-yoffset));
+		
+	      } else {
+		/*  clear */
+	      }
+	    }
+	    if (map->url) {
+	      if (((tile_request_mode>1)&&(now-mtime>tile_request_mode))||
+                  ((tile_request_mode==1)&&(!src)&&(!mtime))) {
+                char url[512];
+		if (get_mapfilename(url,sizeof(url),
+                                    map, map->url, x_page, y_page)) {
+                  get_http_tile(NULL,url,filename,0);
+		}
+	      }
 	    }
 	  }	
 	  src_x=src_x+map->tilewidth-xoffset;

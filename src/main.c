@@ -1761,8 +1761,7 @@ static void switch_requesttile(gpointer callback_data,
 			       guint callback_action,
 			       GtkWidget *w)
 {
-  struct mapwin *mw=(struct mapwin *)callback_data;
-  mw->request_mode=callback_action;
+  tile_request_mode=callback_action;
 }
 
 static void display_about_box(gpointer callback_data,
@@ -2007,7 +2006,6 @@ struct mapwin * create_mapwin()
   w->mark_str=NULL;
   w->has_path=0;
   w->follow_gps=1;
-  w->request_mode=1;
   w->map_store=NULL;
   w->line_drawing=0;
   w->mouse_move_str=NULL;

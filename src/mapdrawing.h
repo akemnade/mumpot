@@ -17,6 +17,7 @@
 struct connection_dialog;
 struct osm_file;
 struct osm_info;
+extern int tile_request_mode;
 #define MAX_LINE_LIST 5
 
 struct sidebar_mode {
@@ -68,7 +69,6 @@ struct mapwin {
   int have_gpspos;
   int mouse_x, mouse_y;
   int draw_crosshair;
-  int request_mode;
   struct osm_info *osm_inf;
   struct osm_file *osm_main_file;
   struct nmea_pointinfo last_nmea;
