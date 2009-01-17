@@ -43,6 +43,17 @@
 #define OPT_W 4
 #define OPT_H 8
 
+static GMainLoop *mainloop;
+
+static gboolean poll_requests(gpointer data)
+{
+  if (tile_requests_processed()) {
+    g_main_quit(mainloop);
+    return FALSE;
+  }
+  return TRUE;
+}
+
 int main(int argc, char **argv)
 {
   double x;
@@ -110,6 +121,14 @@ int main(int argc, char **argv)
   geosec2point(&x, &y, longg, latt);
   /* read the map and copy the rectangle */
   pinfo=get_map_rectangle((int)x+xoffset,(int)y+yoffset,width, height);
+  if (!tile_requests_processed()) {
+    g_timeout_add(1000,poll_requests,NULL);
+    mainloop=g_main_new(TRUE);
+    g_main_run(mainloop);
+    if (pinfo)
+      free_pinfo(pinfo);
+    pinfo=get_map_rectangle((int)x+xoffset,(int)y+yoffset,width, height);
+  }
   if (pinfo) {
     char pshead[512];
     if (output_ps) {

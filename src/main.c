@@ -1258,16 +1258,20 @@ static void mark_del_one(gpointer callback_data,
 
 
 /* print the marked rectangles */
-static void mark_print_cb(int fd, struct t_mark_rect *rc,
-			  struct mapwin *mw)
+static int mark_print_page(int fd, struct t_mark_rect *rc,
+			   struct mapwin *mw,int start_page,int pnum)
 {
-  char tmp_ps_tpl[80];
   char cmd_tpl[200];
+  char buf[512];
   int x,y,w,h;
   double dim;
   get_mark_xywh(rc,&x,&y,&w,&h,&dim);
   struct pixmap_info *pinfo=get_map_rectangle(x,y,w,h);
-
+  if (!tile_requests_processed()) {
+    free_pinfo(pinfo);
+    return 0;
+  }
+    
   dim=dim*25.4;
 
   /*  strcpy(tmp_tpl,"/tmp/mapprint.XXXXXX");
@@ -1275,6 +1279,8 @@ static void mark_print_cb(int fd, struct t_mark_rect *rc,
   /*  save_pinfo(tmp_tpl,pinfo); */
 
   setlocale(LC_NUMERIC,"C");
+  snprintf(buf,sizeof(buf),"%%%%Page: %d %d\n",start_page,start_page+pnum);
+  write(fd,buf,strlen(buf));
   snprintf(cmd_tpl,sizeof(cmd_tpl),
            "gsave 50 50 translate 72 72 scale 1 %f div dup scale 0 %lu %s\n",
 	   dim,pinfo->height,rc->width_gt_height?"pop pop 90 rotate":"translate");
@@ -1293,36 +1299,53 @@ static void mark_print_cb(int fd, struct t_mark_rect *rc,
     char *t="grestore showpage\n";
     write(fd,t,strlen(t));
   }
-
-  /*close(fd);*/
   free_pinfo(pinfo);
-  snprintf(cmd_tpl,sizeof(cmd_tpl),"lpr '%s'",tmp_ps_tpl);
-  // system(cmd_tpl);
-  //unlink(tmp_ps_tpl);
-
+  return 1;
 }
 
 static void print_dlg_cancel(void *data)
 {
 }
 
-static void print_dlg_ok(void *data, int start_page, int end_page, int fd)
+static gboolean print_timer_cb(void *data)
+{
+  char buf[512];
+  struct print_job *pj=(struct print_job *)data;
+  int fd=pj->fd;
+  while (pj->page_data) {
+    if (!tile_requests_processed()) {
+      return TRUE;
+    }
+    if (mark_print_page(fd,(struct t_mark_rect *)g_list_first(pj->page_data)->data,
+			(struct mapwin *)pj->data,pj->start_page,pj->page)) {
+      pj->page++;
+      free(g_list_first(pj->page_data)->data);
+      pj->page_data=g_list_remove(pj->page_data,
+				       g_list_first(pj->page_data)->data);
+    }
+  } 
+  snprintf(buf,sizeof(buf),"%%EOF\n");
+  write(fd,buf,strlen(buf));
+  delete_print_job(pj);
+
+  return FALSE;
+}
+
+static void print_dlg_ok(void *data, struct print_job *pj)
 {
   struct mapwin *mw=(struct mapwin *)data;
   int i;
   GList *l;
   char buf[512];
-  snprintf(buf,sizeof(buf),"%%!PS-Adobe-2.0\n%%%%Pages %d\n%%%%PageOrder: Ascend\n%%%%EndComments\n",end_page-start_page+1);
-  write(fd,buf,strlen(buf));
-  for(i=1,l=g_list_first(mw->rect_list);l&&(i<start_page);i++,l=g_list_next(l));
-  for(;l&&(i<=end_page);i++,l=g_list_next(l)) {
-    snprintf(buf,sizeof(buf),"%%%%Page: %d %d\n",i,i-start_page+1);
-    write(fd,buf,strlen(buf));
-    mark_print_cb(fd,(struct t_mark_rect *)l->data,mw);
-    
+  snprintf(buf,sizeof(buf),"%%!PS-Adobe-2.0\n%%%%Pages %d\n%%%%PageOrder: Ascend\n%%%%EndComments\n",pj->end_page-pj->start_page+1);
+  write(pj->fd,buf,strlen(buf));
+  for(i=1,l=g_list_first(mw->rect_list);l&&(i<pj->start_page);i++,l=g_list_next(l));
+  for(l=g_list_first(mw->rect_list);l&&(i<=pj->end_page);l=g_list_next(l)) {
+    struct t_mark_rect *mr=g_new0(struct t_mark_rect,1);
+    *mr=*(struct t_mark_rect *)l->data;
+    pj->page_data=g_list_append(pj->page_data,mr);
   }
-  snprintf(buf,sizeof(buf),"%%EOF\n");
-  write(fd,buf,strlen(buf));
+  g_timeout_add(1000,print_timer_cb,pj);
   
 }
 

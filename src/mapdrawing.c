@@ -249,13 +249,22 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l)
   }
 }
 
+static void tile_failed(const char *url, const char *filename,
+			gpointer data)
+{
+  GList *l=g_list_find_custom(tile_fetch_queue,url,g_str_equal);
+  if (l) {
+    free(l->data);
+    tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);
+  }
+}
 
 static void tile_fetched(const char *url, const char *filename,
 			 gpointer data)
 {
   char *nfname=g_strdup(filename);
   char *dot;
-  GList *l=g_list_find(tile_fetch_queue,url);
+  GList *l=g_list_find_custom(tile_fetch_queue,url,g_str_equal);
   struct mapwin *mw=(struct mapwin *)data;
   dot=strrchr(nfname,'.');
   if (dot) {
@@ -263,13 +272,13 @@ static void tile_fetched(const char *url, const char *filename,
   }
   free_image_cache(nfname);
   g_free(nfname);
-  
-  gtk_widget_queue_draw_area(mw->map,0,0,
-			     mw->page_width,
-			     mw->page_height);
-  mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
-	      mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
-  
+  if (mw) {
+    gtk_widget_queue_draw_area(mw->map,0,0,
+			       mw->page_width,
+			       mw->page_height);
+    mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+		mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
+  }
   if (l) {
     free(l->data);
     tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);  
@@ -303,6 +312,9 @@ static gboolean do_http_recv(GIOChannel *source,
       if (hfb->finish_cb)
 	hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
       hfb->outfd=-1;
+    } else {
+      if (hfb->fail_cb)
+	hfb->fail_cb(hfb->url,hfb->filename,hfb->data);
     }
     
     cleanup_http_buf(hfb);
@@ -457,6 +469,10 @@ static int tile_size_check(const char *filename, void *data,
 }
 
 
+int tile_requests_processed()
+{
+  return tile_fetch_queue==NULL;
+}
 /* initiate a http request for a tile */
 static void get_http_tile(struct mapwin *mw,
 			  const char *url, const char *filename,
@@ -476,7 +492,7 @@ static void get_http_tile(struct mapwin *mw,
     g_free(fullname);
     return;
   }
-  get_http_file(url,fullname,mw?tile_fetched:NULL,NULL,tile_size_check,mw);
+  get_http_file(url,fullname,tile_fetched,tile_failed,tile_size_check,mw);
   if (do_queue) {
     tile_fetch_queue=g_list_append(tile_fetch_queue,strdup(url));
   }
