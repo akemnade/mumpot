@@ -492,9 +492,10 @@ static void get_http_tile(struct mapwin *mw,
     g_free(fullname);
     return;
   }
-  get_http_file(url,fullname,tile_fetched,tile_failed,tile_size_check,mw);
-  if (do_queue) {
-    tile_fetch_queue=g_list_append(tile_fetch_queue,strdup(url));
+  if (get_http_file(url,fullname,tile_fetched,tile_failed,tile_size_check,mw)) {
+    if (do_queue) {
+      tile_fetch_queue=g_list_append(tile_fetch_queue,strdup(url));
+    }
   }
   g_free(fullname);
 }
@@ -554,10 +555,10 @@ static void check_request_queue()
 
 
 /* initiate a http request */
-void get_http_file(const char *url,const char *filename,
-			  void (*finish_cb)(const char *,const char*,void *),
-		   void (*fail_cb)(const char *,const char *,void *),
-                   int (*size_check)(const char *, void *, int),void *data)
+int get_http_file(const char *url,const char *filename,
+		  void (*finish_cb)(const char *,const char*,void *),
+		  void (*fail_cb)(const char *,const char *,void *),
+		  int (*size_check)(const char *, void *, int),void *data)
 {
   struct http_fetch_buf *hfb;
   
@@ -565,7 +566,7 @@ void get_http_file(const char *url,const char *filename,
     http_hash = g_hash_table_new(g_str_hash,g_str_equal);
   }
   if (g_hash_table_lookup(http_hash,url)) {
-    return;
+    return 0;
   }
 
  
@@ -588,6 +589,7 @@ void get_http_file(const char *url,const char *filename,
   g_hash_table_insert(http_hash,hfb->url,hfb);
   request_list=g_list_append(request_list,hfb);
   check_request_queue();
+  return 1;
 }
 
 
