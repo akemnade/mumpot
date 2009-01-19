@@ -1415,6 +1415,8 @@ static void gps_filesel(GtkWidget *w, gpointer data)
   load_gps_line(f,mw->mark_line_list);
   mouse_state=IN_WAY;
   mw->line_drawing=1;
+  change_sidebar_cb(mw,0,NULL);
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->linemode_but),1);
 }
 
 static void osm_filesel(GtkWidget *w, gpointer data)
