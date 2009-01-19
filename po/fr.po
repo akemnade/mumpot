@@ -522,15 +522,15 @@ msgstr "Banque"
 
 #: config-examples/tagpresets:72
 msgid "with ATM"
-msgstr "Avec ATM"
+msgstr "Avec GAB"
 
 #: config-examples/tagpresets:73
 msgid "without ATM"
-msgstr "Sans ATM"
+msgstr "Sans GAB"
 
 #: config-examples/tagpresets:75
 msgid "ATM"
-msgstr "ATM"
+msgstr "GAB"
 
 #: config-examples/tagpresets:78
 msgid "Playground"
