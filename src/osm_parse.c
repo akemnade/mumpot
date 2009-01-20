@@ -233,6 +233,13 @@ void osm_delete_way(struct osm_file *osmf,
       free_osm_node(way->nodes[i]);
     }
   }
+  if (0==(osmf->deleted_way_count&0xf)) {
+    osmf->deleted_ways=(int *)realloc(osmf->deleted_ways,
+				      osmf->deleted_way_count+sizeof(int)*16);
+  }
+  osmf->deleted_ways[osmf->deleted_way_count]=way->head.id;
+  osmf->deleted_way_count++;
+  
   free_osm_way(way->head.id);
   osmf->ways=g_list_remove(osmf->ways,way);
   osmf->changed=1;
@@ -249,6 +256,13 @@ void osm_delete_node(struct osm_file *osmf,
       osm_delete_way(osmf,way);
     }
   }
+  if ((osmf->deleted_node_count&0xf)==0) {
+    osmf->deleted_nodes=(int *)realloc(osmf->deleted_nodes,
+				       osmf->deleted_node_count+sizeof(int)*16);
+  }
+  osmf->deleted_nodes[osmf->deleted_node_count]=node->head.id;
+  osmf->deleted_node_count++;
+
   osmf->nodes=g_list_remove(osmf->nodes,node);
   free_osm_node(node->head.id);
   osmf->changed=1;
@@ -782,6 +796,7 @@ int save_osm_file(const char *fname, struct osm_file *osmf)
 {
   xmlTextWriterPtr writer;
   GList *l;
+  int i;
   writer=xmlNewTextWriterFilename(fname,0);
   if (!writer) 
     return 0;
@@ -797,6 +812,21 @@ int save_osm_file(const char *fname, struct osm_file *osmf)
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
     osm_write_way_xml(writer,(struct osm_way *)l->data);
   }
+  
+  for(i=0;i<osmf->deleted_way_count;i++) {
+    xmlTextWriterStartElement(writer,(xmlChar *)"way");
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
+				      osmf->deleted_ways[i]);
+    xmlTextWriterEndElement(writer);
+  }
+
+  for(i=0;i<osmf->deleted_node_count;i++) {
+    xmlTextWriterStartElement(writer,(xmlChar *)"node");
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
+				      osmf->deleted_ways[i]);
+    xmlTextWriterEndElement(writer);
+  }
+  
 
   xmlTextWriterEndElement(writer);
 
