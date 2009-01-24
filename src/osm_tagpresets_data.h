@@ -18,6 +18,7 @@ struct osm_preset_menu_sect {
 };
 struct osm_presetitem {
   char *name;
+  char *img;
   int x;
   int y;
   struct osm_preset_menu_sect *menu;

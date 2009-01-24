@@ -62,6 +62,7 @@ static char *delbracket(char *str)
 \"[^\"]*\"     tagsellval.str=delbracket(yytext); return T_STRING;
 _\(\"[^\"]*\"\)     tagsellval.str=delbracket(yytext); return T_STRING;
 pos            return T_POS;
+gfx            return T_IMG;
 settag         return T_SETTAG;
 nodepreset           return T_NODEPRESET;
 waypreset      return T_WAYPRESET;
