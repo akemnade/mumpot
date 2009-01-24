@@ -103,4 +103,6 @@ void draw_marks_to_ps(GList *mark_line_list, int mx, int my,
 		      int w, int h, int fd);
 void free_line_list(GList *l);
 int tile_requests_processed();
+/* center the view to a place */
+void center_map(struct mapwin *mw,double longsec, double lattsec);
 #endif

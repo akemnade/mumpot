@@ -137,6 +137,27 @@ static void cleanup_http_buf(struct http_fetch_buf *hfb)
   check_request_queue();
 }
 
+/* center the view to a place */
+void center_map(struct mapwin *mw,double longsec, double lattsec)
+{
+
+  double x,y;
+  geosec2point(&x,&y,(double)longsec,(double)lattsec);
+  x=x-mw->page_width/2;
+  y=y-mw->page_height/2;
+  x=floor(x);
+  y=floor(y);
+  if ((x != GTK_ADJUSTMENT(mw->hadj)->value) ||
+      (y != GTK_ADJUSTMENT(mw->vadj)->value)) {
+    GTK_ADJUSTMENT(mw->hadj)->value=x;
+    GTK_ADJUSTMENT(mw->vadj)->value=y;
+    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->hadj));
+    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->vadj));
+  }
+}
+
+
+
 GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata)
 {
   GdkBitmap *mask=NULL;

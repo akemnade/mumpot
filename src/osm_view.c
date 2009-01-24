@@ -1406,6 +1406,16 @@ static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
     display_tags(mw->osm_inf,mw->osm_inf->selected_object);
     if (mw->osm_inf->selected_object->type == NODE)
       mw->osm_inf->moving_node=1;
+  } else {
+    double longsec=0;
+    double lattsec=0;
+    if (((x-mw->page_x)<(mw->page_width/4)) ||
+	((x-mw->page_x-mw->page_width)>(-mw->page_width/4)) ||
+	((y-mw->page_y)<(mw->page_height/4)) ||
+	((y-mw->page_y-mw->page_height)>(-mw->page_height/4))) {
+      point2geosec(&longsec,&lattsec,x,y);
+      center_map(mw,longsec,lattsec);
+    }
   }
   gtk_widget_queue_draw_area(mw->map,0,0,
 			     mw->page_width,
@@ -1442,6 +1452,7 @@ static void handle_edit_addway_click(struct mapwin *mw,
     lat=lat/3600.0;
     nd=new_osm_node_from_point(mw->osm_main_file,
 			       lon,lat);
+    center_map(mw,lon*3600.0,lat*3600.0);
     l=g_list_append(l,nd);
     if (nodeafter) {
       struct osm_way *mergeway=(struct osm_way *)nearest_obj;
@@ -1489,7 +1500,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
   if (mw->osm_inf->clicktime==0) {
     above_limit=1;
   } else {
-    above_limit=((millitime-mw->osm_inf->clicktime)>1500);
+    above_limit=((millitime-mw->osm_inf->clicktime)>1000);
   }
   if (!state) {
     if ((mw->osm_inf->moving_node)&&(mw->osm_inf->selected_object)) {
@@ -1505,7 +1516,8 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
   mw->osm_inf->moving_node=0;
   if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.start_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route))) {
     if (above_limit) {
-      set_route_start(mw,x,y);
+      if (mw->osm_main_file)
+	set_route_start(mw,x,y);
       mw->osm_inf->clicktime=millitime;
     }
     return TRUE;
@@ -1513,44 +1525,50 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
 
   } else if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.end_route)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.end_route))) {
     if (above_limit) {
-      set_route_end(mw,x,y);
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route),1);
-      gtk_widget_queue_draw_area(mw->map,0,0,
-				 mw->page_width,
-				 mw->page_height);
+      if (mw->osm_main_file) {
+	set_route_end(mw,x,y);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.start_route),1);
+	gtk_widget_queue_draw_area(mw->map,0,0,
+				   mw->page_width,
+				   mw->page_height);
+      }
       mw->osm_inf->clicktime=millitime;
     }
     return TRUE;
   } else if (GTK_WIDGET_MAPPED(mw->osm_inf->routeb.set_destination)&&gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->routeb.set_destination))) {
     if (above_limit) {
-      set_destination(mw,x,y);
+      if (mw->osm_main_file)
+	set_destination(mw,x,y);
       mw->osm_inf->clicktime=millitime;
     }
     return TRUE;
   } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->liveeditb.startwaybut))&&(osm_nodepresets)) {
     if (above_limit) {
-      struct osm_node *nd;
-      double lon=0;
-      double lat=0;
-      point2geosec(&lon,&lat,x,y);
-      lon/=3600.0;
-      lat/=3600.0;
-      nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
-      osm_choose_tagpreset(osm_nodepresets,NULL,&nd->head.tag_list,NULL);
-      mw->osm_inf->clicktime=millitime;
+      if (mw->osm_main_file) {
+	struct osm_node *nd;
+	double lon=0;
+	double lat=0;
+	point2geosec(&lon,&lat,x,y);
+	lon/=3600.0;
+	lat/=3600.0;
+	nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
+	osm_choose_tagpreset(osm_nodepresets,NULL,&nd->head.tag_list,NULL);
+	mw->osm_inf->clicktime=millitime;
+      }
     }
     return TRUE;
   } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->editb.selbut))&&
 	     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->editb.selbut)))) {
-    if (above_limit) {
+    if (mw->osm_main_file)
       handle_edit_sel_click(mw,x,y);
-      mw->osm_inf->clicktime=millitime;
-    }
+    mw->osm_inf->clicktime=millitime;
+    
     return TRUE;
   } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->editb.addwaybut))&&
 	     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->editb.addwaybut)))) {
     if (above_limit) {
-      handle_edit_addway_click(mw,x,y);
+      if (mw->osm_main_file)
+	handle_edit_addway_click(mw,x,y);
       mw->osm_inf->clicktime=millitime;
     }
     return TRUE;

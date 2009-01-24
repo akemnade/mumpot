@@ -263,32 +263,13 @@ char * lese_zkette(char **s)
 
 
 
-/* center the view to a place */
-void center_ort_s(struct mapwin *mw,double longg, double latt)
-{
-
-  double x,y;
-  geosec2point(&x,&y,(double)longg,(double)latt);
-  x=x-mw->page_width/2;
-  y=y-mw->page_height/2;
-  x=floor(x);
-  y=floor(y);
-  if ((x != GTK_ADJUSTMENT(mw->hadj)->value) ||
-      (y != GTK_ADJUSTMENT(mw->vadj)->value)) {
-    GTK_ADJUSTMENT(mw->hadj)->value=x;
-    GTK_ADJUSTMENT(mw->vadj)->value=y;
-    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->hadj));
-    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->vadj));
-  }
-}
-
 void center_ort(struct mapwin *mw,char *name)
 {
   
   struct t_ort *ort=g_hash_table_lookup(orts_hash,name);
   if (!ort)
     return;
-  center_ort_s(mw,(double)ort->laenge,(double)ort->breite);
+  center_map(mw,(double)ort->laenge,(double)ort->breite);
 }
 
 
@@ -1210,7 +1191,7 @@ void ort_select(GtkCList *clist,
   struct mapwin *mw=user_data;
   struct t_ort *ort=gtk_clist_get_row_data(clist,row);
   if (ort)
-    center_ort_s(mw,ort->laenge,ort->breite);
+    center_map(mw,ort->laenge,ort->breite);
 }
 
 /* prepare to mark a rectangle for printing */
@@ -1545,7 +1526,7 @@ static gboolean set_gps_position(gpointer data)
   struct mapwin *mw = (struct mapwin *)data;
   struct nmea_pointinfo *nmea=&mw->last_nmea;
   if (mw->follow_gps) {
-    center_ort_s(mw,nmea->longsec,nmea->lattsec);
+    center_map(mw,nmea->longsec,nmea->lattsec);
   }
   snprintf(buf,sizeof(buf),"%c %.1f km/h",nmea->state,nmea->speed*1.852);
   gtk_label_set_text(GTK_LABEL(mw->gps_label),buf);
@@ -1716,7 +1697,7 @@ static void zoom_in(struct mapwin *mw)
   if (mw->osm_main_file)
     recalc_node_coordinates(mw,mw->osm_main_file);
   geosec2point(&x,&y,lon,lat);
-  center_ort_s(mw,lon,lat);
+  center_map(mw,lon,lat);
 }
 
 static void zoom_in_cb(gpointer callback_data,
@@ -1763,7 +1744,7 @@ static void zoom_out(struct mapwin *mw)
   if (mw->osm_main_file)
     recalc_node_coordinates(mw,mw->osm_main_file);
   geosec2point(&x,&y,lon,lat);
-  center_ort_s(mw,lon,lat);
+  center_map(mw,lon,lat);
 
 }
 
@@ -2341,6 +2322,9 @@ int main(int argc, char **argv)
     globalmap.placefilelist=lcopy;
     
   }
+  if (!globalmap.placefilelist) {
+    read_places(MUMPOT_DATADIR "/places.txt");
+  }
   gdk_rgb_init();
   /* gdk_imlib_init_params(&imlibinit);
      gtk_widget_push_visual(gdk_imlib_get_visual());
@@ -2366,7 +2350,7 @@ int main(int argc, char **argv)
   if (globalmap.startplace)
     center_ort(mw,globalmap.startplace);
   else
-    center_ort_s(mw,globalmap.startlong,globalmap.startlatt);
+    center_map(mw,globalmap.startlong,globalmap.startlatt);
   gtk_main();
   return 0;
 }
