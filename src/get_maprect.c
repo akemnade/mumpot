@@ -119,7 +119,7 @@ int main(int argc, char **argv)
   /* initialize map data */
   parse_mapconfig(configfile);
   calc_mapoffsets();
-  if (zoomlevel > 0) {
+  if ((zoomlevel > 0)&&globalmap.zoomable) {
     globalmap.zoomfactor=zoomlevel;
     calc_mapoffsets();
   }
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
       close(fd);
     } else {
       if (pinfo->row_len > 0)
-      save_pinfo(argv[optind],pinfo);
+	save_pinfo(argv[optind],pinfo);
     }
   }
   return 0;
