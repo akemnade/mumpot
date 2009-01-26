@@ -270,13 +270,19 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l)
   }
 }
 
+static int mystrequal(gconstpointer a, gconstpointer b)
+{
+  return strcmp((char *)a,(char *)b);
+}
+
 static void tile_failed(const char *url, const char *filename,
 			gpointer data)
 {
-  GList *l=g_list_find_custom(tile_fetch_queue,url,g_str_equal);
+  GList *l=g_list_find_custom(tile_fetch_queue,url,mystrequal);
   if (l) {
     free(l->data);
     tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);
+    g_list_free(l);
   }
 }
 
@@ -285,7 +291,7 @@ static void tile_fetched(const char *url, const char *filename,
 {
   char *nfname=g_strdup(filename);
   char *dot;
-  GList *l=g_list_find_custom(tile_fetch_queue,url,g_str_equal);
+  GList *l=g_list_find_custom(tile_fetch_queue,url,mystrequal);
   struct mapwin *mw=(struct mapwin *)data;
   dot=strrchr(nfname,'.');
   if (dot) {
@@ -302,7 +308,8 @@ static void tile_fetched(const char *url, const char *filename,
   }
   if (l) {
     free(l->data);
-    tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);  
+    tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);
+    g_list_free(l);
   }
 }
 
@@ -501,6 +508,7 @@ static void get_http_tile(struct mapwin *mw,
 {
   char *fullname=g_strdup_printf("%s.png",filename);
   char *fn2;
+  char *urldup;
   if (!tile_files_to_fetch)
     tile_files_to_fetch=g_hash_table_new(g_str_hash,g_str_equal);
   if (g_hash_table_lookup(tile_files_to_fetch,fullname)) {
@@ -513,9 +521,11 @@ static void get_http_tile(struct mapwin *mw,
     g_free(fullname);
     return;
   }
-  if (get_http_file(url,fullname,tile_fetched,tile_failed,tile_size_check,mw)) {
+  urldup=strdup(url);
+  tile_fetch_queue=g_list_append(tile_fetch_queue,urldup);
+  if (!get_http_file(url,fullname,tile_fetched,tile_failed,tile_size_check,mw)) {
     if (do_queue) {
-      tile_fetch_queue=g_list_append(tile_fetch_queue,strdup(url));
+      tile_fetch_queue=g_list_remove(tile_fetch_queue,urldup);
     }
   }
   g_free(fullname);
@@ -823,7 +833,7 @@ static struct pixmap_info *load_image_mtime(char *name,time_t *mtime  /*GdkWindo
 #else
       free_pinfo(ce->p);
 #endif
-      printf("entferne %s\n",ce->name);
+      /* printf("entferne %s\n",ce->name); */
       g_free(ce->name);
       g_free(ce);
       rem=g_list_first(cache_list);
@@ -1256,12 +1266,6 @@ static void draw2pinfo_real(struct pixmap_info *pinfo,struct t_map *map,
 			MIN(height+dy-dest_y,
 			    map->tileheight-yoffset));
 	    } else {
-	      char url[512];
-	      if ((map->url)&&(get_mapfilename(url,sizeof(url),map,map->url,
-					       x_page,y_page))) {
-		get_http_tile(NULL,url,filename,1);
-		
-	      }
 	      if (map->next) {
 		draw2pinfo_real(pinfo,map->next,src_x-map->xoffset,
 				src_y-map->yoffset,dest_x,dest_y,
@@ -1279,7 +1283,7 @@ static void draw2pinfo_real(struct pixmap_info *pinfo,struct t_map *map,
                 char url[512];
 		if (get_mapfilename(url,sizeof(url),
                                     map, map->url, x_page, y_page)) {
-                  get_http_tile(NULL,url,filename,0);
+                  get_http_tile(NULL,url,filename,1);
 		}
 	      }
 	    }
