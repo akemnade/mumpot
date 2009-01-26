@@ -43,6 +43,10 @@
 #define OPT_W 4
 #define OPT_H 8
 
+GdkColor speedcolor[256];
+
+
+
 int main(int argc, char **argv)
 {
   double x;
