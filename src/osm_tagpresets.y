@@ -49,10 +49,10 @@ int tagselwrap()
   GList *list;
 }
 
-%token T_POS T_WAYPRESET T_NODEPRESET T_SETTAG
+%token T_POS T_WAYPRESET T_NODEPRESET T_SETTAG T_IMG
 %token <str> T_STRING
 %token <num> T_NUM
-%type <str> settag 
+%type <str> settag title img 
 %type <menu> menu
 %type <item> item
 %%
@@ -93,12 +93,15 @@ settag: T_SETTAG T_STRING T_STRING {
 ;
 
 
-item: T_POS T_NUM T_NUM T_STRING menu {
+item: T_POS T_NUM T_NUM title img menu {
   struct osm_presetitem *pitem=g_new0(struct osm_presetitem,1);
   pitem->x=$2;
   pitem->y=$3;
   pitem->name=$4;
-  pitem->menu=$5;
+  pitem->img=$5;
+  pitem->menu=$6;
   $$=pitem;
 };
 
+title: { $$=NULL; } | T_STRING { $$=$1; };
+img:   { $$=NULL; } | T_IMG T_STRING { $$=$2; };

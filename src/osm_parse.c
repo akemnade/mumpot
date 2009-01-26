@@ -229,10 +229,16 @@ void osm_delete_way(struct osm_file *osmf,
     node->way_list=g_list_remove(node->way_list,way);
     node->nr_ways--;
     if (node->nr_ways==0) {
-      osmf->nodes=g_list_remove(osmf->nodes,node);
-      free_osm_node(way->nodes[i]);
+      osm_delete_node(osmf,node);
     }
   }
+  if (0==(osmf->deleted_way_count&0xf)) {
+    osmf->deleted_ways=(int *)realloc(osmf->deleted_ways,
+				      osmf->deleted_way_count+sizeof(int)*16);
+  }
+  osmf->deleted_ways[osmf->deleted_way_count]=way->head.id;
+  osmf->deleted_way_count++;
+  
   free_osm_way(way->head.id);
   osmf->ways=g_list_remove(osmf->ways,way);
   osmf->changed=1;
@@ -249,6 +255,13 @@ void osm_delete_node(struct osm_file *osmf,
       osm_delete_way(osmf,way);
     }
   }
+  if ((osmf->deleted_node_count&0xf)==0) {
+    osmf->deleted_nodes=(int *)realloc(osmf->deleted_nodes,
+				       osmf->deleted_node_count+sizeof(int)*16);
+  }
+  osmf->deleted_nodes[osmf->deleted_node_count]=node->head.id;
+  osmf->deleted_node_count++;
+
   osmf->nodes=g_list_remove(osmf->nodes,node);
   free_osm_node(node->head.id);
   osmf->changed=1;
@@ -579,6 +592,7 @@ void osm_merge_into_way(struct osm_way *mergeway, int pos,
   memmove(mergeway->nodes+pos+1,mergeway->nodes+pos,(mergeway->nr_nodes-pos)*(sizeof(int)));
   mergeway->nodes[pos]=node->head.id;
   mergeway->nr_nodes++;
+  mergeway->head.modified=1;
   node->way_list=g_list_append(node->way_list,mergeway);
   node->nr_ways++;
 #ifdef USE_DOM_PARSER
@@ -782,6 +796,7 @@ int save_osm_file(const char *fname, struct osm_file *osmf)
 {
   xmlTextWriterPtr writer;
   GList *l;
+  int i;
   writer=xmlNewTextWriterFilename(fname,0);
   if (!writer) 
     return 0;
@@ -797,6 +812,25 @@ int save_osm_file(const char *fname, struct osm_file *osmf)
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
     osm_write_way_xml(writer,(struct osm_way *)l->data);
   }
+  
+  for(i=0;i<osmf->deleted_way_count;i++) {
+    xmlTextWriterStartElement(writer,(xmlChar *)"way");
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
+				      osmf->deleted_ways[i]);
+    xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"delete");
+    xmlTextWriterEndElement(writer);
+  }
+
+  for(i=0;i<osmf->deleted_node_count;i++) {
+    xmlTextWriterStartElement(writer,(xmlChar *)"node");
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
+				      osmf->deleted_nodes[i]);
+    xmlTextWriterWriteAttribute(writer,(xmlChar *)"lat",(xmlChar *)"0");
+    xmlTextWriterWriteAttribute(writer,(xmlChar *)"lon",(xmlChar *)"0");
+    xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"delete");
+    xmlTextWriterEndElement(writer);
+  }
+  
 
   xmlTextWriterEndElement(writer);
 

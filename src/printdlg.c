@@ -25,6 +25,7 @@
 #include <windows.h>
 #endif
 #include "myintl.h"
+#include "printdlg.h"
 #define DEFAULTPRINTER _("Default printer")
 
 struct printdlg_t {
@@ -40,7 +41,7 @@ struct printdlg_t {
   GtkWidget *pagerange;
   GtkWidget *allpages;
   int num_pages;
-  void (*ok_cb)(void *,int,int,int);
+  void (*ok_cb)(void *,struct print_job *);
   void (*cancel_cb)(void *);
   void *data;
   
@@ -66,6 +67,21 @@ static void free_printer_list_item(gpointer data, gpointer bla)
   g_free(data);
 }
 
+void delete_print_job(struct print_job *pj)
+{
+  if (pj->tmpname) {
+#ifdef _WIN32
+    ShellExecute(NULL,"print",pj->tmpname,NULL,NULL,SW_SHOWNORMAL);
+    printf("printed\n");
+#endif
+    free(pj->tmpname);
+  }
+  if (pj->fd>=0)
+    close(pj->fd);
+  free(pj);
+}
+
+
 static void printdlg_ok(GtkWidget *w, gpointer data)
 {
   int fd=-1;
@@ -74,6 +90,7 @@ static void printdlg_ok(GtkWidget *w, gpointer data)
   char lptmp[256];
 #endif
   struct printdlg_t *pd = (struct printdlg_t *)data;
+  struct print_job *pj;
   int start_page;
   int end_page;
   char *tmp;
@@ -163,15 +180,17 @@ static void printdlg_ok(GtkWidget *w, gpointer data)
 #endif
   }
   if (fd>0) {
-    pd->ok_cb(pd->data, start_page, end_page, fd);
-    close(fd);
+    pj = g_new0(struct print_job,1);
+    pj->fd=fd;
+    pj->data=pd->data;
+    pj->start_page=start_page;
+    pj->end_page=end_page;
 #ifdef _WIN32
-    if (tmpfileused) {
-      ShellExecute(NULL,"print",lptmp,NULL,NULL,SW_SHOWNORMAL);
-      printf("printed\n");
-      /* unlink(lptmp); */
-    }
-#endif
+    if (tmpfileused)
+      pj->tmpname=strdup(lptmp);
+#endif    
+    pd->ok_cb(pd->data, pj);
+
     gtk_widget_destroy(pd->win);
     free(pd);
   }
@@ -189,7 +208,7 @@ static void close_printdlg(GtkWidget *w, gpointer data)
 }
 
 struct printdlg_t *create_printdlg(int numpages, void (*cancel_cb)(void *), 
-				   void (*ok_cb)(void *,int,int,int), void *data)
+				   void (*ok_cb)(void *,struct print_job *),void *data)
 {
   GtkWidget *but;
   GtkWidget *label;

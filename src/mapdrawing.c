@@ -53,6 +53,8 @@ int tile_cache_size=64;
 #define M_PI_2         1.57079632679489661923
 #endif
 
+#define MAX_HTTP_REQUESTS 8
+
 static int cache_count;
 static GList *cache_list;
 /* contains the urls which are actually downloaded to avoid
@@ -63,8 +65,12 @@ static GHashTable *http_hash;
    the hash to avoid rerequesting failed tiles again and
    again so that the tile server does not get overloaded */
 static GHashTable *tile_files_to_fetch;
+static GList *tile_fetch_queue;
+static GList *request_list;
+static int running_requests=0;
 static void free_image_cache(char *fname);
 extern GdkColor speedcolor[256];
+int tile_request_mode=1;
 struct http_fetch_buf {
   char *request;
   int fd;
@@ -90,6 +96,8 @@ struct cache_entry {
   int count;
   time_t mtime;
 };
+
+static void check_request_queue();
 /* compare the number of the image cache entry */
 static gint compare_cache(gconstpointer a, gconstpointer b)
 {
@@ -124,9 +132,32 @@ static void cleanup_http_buf(struct http_fetch_buf *hfb)
     if (closesocket(hfb->fd)) {
       perror("close: ");
     }
+    running_requests--;
   }
   g_free(hfb);
+  check_request_queue();
 }
+
+/* center the view to a place */
+void center_map(struct mapwin *mw,double longsec, double lattsec)
+{
+
+  double x,y;
+  geosec2point(&x,&y,(double)longsec,(double)lattsec);
+  x=x-mw->page_width/2;
+  y=y-mw->page_height/2;
+  x=floor(x);
+  y=floor(y);
+  if ((x != GTK_ADJUSTMENT(mw->hadj)->value) ||
+      (y != GTK_ADJUSTMENT(mw->vadj)->value)) {
+    GTK_ADJUSTMENT(mw->hadj)->value=x;
+    GTK_ADJUSTMENT(mw->vadj)->value=y;
+    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->hadj));
+    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->vadj));
+  }
+}
+
+
 
 GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata)
 {
@@ -249,12 +280,28 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l)
   }
 }
 
+static int mystrequal(gconstpointer a, gconstpointer b)
+{
+  return strcmp((char *)a,(char *)b);
+}
+
+static void tile_failed(const char *url, const char *filename,
+			gpointer data)
+{
+  GList *l=g_list_find_custom(tile_fetch_queue,url,mystrequal);
+  if (l) {
+    free(l->data);
+    tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);
+    g_list_free(l);
+  }
+}
 
 static void tile_fetched(const char *url, const char *filename,
 			 gpointer data)
 {
   char *nfname=g_strdup(filename);
   char *dot;
+  GList *l=g_list_find_custom(tile_fetch_queue,url,mystrequal);
   struct mapwin *mw=(struct mapwin *)data;
   dot=strrchr(nfname,'.');
   if (dot) {
@@ -262,13 +309,18 @@ static void tile_fetched(const char *url, const char *filename,
   }
   free_image_cache(nfname);
   g_free(nfname);
-  
-  gtk_widget_queue_draw_area(mw->map,0,0,
-			     mw->page_width,
-			     mw->page_height);
-  mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
-	      mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
-
+  if (mw) {
+    gtk_widget_queue_draw_area(mw->map,0,0,
+			       mw->page_width,
+			       mw->page_height);
+    mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+		mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
+  }
+  if (l) {
+    free(l->data);
+    tile_fetch_queue=g_list_remove_link(tile_fetch_queue,l);
+    g_list_free(l);
+  }
 }
 
 /* do http recv */
@@ -295,8 +347,12 @@ static gboolean do_http_recv(GIOChannel *source,
         }
 	g_free(nfname);
       }
-      hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
+      if (hfb->finish_cb)
+	hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
       hfb->outfd=-1;
+    } else {
+      if (hfb->fail_cb)
+	hfb->fail_cb(hfb->url,hfb->filename,hfb->data);
     }
     
     cleanup_http_buf(hfb);
@@ -442,7 +498,8 @@ static int tile_size_check(const char *filename, void *data,
   struct stat st;
   if (len==0)
     return 0;
-  stat(filename,&st);  
+  if (stat(filename,&st))
+    return 1;
   if (st.st_size> (len*3)) {
     return 0;
   }
@@ -450,12 +507,18 @@ static int tile_size_check(const char *filename, void *data,
 }
 
 
+int tile_requests_processed()
+{
+  return tile_fetch_queue==NULL;
+}
 /* initiate a http request for a tile */
 static void get_http_tile(struct mapwin *mw,
-			  const char *url, const char *filename)
+			  const char *url, const char *filename,
+			  int do_queue)
 {
   char *fullname=g_strdup_printf("%s.png",filename);
   char *fn2;
+  char *urldup;
   if (!tile_files_to_fetch)
     tile_files_to_fetch=g_hash_table_new(g_str_hash,g_str_equal);
   if (g_hash_table_lookup(tile_files_to_fetch,fullname)) {
@@ -468,31 +531,26 @@ static void get_http_tile(struct mapwin *mw,
     g_free(fullname);
     return;
   }
-  get_http_file(url,fullname,tile_fetched,NULL,tile_size_check,mw);
+  urldup=strdup(url);
+  tile_fetch_queue=g_list_append(tile_fetch_queue,urldup);
+  if (!get_http_file(url,fullname,tile_fetched,tile_failed,tile_size_check,mw)) {
+    if (do_queue) {
+      tile_fetch_queue=g_list_remove(tile_fetch_queue,urldup);
+    }
+  }
   g_free(fullname);
 }
 
-/* initiate a http request */
-void get_http_file(const char *url,const char *filename,
-			  void (*finish_cb)(const char *,const char*,void *),
-		   void (*fail_cb)(const char *,const char *,void *),
-                   int (*size_check)(const char *, void *, int),void *data)
+
+static void start_http_request(struct http_fetch_buf *hfb)
 {
   int i;
-  struct http_fetch_buf *hfb;
   char hostname[512];
   const char *hostn;
   const char *slash;
   int sock;
   int port;
-  if (!http_hash) {
-    http_hash = g_hash_table_new(g_str_hash,g_str_equal);
-  }
-  if (g_hash_table_lookup(http_hash,url)) {
-    return;
-  }
-
-  hostn=url+sizeof("http://")-1;
+  hostn=hfb->url+sizeof("http://")-1;
   for(i=0;(i<511)&&(hostn[i]!=':')&&(hostn[i]!='/');i++)
     hostname[i]=hostn[i];
   hostname[i]=0;
@@ -507,18 +565,60 @@ void get_http_file(const char *url,const char *filename,
   }
   sock=my_connectto(hostname,port);
   if (sock<0) {
-    if (fail_cb)
-      fail_cb(url,filename,data);
+    if (hfb->fail_cb)
+      hfb->fail_cb(hfb->url,hfb->filename,hfb->data);
+    cleanup_http_buf(hfb);
     return;
   }
-  hfb=g_new0(struct http_fetch_buf,1);
-  hfb->outfd=-1;
+  running_requests++;
+  hfb->fd=sock;
   hfb->request=g_strdup_printf("%s %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s %s\r\n\r\n",
 			       "GET",slash,hostname,PACKAGE,VERSION);
+#ifdef _WIN32
+  hfb->ioc=g_io_channel_win32_new_stream_socket(hfb->fd);
+#else
+  hfb->ioc=g_io_channel_unix_new(hfb->fd);
+#endif
+  g_io_add_watch(hfb->ioc,
+		 G_IO_OUT|G_IO_HUP,
+		 do_http_send,hfb);
+}
+
+static void check_request_queue()
+{
+  while ((running_requests < MAX_HTTP_REQUESTS)&&(request_list)) {
+    struct http_fetch_buf *hfb=(struct http_fetch_buf *)
+      g_list_first(request_list)->data;
+    request_list=g_list_remove_link(request_list,g_list_first(request_list));
+    start_http_request(hfb);
+  }
+}
+
+
+/* initiate a http request */
+int get_http_file(const char *url,const char *filename,
+		  void (*finish_cb)(const char *,const char*,void *),
+		  void (*fail_cb)(const char *,const char *,void *),
+		  int (*size_check)(const char *, void *, int),void *data)
+{
+  struct http_fetch_buf *hfb;
+  
+  if (!http_hash) {
+    http_hash = g_hash_table_new(g_str_hash,g_str_equal);
+  }
+  if (g_hash_table_lookup(http_hash,url)) {
+    return 0;
+  }
+
+ 
+  hfb=g_new0(struct http_fetch_buf,1);
+  hfb->outfd=-1;
+
   hfb->url=g_strdup(url);
-  hfb->fd=sock;
+  hfb->fd=-1;
   hfb->finish_cb=finish_cb;
   hfb->fail_cb=fail_cb;
+  hfb->size_check=size_check;
   hfb->data=data;
   if (filename) {
     hfb->filename=g_strdup(filename);
@@ -528,15 +628,9 @@ void get_http_file(const char *url,const char *filename,
     hfb->use_tempname=1;
   }
   g_hash_table_insert(http_hash,hfb->url,hfb);
-#ifdef _WIN32
-  hfb->ioc=g_io_channel_win32_new_stream_socket(hfb->fd);
-#else
-  hfb->ioc=g_io_channel_unix_new(hfb->fd);
-#endif
-  g_io_add_watch(hfb->ioc,
-		 G_IO_OUT|G_IO_HUP,
-		 do_http_send,hfb);
-  
+  request_list=g_list_append(request_list,hfb);
+  check_request_queue();
+  return 1;
 }
 
 
@@ -749,7 +843,7 @@ static struct pixmap_info *load_image_mtime(char *name,time_t *mtime  /*GdkWindo
 #else
       free_pinfo(ce->p);
 #endif
-      printf("entferne %s\n",ce->name);
+      /* printf("entferne %s\n",ce->name); */
       g_free(ce->name);
       g_free(ce);
       rem=g_list_first(cache_list);
@@ -995,25 +1089,12 @@ int mapwin_draw(struct mapwin *mw,
 	      tcount++;
 	    }
 	    if (map->url) {
-	      if (((mw->request_mode>1)&&(now-mtime>mw->request_mode))||
-		  ((mw->request_mode==1)&&(!src)&&(!mtime))) {
+	      if (((tile_request_mode>1)&&(now-mtime>tile_request_mode))||
+		  ((tile_request_mode==1)&&(!src)&&(!mtime))) {
 		char url[512];
-#if 0
-		char cmd[2048];
-#endif
 		if (get_mapfilename(url,sizeof(url),
 				    map, map->url, x_page, y_page)) {
-		  get_http_tile(mw,url,filename);
-#if 0
-		  /* HACK */
-		  snprintf(cmd,sizeof(cmd),"mkdir -p $(dirname %s) || true ; [ ! -f %s.lck ] && ( touch %s.lck ; wget '%s' -O %s.png ; rm %s.lck ) & ",filename,filename,filename,url,filename,filename);
-		  system(cmd); 
-#ifdef _WIN32
-		  Sleep(200);
-#else
-		  usleep(200000);
-#endif
-#endif
+		  get_http_tile(mw,url,filename,0);
 		}
 	      }
 	    }
@@ -1140,6 +1221,8 @@ static void draw2pinfo_real(struct pixmap_info *pinfo,struct t_map *map,
       while(dest_x<pinfo->width)
 	{
 	  char filename[512];
+	  time_t mtime;
+	  time_t now=time(NULL);
 	  int x_page=src_x/map->tilewidth;
 	  int xoffset=src_x%map->tilewidth;
 	  if (xoffset<0) {
@@ -1148,58 +1231,71 @@ static void draw2pinfo_real(struct pixmap_info *pinfo,struct t_map *map,
 	    xoffset+=map->tilewidth;
 	    
 	  }
+	  mtime=0;
 	  snprintf(filename,sizeof(filename),
 		   "karte%03d/%03d",y_page,x_page);
 	  if (get_mapfilename(filename,sizeof(filename),
-			      map,map->filepattern,x_page,y_page)&&
-	      ((src=load_image(filename)))) {
-	    int i,j;
-	    unsigned char  color_conv[256];
-	    if (pinfo->row_len==0) {
-	      init_pinfo_bitdata(pinfo,src);
-	    }
-	    for(i=0;(pinfo->bit_depth<=8)&&(i<src->num_palette);i++) {
-	      int found=0;
-	      for(j=0;j<pinfo->num_palette;j++) {
-		if (src->gdk_palette[i]==pinfo->gdk_palette[j]) {
-		  color_conv[i]=j;
-		  found=1;
-		  break;
+			      map,map->filepattern,x_page,y_page)) {
+
+	    if ((src=load_image_mtime(filename,&mtime))) {
+	      int i,j;
+	      unsigned char  color_conv[256];
+	      if (pinfo->row_len==0) {
+		init_pinfo_bitdata(pinfo,src);
+	      }
+	      for(i=0;(pinfo->bit_depth<=8)&&(i<src->num_palette);i++) {
+		int found=0;
+		for(j=0;j<pinfo->num_palette;j++) {
+		  if (src->gdk_palette[i]==pinfo->gdk_palette[j]) {
+		    color_conv[i]=j;
+		    found=1;
+		    break;
+		  }
+		}
+		if (!found) {
+		  if (pinfo->num_palette<256) {
+		    color_conv[i]=pinfo->num_palette;
+		    pinfo->gdk_palette[pinfo->num_palette]=src->gdk_palette[i];
+		    pinfo->num_palette++;
+		  } else {
+		    break;
+		  }
 		}
 	      }
-	      if (!found) {
-		if (pinfo->num_palette<256) {
-		  color_conv[i]=pinfo->num_palette;
-		  pinfo->gdk_palette[pinfo->num_palette]=src->gdk_palette[i];
-		  pinfo->num_palette++;
-		} else {
-		  break;
-		}
+	      if (((i==0)||(i!=src->num_palette))&&(pinfo->bit_depth<=8)) {
+		free(pinfo->row_pointers[0]);
+		init_pinfo_bitdata_parm(pinfo,24,PNG_COLOR_TYPE_RGB);
+		pinfo->num_palette=0;
+		draw2pinfo_real(pinfo,map,sx,sy,dx,dy,width,height);
+		return;
 	      }
-	    }
-	    if (((i==0)||(i!=src->num_palette))&&(pinfo->bit_depth<=8)) {
-	      free(pinfo->row_pointers[0]);
-	      init_pinfo_bitdata_parm(pinfo,24,PNG_COLOR_TYPE_RGB);
-	      pinfo->num_palette=0;
-	      draw2pinfo_real(pinfo,map,sx,sy,dx,dy,width,height);
-	      return;
-	    }
-	    for(;i<256;i++)
-	      color_conv[i]=0;
-	    blt_pinfo(src,pinfo,color_conv,xoffset,yoffset,dest_x,dest_y,
-		      MIN(width+dx-dest_x,map->tilewidth-xoffset),
-		      MIN(height+dy-dest_y,
-			  map->tileheight-yoffset));
-	  } else {
-	    if (map->next) {
-	      draw2pinfo_real(pinfo,map->next,src_x-map->xoffset,
-			      src_y-map->yoffset,dest_x,dest_y,
-			      MIN(width+dx-dest_x,map->tilewidth-xoffset),
-			      MIN(height+dy-dest_y,
-				  map->tileheight-yoffset));
-	      
+	      for(;i<256;i++)
+		color_conv[i]=0;
+	      blt_pinfo(src,pinfo,color_conv,xoffset,yoffset,dest_x,dest_y,
+			MIN(width+dx-dest_x,map->tilewidth-xoffset),
+			MIN(height+dy-dest_y,
+			    map->tileheight-yoffset));
 	    } else {
-	      /*  clear */
+	      if (map->next) {
+		draw2pinfo_real(pinfo,map->next,src_x-map->xoffset,
+				src_y-map->yoffset,dest_x,dest_y,
+				MIN(width+dx-dest_x,map->tilewidth-xoffset),
+				MIN(height+dy-dest_y,
+				    map->tileheight-yoffset));
+		
+	      } else {
+		/*  clear */
+	      }
+	    }
+	    if (map->url) {
+	      if (((tile_request_mode>1)&&(now-mtime>tile_request_mode))||
+                  ((tile_request_mode==1)&&(!src)&&(!mtime))) {
+                char url[512];
+		if (get_mapfilename(url,sizeof(url),
+                                    map, map->url, x_page, y_page)) {
+                  get_http_tile(NULL,url,filename,1);
+		}
+	      }
 	    }
 	  }	
 	  src_x=src_x+map->tilewidth-xoffset;

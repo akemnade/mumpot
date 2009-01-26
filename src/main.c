@@ -264,32 +264,13 @@ char * lese_zkette(char **s)
 
 
 
-/* center the view to a place */
-void center_ort_s(struct mapwin *mw,double longg, double latt)
-{
-
-  double x,y;
-  geosec2point(&x,&y,(double)longg,(double)latt);
-  x=x-mw->page_width/2;
-  y=y-mw->page_height/2;
-  x=floor(x);
-  y=floor(y);
-  if ((x != GTK_ADJUSTMENT(mw->hadj)->value) ||
-      (y != GTK_ADJUSTMENT(mw->vadj)->value)) {
-    GTK_ADJUSTMENT(mw->hadj)->value=x;
-    GTK_ADJUSTMENT(mw->vadj)->value=y;
-    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->hadj));
-    gtk_adjustment_value_changed(GTK_ADJUSTMENT(mw->vadj));
-  }
-}
-
 void center_ort(struct mapwin *mw,char *name)
 {
   
   struct t_ort *ort=g_hash_table_lookup(orts_hash,name);
   if (!ort)
     return;
-  center_ort_s(mw,(double)ort->laenge,(double)ort->breite);
+  center_map(mw,(double)ort->laenge,(double)ort->breite);
 }
 
 
@@ -1211,7 +1192,7 @@ void ort_select(GtkCList *clist,
   struct mapwin *mw=user_data;
   struct t_ort *ort=gtk_clist_get_row_data(clist,row);
   if (ort)
-    center_ort_s(mw,ort->laenge,ort->breite);
+    center_map(mw,ort->laenge,ort->breite);
 }
 
 /* prepare to mark a rectangle for printing */
@@ -1259,16 +1240,20 @@ static void mark_del_one(gpointer callback_data,
 
 
 /* print the marked rectangles */
-static void mark_print_cb(int fd, struct t_mark_rect *rc,
-			  struct mapwin *mw)
+static int mark_print_page(int fd, struct t_mark_rect *rc,
+			   struct mapwin *mw,int start_page,int pnum)
 {
-  char tmp_ps_tpl[80];
   char cmd_tpl[200];
+  char buf[512];
   int x,y,w,h;
   double dim;
   get_mark_xywh(rc,&x,&y,&w,&h,&dim);
   struct pixmap_info *pinfo=get_map_rectangle(x,y,w,h);
-
+  if (!tile_requests_processed()) {
+    free_pinfo(pinfo);
+    return 0;
+  }
+    
   dim=dim*25.4;
 
   /*  strcpy(tmp_tpl,"/tmp/mapprint.XXXXXX");
@@ -1276,6 +1261,8 @@ static void mark_print_cb(int fd, struct t_mark_rect *rc,
   /*  save_pinfo(tmp_tpl,pinfo); */
 
   setlocale(LC_NUMERIC,"C");
+  snprintf(buf,sizeof(buf),"%%%%Page: %d %d\n",start_page,start_page+pnum);
+  write(fd,buf,strlen(buf));
   snprintf(cmd_tpl,sizeof(cmd_tpl),
            "gsave 50 50 translate 72 72 scale 1 %f div dup scale 0 %lu %s\n",
 	   dim,pinfo->height,rc->width_gt_height?"pop pop 90 rotate":"translate");
@@ -1294,36 +1281,53 @@ static void mark_print_cb(int fd, struct t_mark_rect *rc,
     char *t="grestore showpage\n";
     write(fd,t,strlen(t));
   }
-
-  /*close(fd);*/
   free_pinfo(pinfo);
-  snprintf(cmd_tpl,sizeof(cmd_tpl),"lpr '%s'",tmp_ps_tpl);
-  // system(cmd_tpl);
-  //unlink(tmp_ps_tpl);
-
+  return 1;
 }
 
 static void print_dlg_cancel(void *data)
 {
 }
 
-static void print_dlg_ok(void *data, int start_page, int end_page, int fd)
+static gboolean print_timer_cb(void *data)
+{
+  char buf[512];
+  struct print_job *pj=(struct print_job *)data;
+  int fd=pj->fd;
+  while (pj->page_data) {
+    if (!tile_requests_processed()) {
+      return TRUE;
+    }
+    if (mark_print_page(fd,(struct t_mark_rect *)g_list_first(pj->page_data)->data,
+			(struct mapwin *)pj->data,pj->start_page,pj->page)) {
+      pj->page++;
+      free(g_list_first(pj->page_data)->data);
+      pj->page_data=g_list_remove(pj->page_data,
+				       g_list_first(pj->page_data)->data);
+    }
+  } 
+  snprintf(buf,sizeof(buf),"%%EOF\n");
+  write(fd,buf,strlen(buf));
+  delete_print_job(pj);
+
+  return FALSE;
+}
+
+static void print_dlg_ok(void *data, struct print_job *pj)
 {
   struct mapwin *mw=(struct mapwin *)data;
   int i;
   GList *l;
   char buf[512];
-  snprintf(buf,sizeof(buf),"%%!PS-Adobe-2.0\n%%%%Pages %d\n%%%%PageOrder: Ascend\n%%%%EndComments\n",end_page-start_page+1);
-  write(fd,buf,strlen(buf));
-  for(i=1,l=g_list_first(mw->rect_list);l&&(i<start_page);i++,l=g_list_next(l));
-  for(;l&&(i<=end_page);i++,l=g_list_next(l)) {
-    snprintf(buf,sizeof(buf),"%%%%Page: %d %d\n",i,i-start_page+1);
-    write(fd,buf,strlen(buf));
-    mark_print_cb(fd,(struct t_mark_rect *)l->data,mw);
-    
+  snprintf(buf,sizeof(buf),"%%!PS-Adobe-2.0\n%%%%Pages %d\n%%%%PageOrder: Ascend\n%%%%EndComments\n",pj->end_page-pj->start_page+1);
+  write(pj->fd,buf,strlen(buf));
+  for(i=1,l=g_list_first(mw->rect_list);l&&(i<pj->start_page);i++,l=g_list_next(l));
+  for(l=g_list_first(mw->rect_list);l&&(i<=pj->end_page);l=g_list_next(l)) {
+    struct t_mark_rect *mr=g_new0(struct t_mark_rect,1);
+    *mr=*(struct t_mark_rect *)l->data;
+    pj->page_data=g_list_append(pj->page_data,mr);
   }
-  snprintf(buf,sizeof(buf),"%%EOF\n");
-  write(fd,buf,strlen(buf));
+  g_timeout_add(1000,print_timer_cb,pj);
   
 }
 
@@ -1393,6 +1397,8 @@ static void gps_filesel(GtkWidget *w, gpointer data)
   load_gps_line(f,mw->mark_line_list);
   mouse_state=IN_WAY;
   mw->line_drawing=1;
+  change_sidebar_cb(mw,0,NULL);
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->linemode_but),1);
 }
 
 static void osm_filesel(GtkWidget *w, gpointer data)
@@ -1521,7 +1527,7 @@ static gboolean set_gps_position(gpointer data)
   struct mapwin *mw = (struct mapwin *)data;
   struct nmea_pointinfo *nmea=&mw->last_nmea;
   if (mw->follow_gps) {
-    center_ort_s(mw,nmea->longsec,nmea->lattsec);
+    center_map(mw,nmea->longsec,nmea->lattsec);
   }
   snprintf(buf,sizeof(buf),"%c %.1f km/h",nmea->state,nmea->speed*1.852);
   gtk_label_set_text(GTK_LABEL(mw->gps_label),buf);
@@ -1692,7 +1698,7 @@ static void zoom_in(struct mapwin *mw)
   if (mw->osm_main_file)
     recalc_node_coordinates(mw,mw->osm_main_file);
   geosec2point(&x,&y,lon,lat);
-  center_ort_s(mw,lon,lat);
+  center_map(mw,lon,lat);
 }
 
 static void zoom_in_cb(gpointer callback_data,
@@ -1739,7 +1745,7 @@ static void zoom_out(struct mapwin *mw)
   if (mw->osm_main_file)
     recalc_node_coordinates(mw,mw->osm_main_file);
   geosec2point(&x,&y,lon,lat);
-  center_ort_s(mw,lon,lat);
+  center_map(mw,lon,lat);
 
 }
 
@@ -1762,8 +1768,7 @@ static void switch_requesttile(gpointer callback_data,
 			       guint callback_action,
 			       GtkWidget *w)
 {
-  struct mapwin *mw=(struct mapwin *)callback_data;
-  mw->request_mode=callback_action;
+  tile_request_mode=callback_action;
 }
 
 static void display_about_box(gpointer callback_data,
@@ -2008,7 +2013,6 @@ struct mapwin * create_mapwin()
   w->mark_str=NULL;
   w->has_path=0;
   w->follow_gps=1;
-  w->request_mode=1;
   w->map_store=NULL;
   w->line_drawing=0;
   w->mouse_move_str=NULL;
@@ -2320,6 +2324,9 @@ int main(int argc, char **argv)
     globalmap.placefilelist=lcopy;
     
   }
+  if (!globalmap.placefilelist) {
+    read_places(MUMPOT_DATADIR "/places.txt");
+  }
   gdk_rgb_init();
   /* gdk_imlib_init_params(&imlibinit);
      gtk_widget_push_visual(gdk_imlib_get_visual());
@@ -2384,7 +2391,7 @@ int main(int argc, char **argv)
   if (globalmap.startplace)
     center_ort(mw,globalmap.startplace);
   else
-    center_ort_s(mw,globalmap.startlong,globalmap.startlatt);
+    center_map(mw,globalmap.startlong,globalmap.startlatt);
   gtk_main();
   return 0;
 }

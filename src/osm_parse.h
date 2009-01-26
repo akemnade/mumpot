@@ -53,6 +53,10 @@ struct osm_file {
   xmlNodePtr headnode;
   GList *ways;
   GList *nodes;
+  int *deleted_ways;
+  int *deleted_nodes;
+  int deleted_way_count;
+  int deleted_node_count;
   int changed;
 };
 

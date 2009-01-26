@@ -16,8 +16,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include "mapconfig_data.h"
 #include "osm_tagpresets_data.h"
 #include "osm_tagpresets_gui.h"
+
+static GHashTable *pixmap_ht;
+
+struct pixmap_ht_entry {
+  GdkBitmap *bm;
+  GdkPixmap *pm;
+};
+
 static void preset_clicked(GtkWidget *w, gpointer user_data)
 {
   struct osm_preset_menu_sect *sect=
@@ -68,10 +77,58 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 	y=pi->y;
     }
     win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_widget_realize(win);
     table=gtk_table_new(y,x,TRUE);
     for(l=g_list_first(sect->items);l;l=g_list_next(l)) {
       struct osm_presetitem *pi = (struct osm_presetitem *)l->data;
-      GtkWidget *but=gtk_button_new_with_label(pi->name);
+      GtkWidget *but=NULL;
+      if (pi->img) {
+	char fbuf[512];
+	GdkBitmap *bm=NULL;
+	GdkPixmap *gdkpm=NULL;;
+	GtkWidget *gtkpm;
+	struct pixmap_ht_entry *hte;
+	if (!pixmap_ht) {
+	  pixmap_ht=g_hash_table_new(g_str_hash,g_str_equal);
+	}
+	hte=(struct pixmap_ht_entry *)
+	  g_hash_table_lookup(pixmap_ht,pi->img);
+	if (hte) {
+	  gdkpm=hte->pm;
+	  bm=hte->bm;
+	}
+	if (!gdkpm)
+	  gdkpm=gdk_pixmap_create_from_xpm(win->window,&bm,NULL,pi->img);
+	if (!gdkpm) {
+	  snprintf(fbuf,sizeof(fbuf),MUMPOT_DATADIR "/pixmaps/%s",pi->img);
+	  gdkpm=gdk_pixmap_create_from_xpm(win->window,&bm,NULL,fbuf);
+	}
+	if (!gdkpm) {
+	  char *h;
+	  snprintf(fbuf,sizeof(fbuf),"~/.mumpot/pixmaps/%s",pi->img);
+	  h=expand_home(fbuf);
+	  gdkpm=gdk_pixmap_create_from_xpm(win->window,&bm,NULL,h);
+	  if (h!=fbuf)
+	    free(h);
+	}
+	if (gdkpm) {
+	  if (!hte) {
+	    hte=g_new0(struct pixmap_ht_entry,1);
+	    hte->pm=gdkpm;
+	    hte->bm=bm;
+	    g_hash_table_insert(pixmap_ht,pi->img,
+				hte);
+	  }
+	  gtkpm=gtk_pixmap_new(gdkpm,bm);
+	  but=gtk_button_new();
+	  gtk_container_add(GTK_CONTAINER(but),gtkpm);
+	  gtk_widget_show(gtkpm);
+	}
+	
+      }
+      if (but == NULL)
+	but=gtk_button_new_with_label(pi->name);
+      
       gtk_object_set_data(GTK_OBJECT(but),"sect",pi->menu);
       gtk_object_set_data(GTK_OBJECT(but),"list",data);
       gtk_object_set_data(GTK_OBJECT(but),"list_data",user_data);

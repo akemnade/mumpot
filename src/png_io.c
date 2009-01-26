@@ -27,8 +27,11 @@ static struct pixmap_info *load_jpg_file(const char *filename);
 
 void free_pinfo(struct pixmap_info *p_info)
 {
-  free(p_info->row_pointers[0]);
-  free(p_info->row_pointers);
+  if (p_info->row_pointers) {
+    if (p_info->row_len)
+      free(p_info->row_pointers[0]);
+    free(p_info->row_pointers);
+  }
   free(p_info);
 }
 

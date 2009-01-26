@@ -17,6 +17,7 @@
 struct connection_dialog;
 struct osm_file;
 struct osm_info;
+extern int tile_request_mode;
 #define MAX_LINE_LIST 5
 
 struct sidebar_mode {
@@ -68,7 +69,6 @@ struct mapwin {
   int have_gpspos;
   int mouse_x, mouse_y;
   int draw_crosshair;
-  int request_mode;
   struct osm_info *osm_inf;
   struct osm_file *osm_main_file;
   struct nmea_pointinfo last_nmea;
@@ -88,11 +88,11 @@ struct pixmap_info * get_map_rectangle(int x, int y, int w, int h);
 void draw_pinfo(GdkWindow *w, GdkGC *gc,struct pixmap_info *p_info,
 		int srcx,int srcy, int destx, int desty,
 		int width, int height);
-void get_http_file(const char *url,const char *filename,
-		   void (*finish_cb)(const char *,const char*,void *),
-		   void (*fail_cb)(const char *,const char*,void *),
-                   int (*size_check)(const char *,void *,int),
-		   void *data);
+int get_http_file(const char *url,const char *filename,
+		  void (*finish_cb)(const char *,const char*,void *),
+		  void (*fail_cb)(const char *,const char*,void *),
+		  int (*size_check)(const char *,void *,int),
+		  void *data);
 GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata);
 GtkWidget *make_pixmap_toggle_button(struct mapwin *mw,char **xpmdata);
 void calc_mapoffsets();
@@ -102,4 +102,7 @@ void load_gps_line(const char *fname, GList **mll);
 void draw_marks_to_ps(GList *mark_line_list, int mx, int my,
 		      int w, int h, int fd);
 void free_line_list(GList *l);
+int tile_requests_processed();
+/* center the view to a place */
+void center_map(struct mapwin *mw,double longsec, double lattsec);
 #endif

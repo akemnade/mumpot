@@ -45,7 +45,16 @@
 
 GdkColor speedcolor[256];
 
+static GMainLoop *mainloop;
 
+static gboolean poll_requests(gpointer data)
+{
+  if (tile_requests_processed()) {
+    g_main_quit(mainloop);
+    return FALSE;
+  }
+  return TRUE;
+}
 
 int main(int argc, char **argv)
 {
@@ -58,6 +67,7 @@ int main(int argc, char **argv)
   int o_found=0;
   int output_ps=0;
   int output_arrow=0;
+  int zoomlevel=-1;
   double latt, longg;
   struct pixmap_info *pinfo;
   int o;
@@ -72,14 +82,15 @@ int main(int argc, char **argv)
     } */
   if (argc == 2) {
     if (!strcmp(argv[1],"--help")) {
-      printf("Usage: %s -x xoffset -y yoffset -w width -h height [-c configfile] [-p] [-n nmeafile] [-z] filename coords\n\n"
+      printf("Usage: %s -x xoffset -y yoffset -w width -h height [-c configfile] [-p] [-n nmeafile] [-z zoomlevel] [.a] filename coords\n\n"
       "Extracts one rectangle from the tile cache.\n\n"
       "coords are the geographical coordinates in the form like \"49°22'33''N 7°11'44''E\" \n"
       "-x/-y/-w/-h specify the area around the coords to extract in pixels\n"
       "-p turns on eps output instead of png output\n"
       "-c gives the name of a configfile for mumpot (like /usr/bin/mumpot-tah)\n"
       "-n gives an nmea track which is drawn on top of the map in eps mode\n"
-      "-z draws an arrow to the place specified by coords\n",argv[0]);
+      "-z zoomlevel sets the zoomlevel\n"
+      "-a draws an arrow to the place specified by coords\n",argv[0]);
        return 0;
     } else if (!strcmp(argv[1],"--version")) {
       printf("%s (%s %s)\n""Copyright (C) 2008 Andreas Kemnade\n"
@@ -89,7 +100,7 @@ int main(int argc, char **argv)
       return 0;
     }
   }
-  while(0<(o=getopt(argc,argv,"zx:w:y:h:c:pn:"))) {
+  while(0<(o=getopt(argc,argv,"az:x:w:y:h:c:pn:"))) {
     switch(o) {
     case 'x': xoffset=atoi(optarg); o_found |= OPT_XOFF; break;
     case 'y': yoffset=atoi(optarg); o_found |= OPT_YOFF; break;
@@ -98,7 +109,8 @@ int main(int argc, char **argv)
     case 'c': configfile=strdup(optarg); break;
     case 'p': output_ps=1; break;
     case 'n': nmea_file=strdup(optarg);  break;
-    case 'z': output_arrow=1;
+    case 'a': output_arrow=1; break;
+    case 'z': zoomlevel=atoi(optarg);
     }
     
   }
@@ -109,11 +121,23 @@ int main(int argc, char **argv)
   /* initialize map data */
   parse_mapconfig(configfile);
   calc_mapoffsets();
+  if (zoomlevel > 0) {
+    globalmap.zoomfactor=zoomlevel;
+    calc_mapoffsets();
+  }
   parse_coords(argv[optind+1],&latt,&longg);
   /* convert coordinates to x y */
   geosec2point(&x, &y, longg, latt);
   /* read the map and copy the rectangle */
   pinfo=get_map_rectangle((int)x+xoffset,(int)y+yoffset,width, height);
+  if (!tile_requests_processed()) {
+    g_timeout_add(1000,poll_requests,NULL);
+    mainloop=g_main_new(TRUE);
+    g_main_run(mainloop);
+    if (pinfo)
+      free_pinfo(pinfo);
+    pinfo=get_map_rectangle((int)x+xoffset,(int)y+yoffset,width, height);
+  }
   if (pinfo) {
     char pshead[512];
     if (output_ps) {
@@ -150,5 +174,5 @@ int main(int argc, char **argv)
       save_pinfo(argv[optind],pinfo);
     }
   }
-  return 1;
+  return 0;
 }
