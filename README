@@ -71,6 +71,9 @@ a new way If a way is nearby, the new nodes
 will be merged into it. The third button deletes the selected
 object. If it is a way, the nodes will be deleted, too,
 if they do not belong to another way.
+If you want to edit areas or OSM ways which are not roads,
+then you have to select the menu item OSM->Display non-street-ways.
+
 You can save the OSM data and
 load it with JOSM and have a final look on it and upload
 it there. Also the bulk uploader script used for the 
