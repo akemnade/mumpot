@@ -401,7 +401,6 @@ void draw_marks_cb(gpointer data, gpointer user_data)
 }
 void draw_marks(struct mapwin *mw)
 {
-  int i;
   gdk_gc_set_foreground(mygc,&mark_red);
   gdk_gc_set_line_attributes(mygc,5,
 			     GDK_LINE_SOLID,
