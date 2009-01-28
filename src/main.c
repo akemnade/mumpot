@@ -791,6 +791,9 @@ static void handle_start_way_click(struct mapwin *mw, GdkEventButton *event, int
     reset_way_info(); /* free the previous route info */
     mw->has_path=0;
     mouse_state=IN_WAY;
+    if (event->state&GDK_SHIFT_MASK) { /* shift pressed ->route click */
+      handle_route_click(mw,x,y);
+    }
   }
   if (event->button==3) {
     remove_last_route_point(mw);
