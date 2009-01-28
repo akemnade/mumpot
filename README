@@ -9,6 +9,10 @@ mumpot-cyclemap
 
 These files contain configuration files, so that
 mumpot loads tiles@home resp. mapnik tiles. 
+If you start mumpot directly,
+it will search in ~/.mumpot/map.conf
+If that file does not exists, a dialog to let you choose
+between the three maps.
 
 If you want to use the place search box, generate the corresponding
 text file first:
@@ -54,9 +58,45 @@ To immediately start a new way of the same type
 (because e.g. the street name changes),
 press the restart way button (3rd button in row).
 The fourth button enables merging the ends
-with existing ways. You can save the OSM data and
+with existing ways. 
+To insert POIs, you click in live edit mode to the
+corresponding place on the map. A dialog will pop up in
+which you can choose the POI type.
+The editing mode gives three buttons on the right side.
+The first one is for selecting and moving objects.
+If you click on a OSM node or way, it will be selected.
+If you hold down the button for more than 1 second on a node,
+you can move the node. The second button draws
+a new way If a way is nearby, the new nodes
+will be merged into it. The third button deletes the selected
+object. If it is a way, the nodes will be deleted, too,
+if they do not belong to another way.
+If you want to edit areas or OSM ways which are not roads,
+then you have to select the menu item OSM->Display non-street-ways.
+
+You can save the OSM data and
 load it with JOSM and have a final look on it and upload
-it there.
+it there. Also the bulk uploader script used for the 
+big data imports into OSM works.
+
+POI file (tagpresets)
+--------
+There is one tagpreset file included, but if you want to
+change or extend it, here is the description of the format.
+
+The file can contain 
+nodepreset { <menudef> }
+waypreset { <menudef> }
+
+<menudef> can contain the following lines
+settag "<name>" "<value>"
+for setting tags and/or
+pos <x> <y> ["<name>"] [gfx "<xpmfile>"] { <menudef> }
+
+<x> and <y> start counting at zero and can be used to group the entries
+in one menu. <name> can also be enclosed with _("") to mark
+it for translation.
+
 
 Printing
 ----------

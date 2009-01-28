@@ -402,7 +402,6 @@ void draw_marks_cb(gpointer data, gpointer user_data)
 }
 void draw_marks(struct mapwin *mw)
 {
-  int i;
   gdk_gc_set_foreground(mygc,&mark_red);
   gdk_gc_set_line_attributes(mygc,5,
 			     GDK_LINE_SOLID,
@@ -793,6 +792,9 @@ static void handle_start_way_click(struct mapwin *mw, GdkEventButton *event, int
     reset_way_info(); /* free the previous route info */
     mw->has_path=0;
     mouse_state=IN_WAY;
+    if (event->state&GDK_SHIFT_MASK) { /* shift pressed ->route click */
+      handle_route_click(mw,x,y);
+    }
   }
   if (event->button==3) {
     remove_last_route_point(mw);

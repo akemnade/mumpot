@@ -1,3 +1,21 @@
+Changes between 0.4 and 0.3.2:
+- inserting POIs 
+- configurable tag presets gui for ways and POIs
+- fso-gpsd compatibility
+- remove some debug consistency checks during routing
+  which greatly decreases runtime
+- A* instead of Dijkstra of start and goal of a route are known
+- do not overwrite old tiles with new zero-sized files
+  do not overwrite tile files if size is less than 1/3 of original
+- limit number of concurrently running downloads
+- trying to download every tile before printing
+- also the get_maprect tool downloads its data now
+- non-live editing mode: selecting objects, moving nodes,
+  deleting objects, adding new ways
+- optionally show non-street ways (areas, railways, ...)
+- simple map selection dialog if no map is found
+ 
+
 Changes between 0.3.2 and 0.3.1:
 - send r+ to gpsd if no NMEA data arrives
 - adding cyclemap wrapper
