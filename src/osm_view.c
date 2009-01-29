@@ -851,8 +851,8 @@ static void mysigh(int bla)
 {
  if ((sigmw->osm_main_file) && ( sigmw->osm_main_file->changed)) {
    save_osm_file("dump.osm",sigmw->osm_main_file);
- }
 exit(1);
+ }
 }
 
 static void myexitf()
