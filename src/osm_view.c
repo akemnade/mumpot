@@ -47,6 +47,9 @@
 #include "start_route.xpm"
 #include "end_route.xpm"
 #include "routestartgps.xpm"
+#include "delosmobj.xpm"
+#include "selosmobj.xpm"
+#include "newosmway.xpm"
 
 #define MENU_VIEW_OSM_DATA_N N_("/OSM/View OSM Layer")
 #define MENU_VIEW_OSM_DATA _(MENU_VIEW_OSM_DATA_N)
@@ -1667,16 +1670,16 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   gtk_widget_set_sensitive(mw->osm_inf->routeb.set_destination,FALSE);
   mw->osm_inf->meditbar=gtk_vbox_new(TRUE,0);
   gtk_box_pack_start(GTK_BOX(box),mw->osm_inf->meditbar,FALSE,FALSE,0);
-  mw->osm_inf->editb.selbut=gtk_toggle_button_new_with_label(" SEL ");
+  mw->osm_inf->editb.selbut=make_pixmap_toggle_button(mw,selosmobj);
   gtk_tooltips_set_tip(tt,mw->osm_inf->editb.selbut,
 		       _("select the object to edit"),NULL);
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.selbut,TRUE,TRUE,0);
-  mw->osm_inf->editb.addwaybut=gtk_toggle_button_new_with_label(" AW ");
+  mw->osm_inf->editb.addwaybut=make_pixmap_toggle_button(mw,newosmway);
   gtk_tooltips_set_tip(tt,mw->osm_inf->editb.addwaybut,
 		       _("add a new way"),NULL);
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.addwaybut,
 		     TRUE,TRUE,0);
-  mw->osm_inf->editb.delobjbut=gtk_button_new_with_label(" DEL ");
+  mw->osm_inf->editb.delobjbut=make_pixmap_button(mw,delosmobj);
   gtk_tooltips_set_tip(tt,mw->osm_inf->editb.delobjbut,
 		       _("delete the currently selected object"),NULL);
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.delobjbut,
