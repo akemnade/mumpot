@@ -97,7 +97,7 @@ GtkWidget *make_pixmap_button(struct mapwin *mw,char **xpmdata);
 GtkWidget *make_pixmap_toggle_button(struct mapwin *mw,char **xpmdata);
 void calc_mapoffsets();
 /* draw_route_lines */
-void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l);
+void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l,GdkColor *color256);
 void load_gps_line(const char *fname, GList **mll);
 void draw_marks_to_ps(GList *mark_line_list, int mx, int my,
 		      int w, int h, int fd);

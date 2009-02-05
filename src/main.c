@@ -88,7 +88,7 @@ static GdkColor mark_red;
 static GdkColor mark_white;
 static GdkColor crosshair_color;
 static GdkColor gps_color;
-GdkColor speedcolor[256];
+static GdkColor speedcolor[256];
 static char *clip_coord_buf;
 static char last_coord_buf[80];
 
@@ -416,7 +416,7 @@ void draw_marks(struct mapwin *mw)
     }
   }
   gdk_gc_set_foreground(mygc,&mark_red);
-  draw_line_list(mw,mygc,*mw->mark_line_list);
+  draw_line_list(mw,mygc,*mw->mark_line_list,speedcolor);
 }
 
 /* called on mouse move */
@@ -530,7 +530,7 @@ static gboolean map_move_cb(gpointer user_data)
 	  } else if (mw->osm_main_file) {
 	    osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x2,y2,&l);
 	  }
-	  draw_line_list(mw,mygc,l);
+	  draw_line_list(mw,mygc,l,NULL);
 	  free_line_list(l);
 	}
       }
@@ -1025,7 +1025,7 @@ expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
   for(i=0;i<MAX_LINE_LIST;i++) {
     if (mw->all_line_lists[i]==*(mw->mark_line_list))
       continue;
-    draw_line_list(mw,mygc,mw->all_line_lists[i]);
+    draw_line_list(mw,mygc,mw->all_line_lists[i],NULL);
   }  
   if (mw->osm_main_file)
     draw_osm(mw,mw->osm_main_file,mygc);
