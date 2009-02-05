@@ -67,8 +67,10 @@ The first one is for selecting and moving objects.
 If you click on a OSM node or way, it will be selected.
 If you hold down the button for more than 1 second on a node,
 you can move the node. The second button draws
-a new way If a way is nearby, the new nodes
-will be merged into it. The third button deletes the selected
+a new way. If a way is nearby, the new nodes
+will be merged into it. To stop adding new nodes
+to the new way, deselect the button (or select the first button).
+  The third button deletes the selected
 object. If it is a way, the nodes will be deleted, too,
 if they do not belong to another way.
 If you want to edit areas or OSM ways which are not roads,
