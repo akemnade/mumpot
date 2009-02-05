@@ -27,6 +27,7 @@ struct sidebar_mode {
 
 struct mapwin {
   int line_drawing;
+  int color_line;
   long long int page_width,page_height;
   long long int page_x,page_y;
   GList *rect_list;

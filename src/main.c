@@ -146,11 +146,13 @@ static void change_sidebar_cb(gpointer callback_data,
 #define PATH_FOLLOW_GPS_N N_("/View/Follow GPS")
 #define PATH_ZOOM_OUT_N N_("/View/Zoom out")
 #define PATH_ZOOM_IN_N N_("/View/Zoom in")
+#define PATH_DISP_COLOR_N N_("/View/Draw selected line colored")
 #define PATH_DISP_SEARCH _(PATH_DISP_SEARCH_N)
 #define PATH_DISP_CROSSHAIR  _(PATH_DISP_CROSSHAIR_N)
 #define PATH_FOLLOW_GPS _(PATH_FOLLOW_GPS_N)
 #define PATH_ZOOM_OUT _(PATH_ZOOM_OUT_N)
 #define PATH_ZOOM_IN _(PATH_ZOOM_IN_N)
+#define PATH_DISP_COLOR _(PATH_DISP_COLOR_N)
 
 enum mouse_state_t {
   START_WAY,
@@ -416,7 +418,7 @@ void draw_marks(struct mapwin *mw)
     }
   }
   gdk_gc_set_foreground(mygc,&mark_red);
-  draw_line_list(mw,mygc,*mw->mark_line_list,speedcolor);
+  draw_line_list(mw,mygc,*mw->mark_line_list,(mw->color_line)?speedcolor:NULL);
 }
 
 /* called on mouse move */
@@ -1863,6 +1865,14 @@ static void download_osm_data_cb(gpointer callback_data,
 		download_osm_failed_cb,NULL,mw);
 }
 
+static void switch_draw_all(gpointer callback_data,
+                            guint callback_action,
+                            GtkWidget *w)
+{
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  mw->color_line=GTK_CHECK_MENU_ITEM(w)->active;
+}
+
 static void change_sidebar_cb(gpointer callback_data,
 			      guint callback_action,
 			      GtkWidget *w)
@@ -1913,7 +1923,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/View/Select line layer/2"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),2,N_("/View/Select line layer/0")},
     {N_("/View/Select line layer/3"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),3,N_("/View/Select line layer/0")},
     {N_("/View/Select line layer/4 (live gps)"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),4,N_("/View/Select line layer/0")},
-    
+    {PATH_DISP_COLOR_N,NULL,GTK_SIGNAL_FUNC(switch_draw_all),0,"<CheckItem>"},
     {N_("/View/Request tiles/request missing"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),1,"<RadioItem>"},
     {N_("/View/Request tiles/request never"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),0,N_("/View/Request tiles/request missing")},
     {N_("/View/Request tiles/older than one day"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),86400,N_("/View/Request tiles/request missing")},

@@ -259,7 +259,7 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l, GdkColor *color256
           speedval=0;
         if (speedval >255)
           speedval=255;
-        printf("%d\n",speedval);
+        /*printf("%d\n",speedval); */
         gdk_gc_set_foreground(mygc,color256+speedval);
       } 
       gdk_draw_line(mw->map->window,mygc,x1,y1,x2,y2);
