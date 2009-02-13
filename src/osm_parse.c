@@ -527,6 +527,7 @@ void osm_merge_node(struct osm_file *osmf,
     xmlNodePtr cnode = way->head.xmlnode;
     cnode=way->head.xmlnode->children;
 #endif
+    way->head.modified=1;
     for(i=0;i<way->nr_nodes;i++) {
 #ifdef USE_DOM_PARSER
       char b[20];
