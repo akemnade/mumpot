@@ -1889,6 +1889,7 @@ GtkWidget *create_menu(struct mapwin *mw)
   static GtkItemFactoryEntry mainitems[]={
     {N_("/Project/Printing/mark page in scale 1:50000"),NULL,GTK_SIGNAL_FUNC(mark_for_print),50,NULL},
     {N_("/Project/Printing/mark page in scale 1:25000"),NULL,GTK_SIGNAL_FUNC(mark_for_print),25,NULL},
+    {N_("/Project/Printing/mark page in scale 1:10000"),NULL,GTK_SIGNAL_FUNC(mark_for_print),10,NULL},
     {N_("/Project/Printing/mark page in scale 1:100000"),NULL,GTK_SIGNAL_FUNC(mark_for_print),100,NULL},
     {N_("/Project/Printing/mark page in scale 1:200000"),NULL,GTK_SIGNAL_FUNC(mark_for_print),200,NULL},
     {N_("/Project/Printing/mark page in scale 1:1000000"),NULL,GTK_SIGNAL_FUNC(mark_for_print),1000,NULL},
