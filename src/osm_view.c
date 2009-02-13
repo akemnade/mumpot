@@ -116,6 +116,7 @@ struct osm_info {
     GtkWidget *selbut;
     GtkWidget *addwaybut;
     GtkWidget *delobjbut;
+    GtkWidget *joinbut;
   } editb;
   int clicktime;
   int moving_node;
@@ -1370,16 +1371,37 @@ static void get_way_dist(struct osm_way *way, int x, int y, int *md,
 }
 
 static struct osm_object * find_nearest_object(struct osm_file *osmf,
-					       int x, int y, int *nodeafter)
+					       int x, int y, struct osm_object *not_that,
+					       int *nodeafter)
 {
 
   GList *l;
   int md=10;
+  int md_old=10;
+  int nodeafter_old=0;
   struct osm_way *minw=NULL;
+  struct osm_way *minw2=NULL;
   struct osm_node *minn=NULL;
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
     struct osm_way *way=(struct osm_way*)l->data;
-    get_way_dist(way,x,y,&md,&minw,nodeafter);
+    if (not_that != &(way->head))
+      get_way_dist(way,x,y,&md,&minw,nodeafter);
+    if (minw2!=minw) {
+      int i;
+      if ((not_that)&&(not_that->type == NODE)) {
+	for(i=0;i<minw->nr_nodes;i++) {
+	  if (minw->nodes[i]==not_that->id) {
+	    minw=minw2;
+	    *nodeafter=nodeafter_old;
+	    md=md_old;
+	    break;
+	  }
+	}
+      }
+      minw2=minw;
+      md_old=md;
+      nodeafter_old=*nodeafter;
+    }
   }
   md=md+10*3/2;
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
@@ -1388,14 +1410,16 @@ static struct osm_object * find_nearest_object(struct osm_file *osmf,
     struct node_render_data *nrd = (struct node_render_data *) node->user_data;
     dist=abs(nrd->x-x);
     dist+=abs(nrd->y-y);
-    if (dist < md) {
+    if ((dist < md) && (not_that != &node->head)) {
       md=dist;
       minn=node;
     }
   }
-  if (minn)
+  if (minn) {
+    if (nodeafter)
+      *nodeafter=0;
     return &minn->head;
-  else
+  } else
     return &minw->head;
 }
 
@@ -1403,7 +1427,7 @@ static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
 {
   int nodeafter=0;
   mw->osm_inf->selected_object = find_nearest_object(mw->osm_main_file,
-						     x,y,&nodeafter);
+						     x,y,NULL,&nodeafter);
   
   if (mw->osm_inf->selected_object) {
     display_tags(mw->osm_inf,mw->osm_inf->selected_object);
@@ -1443,7 +1467,7 @@ static void handle_edit_addway_click(struct mapwin *mw,
   }
   newway=mw->osm_inf->way_to_edit;
   nearest_obj=find_nearest_object(mw->osm_main_file,
-				  x,y,&nodeafter);
+				  x,y,NULL,&nodeafter);
   if ((nearest_obj)&&(nearest_obj->type==NODE)) {
     if ((newway->nr_nodes)&&(nearest_obj->id==newway->nodes[newway->nr_nodes-1])) {
       return;
@@ -1597,6 +1621,40 @@ static void osmedit_selbut_cb(GtkWidget *w, gpointer data)
   }
 }
 
+static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
+{
+  struct mapwin *mw = (struct mapwin *)data;
+  struct osm_object *nearest_obj;
+  struct osm_node *node;
+  int nodeafter=0;
+  double x,y;
+  mw->osm_inf->way_to_edit=NULL;
+  if (mw->osm_inf->selected_object == NULL)
+    return;
+  if (mw->osm_inf->selected_object->type == WAY)
+    return;
+  node=(struct osm_node *)mw->osm_inf->selected_object;
+  geosec2point(&x,&y,node->lon*3600.0,node->lat*3600.0);
+  nearest_obj=find_nearest_object(mw->osm_main_file,
+				  x,y,mw->osm_inf->selected_object,
+				  &nodeafter);
+  if (nearest_obj == NULL)
+    return;
+  if (nodeafter) {
+    struct osm_way *mergeway=(struct osm_way *)nearest_obj;
+    struct osm_node *n1=get_osm_node(mergeway->nodes[nodeafter-1]);
+    struct osm_node *n2=get_osm_node(mergeway->nodes[nodeafter]);  
+    if (n1&&n2) {
+      move_node_between(n1->lon,n1->lat,n2->lon,n2->lat,node);
+      osm_set_node_coords(node,node->lon,node->lat);
+      osm_merge_into_way(mergeway,nodeafter,node);
+    }
+  } else if (nearest_obj->type == NODE) {
+    osm_merge_node(mw->osm_main_file,(struct osm_node *)nearest_obj,
+		   node);
+  }
+}
+
 static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
 {
   struct mapwin *mw = (struct mapwin *)data;
@@ -1684,9 +1742,17 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 		       _("delete the currently selected object"),NULL);
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.delobjbut,
 		     TRUE,TRUE,0);
+  mw->osm_inf->editb.joinbut=gtk_button_new_with_label(" J ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.joinbut,
+		       _("join the selected node with the nearest way"),
+		       NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),
+		     mw->osm_inf->editb.joinbut,
+		     TRUE,TRUE,0);
   gtk_widget_show(mw->osm_inf->editb.delobjbut);
   gtk_widget_show(mw->osm_inf->editb.addwaybut);
   gtk_widget_show(mw->osm_inf->editb.selbut);
+  gtk_widget_show(mw->osm_inf->editb.joinbut);
   gtk_widget_set_sensitive(mw->osm_inf->editb.delobjbut,0);
   gtk_widget_set_sensitive(mw->osm_inf->editb.selbut,0);
   gtk_widget_set_sensitive(mw->osm_inf->editb.addwaybut,0);
@@ -1702,6 +1768,9 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.delobjbut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_delobjbut_cb),mw);
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.joinbut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_joinbut_cb),mw);
+  
   sm=calloc(sizeof(struct sidebar_mode),1);
   sm->name=_("routing");
   sm->w=mw->osm_inf->routebar;
