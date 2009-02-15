@@ -43,7 +43,7 @@
 #include "mapdrawing.h"
 #include "strasse.h"
 
-int tile_cache_size=4;
+int tile_cache_size=64;
 #define MAX_CACHE tile_cache_size
 
 #ifndef M_PI
@@ -232,7 +232,7 @@ static int my_connectto(char *host,int port)
 }
 
 /* draw route lines */
-void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l)
+void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l, GdkColor *color256 )
 {
   int n,i;
   int x1,y1,x2,y2;
@@ -252,6 +252,16 @@ void draw_line_list(struct mapwin *mw, GdkGC *mygc, GList *l)
     x2=(p->x>>globalmap.zoomshift)-mw->page_x;
     y2=(p->y>>globalmap.zoomshift)-mw->page_y;
     if ((!p->single_point)&&(!p->start_new)&&(!is_single)&&(check_crossing(x1,y1,x2,y2,mw->page_width,mw->page_height))) {  
+      if (color256) {
+        int speedval=p->speed*10.0;
+        /* int speedval=p->hdop*10.0;  */
+        if (speedval < 0)
+          speedval=0;
+        if (speedval >255)
+          speedval=255;
+        /*printf("%d\n",speedval); */
+        gdk_gc_set_foreground(mygc,color256+speedval);
+      } 
       gdk_draw_line(mw->map->window,mygc,x1,y1,x2,y2);
     } else if (p->single_point) {
       if ((x2 >= 0) && (x2 < mw->page_width) &&

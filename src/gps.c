@@ -208,6 +208,8 @@ static void myendhandler(void *ctx,
     gpsf->curpoint.state=strcmp("3d",gpsf->xmlbuf)?'V':'A';
     gpsf->contreading=0;
     gpsf->xmlbufpos=0;
+  } else if (!strcmp((char *)name,"trkseg")) {
+    gpsf->curpoint.start_new=1;
   }
 }
 

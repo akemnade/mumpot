@@ -43,6 +43,8 @@
 #define OPT_W 4
 #define OPT_H 8
 
+GdkColor speedcolor[256];
+
 static GMainLoop *mainloop;
 
 static gboolean poll_requests(gpointer data)

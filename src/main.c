@@ -88,6 +88,7 @@ static GdkColor mark_red;
 static GdkColor mark_white;
 static GdkColor crosshair_color;
 static GdkColor gps_color;
+static GdkColor speedcolor[256];
 static char *clip_coord_buf;
 static char last_coord_buf[80];
 
@@ -145,11 +146,13 @@ static void change_sidebar_cb(gpointer callback_data,
 #define PATH_FOLLOW_GPS_N N_("/View/Follow GPS")
 #define PATH_ZOOM_OUT_N N_("/View/Zoom out")
 #define PATH_ZOOM_IN_N N_("/View/Zoom in")
+#define PATH_DISP_COLOR_N N_("/View/Draw selected line colored")
 #define PATH_DISP_SEARCH _(PATH_DISP_SEARCH_N)
 #define PATH_DISP_CROSSHAIR  _(PATH_DISP_CROSSHAIR_N)
 #define PATH_FOLLOW_GPS _(PATH_FOLLOW_GPS_N)
 #define PATH_ZOOM_OUT _(PATH_ZOOM_OUT_N)
 #define PATH_ZOOM_IN _(PATH_ZOOM_IN_N)
+#define PATH_DISP_COLOR _(PATH_DISP_COLOR_N)
 
 enum mouse_state_t {
   START_WAY,
@@ -415,7 +418,7 @@ void draw_marks(struct mapwin *mw)
     }
   }
   gdk_gc_set_foreground(mygc,&mark_red);
-  draw_line_list(mw,mygc,*mw->mark_line_list);
+  draw_line_list(mw,mygc,*mw->mark_line_list,(mw->color_line)?speedcolor:NULL);
 }
 
 /* called on mouse move */
@@ -529,7 +532,7 @@ static gboolean map_move_cb(gpointer user_data)
 	  } else if (mw->osm_main_file) {
 	    osmroute_add_path(mw,mw->osm_main_file,path_to_lines,x2,y2,&l);
 	  }
-	  draw_line_list(mw,mygc,l);
+	  draw_line_list(mw,mygc,l,NULL);
 	  free_line_list(l);
 	}
       }
@@ -1024,7 +1027,7 @@ expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
   for(i=0;i<MAX_LINE_LIST;i++) {
     if (mw->all_line_lists[i]==*(mw->mark_line_list))
       continue;
-    draw_line_list(mw,mygc,mw->all_line_lists[i]);
+    draw_line_list(mw,mygc,mw->all_line_lists[i],NULL);
   }  
   if (mw->osm_main_file)
     draw_osm(mw,mw->osm_main_file,mygc);
@@ -1862,6 +1865,14 @@ static void download_osm_data_cb(gpointer callback_data,
 		download_osm_failed_cb,NULL,mw);
 }
 
+static void switch_draw_all(gpointer callback_data,
+                            guint callback_action,
+                            GtkWidget *w)
+{
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  mw->color_line=GTK_CHECK_MENU_ITEM(w)->active;
+}
+
 static void change_sidebar_cb(gpointer callback_data,
 			      guint callback_action,
 			      GtkWidget *w)
@@ -1913,7 +1924,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/View/Select line layer/2"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),2,N_("/View/Select line layer/0")},
     {N_("/View/Select line layer/3"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),3,N_("/View/Select line layer/0")},
     {N_("/View/Select line layer/4 (live gps)"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),4,N_("/View/Select line layer/0")},
-    
+    {PATH_DISP_COLOR_N,NULL,GTK_SIGNAL_FUNC(switch_draw_all),0,"<CheckItem>"},
     {N_("/View/Request tiles/request missing"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),1,"<RadioItem>"},
     {N_("/View/Request tiles/request never"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),0,N_("/View/Request tiles/request missing")},
     {N_("/View/Request tiles/older than one day"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),86400,N_("/View/Request tiles/request missing")},
@@ -2264,6 +2275,7 @@ int main(int argc, char **argv)
 {
   char buf[512];
   GList *l;
+  int i;
 #ifdef USE_IMLIB
   GdkImlibInitParams imlibinit={
     PARAMS_REMAP | PARAMS_FASTRENDER | PARAMS_HIQUALITY,
@@ -2345,6 +2357,45 @@ int main(int argc, char **argv)
   gdk_color_parse("violet",&crosshair_color);
   gdk_color_alloc(cmap,&crosshair_color);
   gps_color = crosshair_color;
+  for(i=0;i<256;i++) {
+    int hs=i*5/256; /* leave out violet -> red transition */
+    int f=(i*5)%256;
+    switch (hs) {
+    case 0:
+      speedcolor[i].red=65535;
+      speedcolor[i].green=256*f;
+      speedcolor[i].blue=0;
+      break;
+    case 1:
+      speedcolor[i].red=256*(255-f);
+      speedcolor[i].green=65535;
+      speedcolor[i].blue=0;
+      break;
+    case 2:
+      speedcolor[i].red=0;
+      speedcolor[i].green=65535;
+      speedcolor[i].blue=256*f;
+      break;
+    case 3:
+      speedcolor[i].red=0;
+      speedcolor[i].green=256*(255-f);
+      speedcolor[i].blue=65535;
+      break;
+    case 4:
+      speedcolor[i].red=256*f;
+      speedcolor[i].green=0;
+      speedcolor[i].blue=65535;
+      break;
+    default:
+      speedcolor[i].red=65535;
+      speedcolor[i].green=0;
+      speedcolor[i].blue=65535;
+      
+    }
+    gdk_color_alloc(cmap,&speedcolor[i]);
+    printf("%08x",speedcolor[i].pixel);
+  }
+  
   if ((globalmap.first)&&(!globalmap.zoomable)) {
     menu_item_set_state(mw,PATH_ZOOM_OUT,0);
     menu_item_set_state(mw,PATH_ZOOM_IN,0);
