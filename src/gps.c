@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <libxml/parser.h>
 #include <locale.h>
+#include <zlib.h>
 #include "gps.h"
 
 struct gpsfile {
@@ -28,7 +29,10 @@ struct gpsfile {
   int bufpos;
   int first;
   char buf[256];
+  int use_zlib;
+  z_stream zstream;
   char xmlbuf[256];
+  char gzbuf[1024];
   int xmlbufpos;
   int contreading;
   void (*handling_procedure)(struct gpsfile *,void (*)(struct nmea_pointinfo *,void *), void *data);
@@ -137,16 +141,63 @@ void load_gps_line_noproj(const char *fname, GList **mll)
   close_gps_file(gpsf,1);
 }
 
+static int proc_gps_decompress(struct gpsfile *gpsf,
+				void (*gpsproc)(struct nmea_pointinfo *,void *), void *data)
+{
+  while(gpsf->zstream.avail_in>0) {
+    gpsf->zstream.next_out=gpsf->buf+gpsf->bufpos;
+    gpsf->zstream.avail_out=sizeof(gpsf->buf)-gpsf->bufpos;
+    if (Z_OK != inflate(&gpsf->zstream,Z_SYNC_FLUSH))
+      return 0;
+    gpsf->bufpos=sizeof(gpsf->buf)-gpsf->zstream.avail_out;
+    gpsf->handling_procedure(gpsf,gpsproc,data);
+  }
+  return 1;
+}
 
 int proc_gps_input(struct gpsfile *gpsf,
                    void (*gpsproc)(struct nmea_pointinfo *,void *), void *data)
 {
-  int l=read(gpsf->fd,gpsf->buf+gpsf->bufpos,sizeof(gpsf->buf)-gpsf->bufpos);
+  int l;
+  if (gpsf->use_zlib>0) {
+    l=read(gpsf->fd,gpsf->gzbuf,sizeof(gpsf->gzbuf));
+    if (l>0) {
+      gpsf->zstream.avail_in=l;
+      gpsf->zstream.next_in=gpsf->gzbuf;
+      if (!proc_gps_decompress(gpsf,gpsproc,data)) {
+	perror("decompress error");
+	return -1;
+      }
+      return l;
+    }
+  } else {
+    l=read(gpsf->fd,gpsf->buf+gpsf->bufpos,sizeof(gpsf->buf)-gpsf->bufpos);
+  }
   if (l<=0) {
     perror("proc_gps_input: ");
     return l;
   }
   gpsf->bufpos+=l;
+  if (gpsf->use_zlib==0) {
+    if (gpsf->bufpos>2) {
+      if ((gpsf->buf[0]!=0x1f)||(gpsf->buf[1]!='\x8b')) {
+	gpsf->use_zlib=-1;
+      } else {
+	memcpy(gpsf->gzbuf,gpsf->buf,gpsf->bufpos);
+	gpsf->zstream.avail_in=gpsf->bufpos;
+	gpsf->zstream.next_in=gpsf->gzbuf;
+	gpsf->zstream.avail_out=sizeof(gpsf->buf);
+	gpsf->zstream.next_out=gpsf->buf;
+	gpsf->bufpos=0;
+	if (Z_OK==inflateInit2(&gpsf->zstream,31)) {
+	  gpsf->use_zlib=1;
+	  if (!proc_gps_decompress(gpsf,gpsproc,data))
+	    l=0;
+	  return l;
+	}
+      }
+    }
+  }
   gpsf->handling_procedure(gpsf,gpsproc,data);
   return l;
 }
