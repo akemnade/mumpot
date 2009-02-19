@@ -15,3 +15,4 @@ void check_item_set_state(struct mapwin *mw,char *path,int state);
 
 void menu_item_set_state(struct mapwin *mw,char *path,int state);
 
+void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data);

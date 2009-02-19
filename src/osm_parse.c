@@ -324,10 +324,23 @@ void free_osm_way(int id)
     if (obj->nodes) {
       free(obj->nodes);
     }
+    if (obj->head.tag_list)
+      free_tag_list(obj->head.tag_list);
     g_mem_chunk_free(way_chunk,obj);
   }
   put_obj_id(NULL,id);
 }
+
+void free_tag_list(GList *tl)
+{
+  GList *l;
+  for(l=tl;l;l=g_list_next(l)) {
+    free(l->data);
+  }
+  g_list_free(tl);
+}
+
+
 
 void free_osm_node(int id) 
 {
@@ -335,6 +348,7 @@ void free_osm_node(int id)
   if (obj) {
     if (obj->way_list)
       g_list_free(obj->way_list);
+    free_tag_list(obj->head.tag_list);
     g_mem_chunk_free(node_chunk,obj);
   }
   put_obj_id(NULL,id);
@@ -343,14 +357,15 @@ void free_osm_node(int id)
 void free_osm_file(struct osm_file *f)
 {
   GList *l;
-  for(l=g_list_first(f->ways);l;l=g_list_next(l)) {
-    free_osm_way(((struct osm_object *)l->data)->id);
+  if (!f->merged) {
+    for(l=g_list_first(f->ways);l;l=g_list_next(l)) {
+      free_osm_way(((struct osm_object *)l->data)->id);
+    }
+    
+    for(l=g_list_first(f->nodes);l;l=g_list_next(l)) {
+      free_osm_node(((struct osm_object *)l->data)->id);
+    }
   }
-
-  for(l=g_list_first(f->nodes);l;l=g_list_next(l)) {
-    free_osm_node(((struct osm_object *)l->data)->id);
-  }
-  xmlFreeDoc(f->xmldoc);
   free(f);
   
 }
@@ -871,6 +886,17 @@ static void osmparse_endhandler(void *ctx,
   }
 }
 				 
+static void remove_way_from_nodes(struct osm_way *w)
+{
+  int i;
+  for(i=0;i<w->nr_nodes;i++) {
+    struct osm_node *nd=get_osm_node(w->nodes[i]);
+    if (nd) {
+      nd->way_list=g_list_remove(nd->way_list,w);
+      nd->nr_ways--;
+    }
+  }
+}
 
 static void osmparse_starthandler(void *ctx,
         const xmlChar *name,
@@ -907,7 +933,15 @@ static void osmparse_starthandler(void *ctx,
 	}
       }
       if (id&&lat&&lon) {
-	octxt->node = new_osm_node(id);
+	struct osm_node *nd;
+	nd=get_osm_node(id);
+	if (!nd) {
+	  octxt->node = new_osm_node(id);
+	} else if (!nd->head.modified) {
+	  octxt->node = nd;
+	  free_tag_list(nd->head.tag_list);
+	  nd->head.tag_list=NULL;
+	}
 	octxt->node->lon=atof(lon);
 	octxt->node->lat=atof(lat);
 	if (user)
@@ -921,16 +955,27 @@ static void osmparse_starthandler(void *ctx,
       char *timestamp=NULL;
       for(i=0;atts[i];i+=2) {
 	if (!strcmp((char *)atts[i],"id")) {
+	  struct osm_way *way;
 	  id=atoi((char *)atts[i+1]);
-	  octxt->way = new_osm_way(id);
+	  way=get_osm_way(id);
+	  if (!way) {
+	    octxt->way = new_osm_way(id);
+	  } else if (!way->head.modified) {
+	    octxt->way = way;
+	    remove_way_from_nodes(octxt->way);
+	    free(way->nodes);
+	    way->nodes = NULL;
+	    way->nr_nodes = 0;
+	    free_tag_list(octxt->way->head. tag_list);
+	    octxt->way->head.tag_list = NULL;
+	  } 
 	} else if (!strcmp((char *)atts[i],"user")) {
 	  user=(char *)atts[i+1];
 	} else if (!strcmp((char *)atts[i],"timestamp")) {
 	  timestamp=(char *)atts[i+1];
 	}
       }
-      if (id) {
-	octxt->way = new_osm_way(id);
+      if (octxt->way) {
 	if (user)
 	  octxt->way->head.user=strdup(user);
 	if (timestamp)
@@ -941,22 +986,24 @@ static void osmparse_starthandler(void *ctx,
     GList **l;
     char *k=NULL;
     char *v=NULL;
-    if (octxt->way)
-      l=&octxt->way->head.tag_list;
-    else
-      l=&octxt->node->head.tag_list;
-    for(i=0;atts[i];i+=2) {
-      if (!strcmp((char *)atts[i],"k")) {
-	k=(char *)atts[i+1];
-      } else {
-	v=(char *)atts[i+1];
+    if ((octxt->way)||(octxt->node)) {
+      if (octxt->way)
+	l=&octxt->way->head.tag_list;
+      else
+	l=&octxt->node->head.tag_list;
+      for(i=0;atts[i];i+=2) {
+	if (!strcmp((char *)atts[i],"k")) {
+	  k=(char *)atts[i+1];
+	} else {
+	  v=(char *)atts[i+1];
+	}
       }
-    }
-    if (k&&v) {
-      char *t=malloc(strlen(k)+strlen(v)+2);
-      strcpy(t,k);
-      strcpy(t+strlen(k)+1,v);
-      *l=g_list_append(*l,t);
+      if (k&&v) {
+	char *t=malloc(strlen(k)+strlen(v)+2);
+	strcpy(t,k);
+	strcpy(t+strlen(k)+1,v);
+	*l=g_list_append(*l,t);
+      }
     }
   } else if ((octxt->way)&&(!strcmp("nd",(char *)name))) {
     for(i=0;atts[i];i+=2) {
@@ -968,7 +1015,8 @@ static void osmparse_starthandler(void *ctx,
   }
 }
 
-struct osm_file * parse_osm_file(const char *fname, int all_ways)
+struct osm_file * parse_osm_file(struct osm_file *mergeto,
+				 const char *fname, int all_ways)
 {
   struct timeval tv1;
   struct timeval tv2;
@@ -976,7 +1024,7 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
   char *suf;
   FILE *f=fopen(fname,"rb");
   struct osm_file *osmf=NULL;
-  struct osm_parser_ctxt *octxt;
+  struct osm_parser_ctxt *octxt=NULL;
   int l;
   static xmlSAXHandler myhandler={
     .initialized = 1,
@@ -1014,7 +1062,6 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
 	}
 	xmlParseChunk(ctxt,buf,0,1);
 	xmlFreeParserCtxt(ctxt);
-	free(octxt);
       }
     }
     BZ2_bzReadClose(&bzerror,bzf);
@@ -1038,7 +1085,6 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
       }
       xmlParseChunk(ctxt, buf, 0 ,1);
       xmlFreeParserCtxt(ctxt);
-      free(octxt);
     }
   fclose(f);
 #ifndef _WIN32
@@ -1052,6 +1098,14 @@ struct osm_file * parse_osm_file(const char *fname, int all_ways)
   gettimeofday(&tv3,NULL);
   printtimediff("build references: %d ms\n",&tv2,&tv3);
 #endif
+  if (octxt) {
+    if (mergeto) {
+      mergeto->ways=g_list_concat(mergeto->ways,osmf->ways);
+      mergeto->nodes=g_list_concat(mergeto->nodes,osmf->nodes);
+      osmf->merged=1;
+    }
+    free(octxt);
+  }
   return osmf;
 }
 #endif

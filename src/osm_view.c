@@ -39,6 +39,8 @@
 #include "geometry.h"
 #include "osm_tagpresets_data.h"
 #include "osm_tagpresets_gui.h"
+
+#include "osm_view.h"
 #include "start_way.xpm"
 #include "end_way.xpm"
 #include "restart_way.xpm"
@@ -946,6 +948,33 @@ void init_osm_draw(struct mapwin *mw)
   atexit(myexitf);
 }
 
+static void clear_osm_cb(GtkWidget *w,
+			 gpointer data)
+{
+  struct mapwin *mw=(struct mapwin *)data;
+  if (mw->osm_main_file) {
+    free_osm_gfx((struct mapwin *)data,mw->osm_main_file);
+    mw->osm_main_file=NULL;
+    gtk_widget_queue_draw_area(mw->map,0,0,
+			       mw->page_width,
+			       mw->page_height);
+  }
+}
+
+void osm_clear_data(struct mapwin *mw)
+{
+  if (mw->osm_main_file) {
+    if (mw->osm_main_file->changed)
+      yes_no_dlg(_("The OSM data is modified.\nDo you really want to loose it"),
+		 GTK_SIGNAL_FUNC(clear_osm_cb),NULL,mw);
+    else 
+      clear_osm_cb(NULL,mw);
+	
+  }
+}
+
+
+
 static void toggle_osm_view(gpointer callback_data, guint callback_action,
 			    GtkWidget *w)
 {
@@ -1043,15 +1072,6 @@ static void start_way_menu_cb(GtkWidget *w, gpointer data)
   mw->osm_inf->newway_hwyclass=gtk_object_get_data(GTK_OBJECT(w),
 						    "hwyclass");
   gtk_widget_hide(mw->osm_inf->hwypopup);
-}
-
-static void free_tag_list(GList *tl)
-{
-  GList *l;
-  for(l=tl;l;l=g_list_next(l)) {
-    free(l->data);
-  }
-  g_list_free(tl);
 }
 
 static void copy_tag_list(struct osm_object *obj, GList *tl)
@@ -1513,6 +1533,7 @@ static void handle_node_move(struct mapwin *mw, int x, int y)
   point2geosec(&lon,&lat,nx,ny);
   lon/=3600.0;
   lat/=3600.0;
+  mw->osm_main_file->changed=1;
   osm_set_node_coords(node,lon,lat);
   init_node_render_data(node);
   gtk_widget_queue_draw_area(mw->map,0,0,
@@ -1640,6 +1661,7 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
 				  &nodeafter);
   if (nearest_obj == NULL)
     return;
+  mw->osm_main_file->changed=1;
   if (nodeafter) {
     struct osm_way *mergeway=(struct osm_way *)nearest_obj;
     struct osm_node *n1=get_osm_node(mergeway->nodes[nodeafter-1]);
@@ -1653,6 +1675,7 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
     osm_merge_node(mw->osm_main_file,(struct osm_node *)nearest_obj,
 		   node);
   }
+  
 }
 
 static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
@@ -1805,14 +1828,19 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 
 
 
-struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
+void load_osm_gfx(struct mapwin *mw, const char *name)
 {
-  struct osm_file *osmf=parse_osm_file(name,0);
+  struct osm_file *osmf=parse_osm_file(mw->osm_main_file,
+				       name,0);
   if (!osmf)
-    return NULL;
+    return;
   mw->osm_inf->way_to_edit=NULL;
   mw->osm_inf->selected_object=NULL;
   recalc_node_coordinates(mw,osmf);
+  if (mw->osm_main_file)
+    free_osm_file(osmf);
+  else
+    mw->osm_main_file=osmf;
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 1);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,1);
@@ -1826,7 +1854,6 @@ struct osm_file * load_osm_gfx(struct mapwin *mw, char *name)
   gtk_widget_set_sensitive(mw->osm_inf->editb.selbut,1);
   gtk_widget_set_sensitive(mw->osm_inf->editb.addwaybut,1);
 
-  return osmf;
 }
 
 GtkItemFactoryEntry *get_osm_menu_items(int *n_osm_items)

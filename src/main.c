@@ -1413,9 +1413,8 @@ static void osm_filesel(GtkWidget *w, gpointer data)
   f=gtk_file_selection_get_filename(GTK_FILE_SELECTION(data));
   if (!f)
     return;
-  if (mw->osm_main_file)
-    free_osm_gfx(mw,mw->osm_main_file);
-  mw->osm_main_file=load_osm_gfx(mw,f);
+
+  load_osm_gfx(mw,f);
   gtk_widget_queue_draw_area(mw->map,0,0,
 			     mw->page_width,
 			     mw->page_height);
@@ -1506,6 +1505,17 @@ static void load_osm_menucb(gpointer callback_data,
   gtk_widget_show_all(fs);
                                 
 }
+
+
+
+static void clear_osm_menucb(gpointer callback_data,
+			     guint callback_action,
+			     GtkWidget *w)
+{
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  osm_clear_data(mw);
+}
+
 
 
 static void save_osm_menucb(gpointer callback_data,
@@ -1811,11 +1821,9 @@ static void download_osm_finished_cb(const char *url, const char *filename,
 				     void *data)
 {
   struct mapwin *mw=(struct mapwin *)data;
-  if (mw->osm_main_file)
-    free_osm_gfx(mw,mw->osm_main_file);
   display_text_box(_("downloading OSM data finished"));
 
-  mw->osm_main_file=load_osm_gfx(mw,filename);
+  load_osm_gfx(mw,filename);
   gtk_widget_queue_draw_area(mw->map,0,0,
 			     mw->page_width,
 			     mw->page_height);
@@ -1912,6 +1920,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/Project/load OSM data"),NULL,GTK_SIGNAL_FUNC(load_osm_menucb),0,NULL},
     {N_("/Project/download OSM data for selected region"),NULL,GTK_SIGNAL_FUNC(download_osm_data_cb),0,NULL},
     {N_("/Project/save OSM data"),NULL,GTK_SIGNAL_FUNC(save_osm_menucb),0,NULL},
+    {N_("/Project/clear OSM data"),NULL,GTK_SIGNAL_FUNC(clear_osm_menucb),0,NULL},
 #ifndef _WIN32
     {N_("/Project/Connect to GPS receiver"),NULL,GTK_SIGNAL_FUNC(connect_gps_cb),0,NULL},
 #endif

@@ -58,6 +58,7 @@ struct osm_file {
   int deleted_way_count;
   int deleted_node_count;
   int changed;
+  int merged;
 };
 
 struct osm_object *get_obj_id(int id);
@@ -68,9 +69,11 @@ struct osm_node *new_osm_node(int id);
 struct osm_node *get_osm_node(int id);
 void free_osm_way(int id);
 void free_osm_node(int id);
-struct osm_file * parse_osm_file(const char *fname, int all_ways);
+struct osm_file * parse_osm_file(struct osm_file *mergeto,
+				 const char *fname, int all_ways);
 void free_osm_file(struct osm_file *f);
 xmlNodePtr next_el_node(xmlNodePtr node);
+void free_tag_list(GList *tl);
 char *get_tag_value(struct osm_object *obj, const char *key);
 void set_osm_tag(struct osm_object *obj, char *k, char *v);
 struct osm_way *add_new_osm_way(struct osm_file *f);

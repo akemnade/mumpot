@@ -13,9 +13,9 @@
 
 #ifndef K_OSM_VIEW_H
 #define K_OSM_VIEW_H
-
+void osm_clear_data(struct mapwin *mw);
 void init_osm_draw(struct mapwin *mw);
-struct osm_file * load_osm_gfx(struct mapwin *mw, const char *name);
+void load_osm_gfx(struct mapwin *mw, const char *name);
 void free_osm_gfx(struct mapwin *mw, struct osm_file *osmf);
 void draw_osm(struct mapwin *mw, struct osm_file *osmf,GdkGC *mygc);
 void recalc_node_coordinates(struct mapwin *mw, struct osm_file *osmf);
