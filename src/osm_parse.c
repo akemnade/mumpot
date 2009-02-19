@@ -52,19 +52,9 @@ struct osm_object *get_obj_id(int id)
 
 static void add_created_tag(struct osm_object *obj)
 {
-#ifdef USE_DOM_PARSER
-  xmlNodePtr nd=obj->xmlnode;
-  xmlNodePtr node=xmlNewNode(NULL,(xmlChar *)"tag");
-  xmlSetProp(node,(xmlChar *)"k",
-	     (xmlChar *)"created_by");
-  xmlSetProp(node,(xmlChar *)"v",
-	     (xmlChar *)PACKAGE);
-  xmlAddChild(nd,node);
-#else
   char *ctag=malloc(sizeof("created_by\0" PACKAGE));
   memcpy(ctag,"created_by\0" PACKAGE,sizeof("created_by\0" PACKAGE));
   obj->tag_list=g_list_append(obj->tag_list,ctag);
-#endif
 }
 
 xmlNodePtr next_named_node(xmlNodePtr node, char *name)
@@ -82,7 +72,6 @@ xmlNodePtr next_named_node(xmlNodePtr node, char *name)
 
 void set_osm_tag(struct osm_object *obj, char *key, char *v)
 {
-#ifndef USE_DOM_PARSER
   GList *l=g_list_first(obj->tag_list);
   char *knew=malloc(strlen(key)+strlen(v)+2);
   strcpy(knew,key);
@@ -102,30 +91,6 @@ void set_osm_tag(struct osm_object *obj, char *key, char *v)
   if (obj->type==WAY) {
     osmway_initialize_flags((struct osm_way *)obj);
   }
-#else
-  node=node->children;
-  while(node) {
-    node=next_el_node(node);
-    if (!node)
-      break;
-    if (!strcmp((char *)node->name,"tag")) {
-      char *k=(char *)xmlGetProp(node,(xmlChar *)"k");
-      if (k) {
-	if (!strcmp(k,key)) {
-	  xmlFree(k);
-	  break;
-	}
-	xmlFree(k);
-      }
-    }
-    node=node->next;
-  }
-  if (!node) {
-    node=xmlNewChild(obj->xmlnode,NULL,(xmlChar *)"tag",NULL);
-    xmlSetProp(node,(xmlChar *)"k",(xmlChar *)key);
-  }
-  xmlSetProp(node,(xmlChar *)"v",(xmlChar *)v);
-#endif
 }
 
 void put_obj_id(struct osm_object *obj,int id)
@@ -160,17 +125,7 @@ struct osm_way *new_osm_way(int id)
 
 struct osm_way *add_new_osm_way(struct osm_file *f)
 {
-#ifdef USE_DOM_PARSER
-  char buf[80];
-#endif
   struct osm_way *way=new_osm_way(max_free_num);
-#ifdef USE_DOM_PARSER
-  way->head.xmlnode=xmlNewNode(NULL,(xmlChar*)"way");
-  snprintf(buf,sizeof(buf),"%d",way->head.id);
-  xmlSetProp(way->head.xmlnode,(xmlChar *)"id",(xmlChar *)buf);
-  xmlSetProp(way->head.xmlnode,(xmlChar *)"visible",(xmlChar*)"true");
-  xmlAddChild(f->headnode,way->head.xmlnode);
-#endif
   add_created_tag(&way->head);
   f->ways=g_list_append(f->ways,way);
   return way;
@@ -179,26 +134,10 @@ struct osm_way *add_new_osm_way(struct osm_file *f)
 struct osm_node *new_osm_node_from_point(struct osm_file *f,
 					 double lon, double lat)
 {
-#ifdef USE_DOM_PARSER
-  char buf[80];
-#endif
   struct osm_node *nd=new_osm_node(max_free_num);
   nd->lon=lon;
   nd->lat=lat;
   f->nodes=g_list_append(f->nodes,nd);
-#ifdef USE_DOM_PARSER
-  nd->head.xmlnode=xmlNewNode(NULL,(xmlChar *)"node");
-
-  snprintf(buf,sizeof(buf),"%d",nd->head.id);
-  xmlSetProp(nd->head.xmlnode,(xmlChar *)"id",(xmlChar *)buf);
-  xmlSetProp(nd->head.xmlnode,(xmlChar *)"visible",(xmlChar *)"true");
-
-  snprintf(buf,sizeof(buf),"%f",lon);
-  xmlSetProp(nd->head.xmlnode,(xmlChar *)"lon",(xmlChar *)buf);
-  snprintf(buf,sizeof(buf),"%f",lat);
-  xmlSetProp(nd->head.xmlnode,(xmlChar *)"lat",(xmlChar *)buf);
-  xmlAddChild(f->headnode,nd->head.xmlnode);
-#endif
   add_created_tag(&nd->head);
   return nd;
 }
@@ -270,9 +209,6 @@ void osm_delete_node(struct osm_file *osmf,
 void add_nodes_to_way(struct osm_way *way, GList *l)
 {
   int offset=way->nr_nodes;
-#ifdef USE_DOM_PARSER
-  char buf[80];
-#endif
   int la=g_list_length(l);
   int i;
   way->nr_nodes+=la;
@@ -282,14 +218,6 @@ void add_nodes_to_way(struct osm_way *way, GList *l)
     way->nodes[i]=nd->head.id;
     nd->way_list=g_list_append(nd->way_list,way);
     nd->nr_ways++;
-#ifdef USE_DOM_PARSER
-    {
-      snprintf(buf,sizeof(buf),"%d",nd->head.id);
-      xmlNodePtr node=xmlNewNode(NULL,(xmlChar *)"nd"); 
-      xmlSetProp(node,(xmlChar *)"ref",(xmlChar*)buf);
-      xmlAddChild(way->head.xmlnode,node);
-    }
-#endif
   }
 }
 
@@ -514,18 +442,6 @@ xmlNodePtr next_el_node(xmlNodePtr node)
   return node;
 }
 
-#ifdef USE_DOM_PARSER
-static int is_street(xmlNodePtr node)
-{
-  char *r = get_tag_value_xml(node,"highway");
-  if (r) {
-    xmlFree(r);
-    return 1;
-  }
-  return 0;
-}
-#endif
-
 void osm_merge_node(struct osm_file *osmf,
 		    struct osm_node *mergeto,
 		    struct osm_node *mergefrom)
@@ -538,39 +454,15 @@ void osm_merge_node(struct osm_file *osmf,
   }
   for(l=g_list_first(mergefrom->way_list);l;l=g_list_next(l)) {
     struct osm_way *way = (struct osm_way *)l->data;
-#ifdef USE_DOM_PARSER
-    xmlNodePtr cnode = way->head.xmlnode;
-    cnode=way->head.xmlnode->children;
-#endif
     way->head.modified=1;
     for(i=0;i<way->nr_nodes;i++) {
-#ifdef USE_DOM_PARSER
-      char b[20];
-      cnode=next_named_node(cnode,"nd");
-#endif
       if (way->nodes[i]==mergefrom->head.id) {
 	way->nodes[i]=mergeto->head.id;
-#ifdef USE_DOM_PARSER
-	snprintf(b,sizeof(b),"%d",mergeto->head.id);
-	if (cnode) {
-	  xmlSetProp(cnode,(xmlChar *)"ref",(xmlChar *)b);
-	  if (way->head.id > 0)
-	    xmlSetProp(way->head.xmlnode,(xmlChar *)"action",(xmlChar *)"modify");
-	}
-#endif
       }
-#ifdef USE_DOM_PARSER
-      cnode=cnode->next;
-      #endif
     }
   }
   mergeto->way_list = g_list_concat(mergeto->way_list,
-					mergefrom->way_list);
-#ifdef USE_DOM_PARSER
-  xmlUnlinkNode(mergefrom->head.xmlnode);
-  xmlFreeNode(mergefrom->head.xmlnode);
-  mergefrom->head.xmlnode=NULL;
-#endif
+				    mergefrom->way_list);
   mergefrom->way_list=NULL;
   free_osm_node(mergefrom->head.id);
   osmf->nodes=g_list_remove(osmf->nodes,mergefrom);
