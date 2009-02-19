@@ -578,32 +578,14 @@ void osm_merge_node(struct osm_file *osmf,
 
 void osm_set_node_coords(struct osm_node *node,double lon, double lat)
 {
-#ifdef USE_DOM_PARSER
-  char buf[80];
-#endif
   node->lon=lon;
   node->lat=lat;
   node->head.modified=1;
-#ifdef USE_DOM_PARSER
-  snprintf(buf,sizeof(buf),"%f",node->lon);
-  xmlSetProp(node->head.xmlnode,(xmlChar *)"lon",(xmlChar *)buf);
-  snprintf(buf,sizeof(buf),"%f",node->lat);
-  xmlSetProp(node->head.xmlnode,(xmlChar *)"lat",(xmlChar *)buf);
-  if (node->head.id>0) {
-    xmlSetProp(node->head.xmlnode,(xmlChar *)"action",(xmlChar *)"modify");
-  }
-#endif
 }
 
 void osm_merge_into_way(struct osm_way *mergeway, int pos,
 			struct osm_node *node)
 {
-#ifdef USE_DOM_PARSER
-  xmlNodePtr xmlnode=mergeway->head.xmlnode;
-  xmlNodePtr nn;
-  char b[80];
-  int i;
-#endif
   mergeway->nodes=realloc(mergeway->nodes,(mergeway->nr_nodes+1)*sizeof(int));
   memmove(mergeway->nodes+pos+1,mergeway->nodes+pos,(mergeway->nr_nodes-pos)*(sizeof(int)));
   mergeway->nodes[pos]=node->head.id;
@@ -611,21 +593,6 @@ void osm_merge_into_way(struct osm_way *mergeway, int pos,
   mergeway->head.modified=1;
   node->way_list=g_list_append(node->way_list,mergeway);
   node->nr_ways++;
-#ifdef USE_DOM_PARSER
-  if (xmlnode)
-    xmlnode=xmlnode->children;
-  for(i=0;i<pos;i++) {
-    xmlnode=next_named_node(xmlnode,"nd");
-    xmlnode=xmlnode->next;
-  }
-  nn=xmlNewNode(NULL,(xmlChar *)"nd");
-  snprintf(b,sizeof(b),"%d",node->head.id);
-  xmlSetProp(nn,(xmlChar *)"ref",(xmlChar *)b);
-  xmlAddPrevSibling(xmlnode,nn);
-  if (mergeway->head.id>0) {
-    xmlSetProp(mergeway->head.xmlnode,(xmlChar *)"action",(xmlChar *)"modify");
-  }
-#endif
 }
 
 void printtimediff(const char *format,const struct timeval *tvstart, const struct timeval *tvend)
@@ -642,112 +609,6 @@ void printtimediff(const char *format,const struct timeval *tvstart, const struc
     fprintf(stderr,format,tvdiff);
 }
 
-#ifdef USE_DOM_PARSER
-
-int save_osm_file(const char *fname, struct osm_file *osmf)
-{
-  return xmlSaveFile(fname,osmf->xmldoc);
-}
-
-struct osm_file * parse_osm_file(const char *fname, int all_ways)
-{
-    xmlNodePtr node;
-    xmlNodePtr docroot;
-    xmlDocPtr doc;
-    struct osm_file *osmf;
-    xmlLineNumbersDefault(1);
-    struct timeval tv1;
-    struct timeval tv2;
-    struct timeval tv3;
-    struct timeval tv4;
-    gettimeofday(&tv1,NULL);
-    doc = xmlParseFile(fname);
-    if (doc == NULL)
-        return NULL;
-    gettimeofday(&tv2,NULL);
-    printtimediff("parse xml: %d ms\n",&tv1,&tv2);
-    docroot=xmlDocGetRootElement(doc);
-    if (!docroot)
-      return NULL;
-    osmf = calloc(1,sizeof(struct osm_file));
-    osmf->xmldoc=doc;
-    node=doc->children;
-    while(node) {
-      node=next_el_node(node);
-      if (!node)
-        break;
-      if (!strcmp((char *)node->name,"osm")) {
-	osmf->headnode=node;
-        node=node->children;
-      } else if (!strcmp((char *)node->name,"way")) {
-        int nodecount=0;
-        struct osm_way *way;
-	char *n;	
-        n = (char *)xmlGetProp(node,(xmlChar *)"id");
-        if ((n)&&(all_ways||is_street(node))) {
-	  int i;
-          xmlNodePtr nodes=node->children;
-          while(nodes) {
-            nodes=next_el_node(nodes);
-	    if (!nodes)
-	      break;
-            if (!strcmp((char *)nodes->name,"nd"))
-              nodecount++;
-	    nodes=nodes->next;
-          }
-          way=new_osm_way(atoi(n));
-          way->head.xmlnode=node;
-          way->nr_nodes=nodecount;
-	  way->nodes = malloc(sizeof(int)*nodecount);
-	  nodes=node->children;
-	  for(i=0;nodes&&(nodes=next_el_node(nodes));nodes=nodes->next) {
-	    char *prop;
-	    prop=(char *)xmlGetProp(nodes,(xmlChar *)"ref");
-	    if (prop) {
-	      way->nodes[i]=atoi(prop);
-	      i++;
-	      xmlFree(prop);
-	    }
-	  }
-	  way->nr_nodes=i;
-	  
-	  osmf->ways=g_list_prepend(osmf->ways,way); 
-        }
-	if (n)
-	  xmlFree(n);
-      } else if (!strcmp((char *)node->name,"node")) {
-	struct osm_node *osmnode;
-	char *n=(char *)xmlGetProp(node,(xmlChar *)"id");
-	if (n) {
-	  char *lon=(char *)xmlGetProp(node,(xmlChar *)"lon");
-	  char *latt=(char *)xmlGetProp(node,(xmlChar *)"lat");
-	  if (lon&&latt) {
-	    osmnode = new_osm_node(atoi(n));
-	    osmnode->lon=atof(lon);
-	    osmnode->lat=atof(latt);
-	    osmnode->head.xmlnode=node;
-	  }
-	  if (lon)
-	    xmlFree(lon);
-	  if (latt)
-	    xmlFree(latt);
-	  xmlFree(n);
-	}
-      }
-      node=node->next;
-    }
-    gettimeofday(&tv3,NULL);
-    printtimediff("iterate doctree: %d ms\n",&tv2,&tv3);
-    if (!build_references(osmf)) {
-      fprintf(stderr,"warning,: inconsistencies detected\n");
-    }
-    gettimeofday(&tv4,NULL);
-    printtimediff("parse xml: %d ms\n",&tv1,&tv2);
-    printtimediff("iterate doctree: %d ms\n",&tv2,&tv3);
-    printtimediff("buld references: %d ms\n",&tv3,&tv4);
-    return osmf;
-}
-#else
 
 static int osm_write_tags(xmlTextWriterPtr writer,
 			  struct osm_object *obj)
@@ -1108,4 +969,3 @@ struct osm_file * parse_osm_file(struct osm_file *mergeto,
   }
   return osmf;
 }
-#endif
