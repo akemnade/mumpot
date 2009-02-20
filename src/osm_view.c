@@ -347,30 +347,7 @@ static void display_tags(struct osm_info *osmf,
     g_hash_table_destroy(osmf->tag_hash);
   }
   osmf->tag_hash=g_hash_table_new(g_str_hash,g_str_equal);
-  if (way->xmlnode) {
-    node = way->xmlnode->children;
-    while(node) {
-      node=next_el_node(node);
-      if (!node)
-	break;
-      if (!strcmp((char *)node->name,"tag")) {
-	char *k=(char *)xmlGetProp(node,(xmlChar *)"k");
-	char *v=(char *)xmlGetProp(node,(xmlChar *)"v");
-	if (k) {
-	  char *k2;
-	k2=strdup(k);
-	keys=g_list_append(keys,k2);
-	if (v) {
-	  g_hash_table_insert(osmf->tag_hash,k2,strdup(v));
-	}
-	xmlFree(k);
-	}
-	if (v)
-	  xmlFree(v);
-      }
-      node=node->next;
-    }
-  } else if (way->tag_list) {
+  if (way->tag_list) {
     GList *l=way->tag_list;
     for(;l;l=g_list_next(l)) {
       char *t=(char *)l->data;
