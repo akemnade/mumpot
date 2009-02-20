@@ -49,6 +49,7 @@
 #include "create_connection.h"
 #include "gui_common.h"
 #include "osm_view.h"
+#include "trip_stats.h"
 
 #include "zoomin.xpm"
 #include "zoomout.xpm"
@@ -1538,12 +1539,14 @@ static void save_osm_menucb(gpointer callback_data,
 static gboolean set_gps_position(gpointer data) 
 {
   char buf[80];
+  char buf2[80];
   struct mapwin *mw = (struct mapwin *)data;
   struct nmea_pointinfo *nmea=&mw->last_nmea;
   if (mw->follow_gps) {
     center_map(mw,nmea->longsec,nmea->lattsec);
   }
-  snprintf(buf,sizeof(buf),"%c %.1f km/h",nmea->state,nmea->speed*1.852);
+  trip_stats_line(mw->stats,buf2,sizeof(buf2),1);
+  snprintf(buf,sizeof(buf),"%c %s",nmea->state,buf2);
   gtk_label_set_text(GTK_LABEL(mw->gps_label),buf);
   return FALSE;
 }
@@ -1565,6 +1568,7 @@ static void got_gps_position(struct nmea_pointinfo *nmea,
   p_new->start_new=nmea->start_new;
   *mw->gps_line_list = g_list_append(*mw->gps_line_list,p_new);
   mw->last_nmea=*nmea;
+  trip_stats_update(mw->stats,nmea);
   g_idle_add(set_gps_position,mw);
 }
 
@@ -1612,7 +1616,11 @@ static int gps_timer(void *data)
     return FALSE;
   }
   if (!mw->have_gpspos) {
-    gtk_label_set_text(GTK_LABEL(mw->gps_label),"V");
+    char buf[80];
+    buf[0]='V';
+    buf[1]=' ';
+    trip_stats_line(mw->stats,buf+2,sizeof(buf)-2,0);
+    gtk_label_set_text(GTK_LABEL(mw->gps_label),buf);
   } else {
     mw->have_gpspos=0;
   }
@@ -2039,6 +2047,7 @@ struct mapwin * create_mapwin()
   w->line_drawing=0;
   w->mouse_move_str=NULL;
   w->mouse_moved=0;
+  w->stats=trip_stats_new();
   w->mainwin=gtk_window_new(GTK_WINDOW_TOPLEVEL);
   tt=gtk_tooltips_new();
   vb1=gtk_vbox_new(FALSE,1);

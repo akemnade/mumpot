@@ -17,6 +17,7 @@
 struct connection_dialog;
 struct osm_file;
 struct osm_info;
+struct trip_stats;
 extern int tile_request_mode;
 #define MAX_LINE_LIST 5
 
@@ -74,6 +75,7 @@ struct mapwin {
   struct osm_file *osm_main_file;
   struct nmea_pointinfo last_nmea;
   struct gpsfile *gpsf;
+  struct trip_stats *stats;
 };
 
 void path_to_lines(double lon, double lat, void *data);
