@@ -56,7 +56,7 @@ void trip_stats_line(struct trip_stats *ts,
 		     char *buf, int len,int current)
 {
   if (current)
-    snprintf(buf,len,"%.1f km/h %.2f km",ts->speed/1.852,
+    snprintf(buf,len,"%.1f km/h %.2f km",ts->speed*1.852,
 	     ts->dist/1000.0);
   else
     snprintf(buf,len,"%.2f km",
