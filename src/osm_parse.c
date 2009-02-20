@@ -429,9 +429,7 @@ char *get_tag_value(struct osm_object *obj,const char *key)
       }
     }
   }
-  if (obj->xmlnode) {
-    return get_tag_value_xml(obj->xmlnode,key);
-  }
+  
   return NULL;
 }
 
@@ -768,6 +766,68 @@ static void osmparse_starthandler(void *ctx,
   }
 }
 
+static void  head_stats(struct osm_object *obj, int *tssize,int *usersize, int *taglistsize,
+			int *tagsize)
+{
+  GList *l;
+  if (obj->user)
+    (*usersize)+=strlen(obj->user)+1;
+  if (obj->timestamp)
+    (*tssize)+=strlen(obj->timestamp)+1;
+  (*taglistsize)+=(sizeof(GList)*g_list_length(obj->tag_list));
+  for(l=g_list_first(obj->tag_list);l;l=g_list_next(l)) {
+    char *t=l->data;
+    char *v=t+strlen(t)+1;
+    (*tagsize)+=(strlen(t)+strlen(v)+2);
+  }
+}
+
+static void mem_stats(struct osm_file *osmf)
+{
+  GList *l;
+  int total=0;
+  int tssize=0;
+  int usersize=0;
+  int tagsize=0;
+  int taglistsize=0;
+  int nwaylistsize=0;
+  int ncount=g_list_length(osmf->nodes);
+  int wcount=g_list_length(osmf->ways);
+  total+=ncount*(sizeof(GList)+sizeof(struct osm_node));
+  total+=wcount*(sizeof(GList)+sizeof(struct osm_way));
+  printf("%-50s: %7d\n","nodes",ncount);
+  printf("%-50s: %7d\n","node structs",(sizeof(GList)+sizeof(struct osm_node))*ncount);
+  for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
+    struct osm_node *nd=(struct osm_node *)l->data;
+    head_stats(&nd->head,&tssize,&usersize,&taglistsize,
+	       &tagsize);
+    nwaylistsize+=nd->nr_ways*sizeof(GList);
+  }
+  printf("%-50s: %7d\n","node way list size",nwaylistsize);
+  printf("%-50s: %7d\n","time stamp size",tssize);
+  printf("%-50s: %7d\n","username size",usersize);
+  printf("%-50s: %7d\n","taglist size",taglistsize);
+  printf("%-50s: %7d\n","tags size",tagsize);
+  total+=nwaylistsize+tssize+usersize+taglistsize+tagsize;
+
+  nwaylistsize=tssize=usersize=taglistsize=tagsize=0;
+  printf("%-50s: %7d\n","ways",wcount);
+  printf("%-50s: %7d\n","way structs",(sizeof(GList)+sizeof(struct osm_way))*wcount);
+  for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
+    struct osm_way *way=(struct osm_way *)l->data;
+    head_stats(&way->head,&tssize,&usersize,&taglistsize,
+	       &tagsize);
+    nwaylistsize+=way->nr_nodes*sizeof(int);
+  }
+  printf("%-50s: %7d\n","way node arrays size",nwaylistsize);
+  printf("%-50s: %7d\n","time stamp size",tssize);
+  printf("%-50s: %7d\n","username size",usersize);
+  printf("%-50s: %7d\n","taglist size",taglistsize);
+  printf("%-50s: %7d\n","tags size",tagsize);
+  total+=nwaylistsize+tssize+usersize+taglistsize+tagsize;
+  printf("\n%-50s: %7d\n","TOTAL",total);  
+}
+
 struct osm_file * parse_osm_file(struct osm_file *mergeto,
 				 const char *fname, int all_ways)
 {
@@ -859,5 +919,6 @@ struct osm_file * parse_osm_file(struct osm_file *mergeto,
     }
     free(octxt);
   }
+  mem_stats(mergeto?mergeto:osmf);
   return osmf;
 }

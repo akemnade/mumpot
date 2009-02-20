@@ -13,23 +13,23 @@
 #ifndef K_OSM_PARSE_H
 #define K_OSM_PARSE_H
 struct osm_object {
-  enum { NODE, SEGMENT, WAY } type;
-  xmlNodePtr xmlnode;
   GList *tag_list;
   char *timestamp;
   char *user;
-  int modified;
   int id;
+  int modified:1;
+  enum { NODE, RELATION, WAY } type:8;
 };
 
 extern int max_free_num;
 
 struct osm_node {
    struct osm_object head;
+  short nr_ways;
   /* GList *segment_list; */
    GList *way_list; 
   /* int nr_segments; */
-  int nr_ways;
+  
   double lat;
   double lon;
 
