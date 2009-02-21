@@ -27,11 +27,22 @@
 double point_dist(double reflon, double reflat, double  lon,
 		  double lat)
 {
-  double ldiff, la1, dist;
+  double ldiff, la1, dist,t;
   ldiff=(lon-reflon)/180.0*M_PI;
   la1=reflat/180.0*M_PI;
   lat=lat/180.0*M_PI;
-  dist=acos(sin(la1)*sin(lat)+cos(la1)*cos(lat)*cos(ldiff));
+  t=0;
+  if (lon==reflon) {
+    dist=abs(la1-lat); 
+  } else { 
+    t=sin(la1)*sin(lat)+cos(la1)*cos(lat)*cos(ldiff);
+    dist=acos(t);
+  }
+  if (isnan(dist)) {
+    fprintf(stderr,"nan: sin+sin+cos*cos*cos-1: %f\n",t-1); 
+    fprintf(stderr,"%.8f/%.8f %.8f/%.8f\n",reflon,reflat,lon,lat);
+    dist=0;
+  }
   dist=6371221.0*dist;
   return dist;
 }
