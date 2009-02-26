@@ -32,6 +32,12 @@ double point_dist(double reflon, double reflat, double  lon,
   la1=reflat/180.0*M_PI;
   lat=lat/180.0*M_PI;
   t=0;
+  if (abs(ldiff)<0.002) { /* approximate */
+    ldiff=cos(la1)*ldiff;
+    lat=la1-lat;
+    dist=sqrt(ldiff*ldiff+lat*lat);
+    return dist;
+  }
   if (lon==reflon) {
     dist=abs(la1-lat); 
   } else { 
