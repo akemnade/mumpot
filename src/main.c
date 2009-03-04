@@ -1085,16 +1085,39 @@ config_event(GtkWidget *widget, GdkEventConfigure *event, gpointer data)
 void scrollbar_moved(GtkWidget *w,gpointer data)
 {
   struct mapwin *mw=data;
+  int oldpx=mw->page_x;
+  int oldpy=mw->page_y;
+  int dx,dy;
   mw->page_x=GTK_ADJUSTMENT(mw->hadj)->value;
   mw->page_y=GTK_ADJUSTMENT(mw->vadj)->value;
+  dx=mw->page_x-oldpx;
+  dy=mw->page_y-oldpy;
   gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
-  
-  mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
-	      mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
-  
+  if ((MY_ABS(dx)<mw->page_width)&&(MY_ABS(dy)<mw->page_height)) {
+    gdk_draw_drawable(mw->map_store,mw->map->style->fg_gc[mw->map->state],mw->map_store,
+		      (dx>0)?dx:0,(dy>0)?dy:0,(dx>0)?0:-dx,(dy>0)?0:-dy,
+		      mw->page_width-MY_ABS(dx),mw->page_height-MY_ABS(dy));
+    if (dx) {
+      int dxoff=dx>0?(mw->page_width-dx):0;
+      
+      mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+		  mw->page_x+dxoff,mw->page_y,dxoff,0,MY_ABS(dx),mw->page_height-MY_ABS(dy));
+      
+    }
+    if (dy) {
+      int dyoff=dy>0?(mw->page_height-dy):0;
+      mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+		  mw->page_x,mw->page_y+dyoff,0,dyoff,
+		  mw->page_width,MY_ABS(dy));
+    }
+    
+  } else {
+    mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+		mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
+  }
   /*
   if (mw->osm_main_file)
-    draw_osm(mw,mw->osm_main_file,mygc);
+  draw_osm(mw,mw->osm_main_file,mygc);
   draw_marks(mw);
   if (mw->draw_crosshair) {
     draw_crosshair(mw);
