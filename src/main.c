@@ -1092,6 +1092,9 @@ void scrollbar_moved(GtkWidget *w,gpointer data)
   mw->page_y=GTK_ADJUSTMENT(mw->vadj)->value;
   dx=mw->page_x-oldpx;
   dy=mw->page_y-oldpy;
+  if ((dx==0)&&(dy==0))
+    return;
+  printf("dx: %d dy: %d\n",dx,dy);
   gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
   if ((MY_ABS(dx)<mw->page_width)&&(MY_ABS(dy)<mw->page_height)) {
     gdk_draw_drawable(mw->map_store,mw->map->style->fg_gc[mw->map->state],mw->map_store,
