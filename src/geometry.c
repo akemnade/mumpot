@@ -36,7 +36,7 @@ double point_dist(double reflon, double reflat, double  lon,
     ldiff=cos(la1)*ldiff;
     lat=la1-lat;
     dist=sqrt(ldiff*ldiff+lat*lat);
-    return dist;
+    return dist*6371221.0;
   }
   if (lon==reflon) {
     dist=abs(la1-lat); 
