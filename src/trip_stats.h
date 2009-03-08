@@ -20,5 +20,7 @@ struct trip_stats * trip_stats_new();
 void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea);
 void trip_stats_line(struct trip_stats *ts,
 		     char *buf, int len,int current);
+void trip_stats_show(struct trip_stats *ts);
+void trip_stats_hide(struct trip_stats *ts);
 
 #endif

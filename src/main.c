@@ -1104,7 +1104,7 @@ void scrollbar_moved(GtkWidget *w,gpointer data)
       int dxoff=dx>0?(mw->page_width-dx):0;
       
       mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
-		  mw->page_x+dxoff,mw->page_y,dxoff,0,MY_ABS(dx),mw->page_height-MY_ABS(dy));
+		  mw->page_x+dxoff,mw->page_y,dxoff,0,MY_ABS(dx),mw->page_height);
       
     }
     if (dy) {
@@ -1915,6 +1915,15 @@ static void switch_draw_all(gpointer callback_data,
   mw->color_line=GTK_CHECK_MENU_ITEM(w)->active;
 }
 
+
+static void tripstats_cb(gpointer callback_data,
+			 guint callback_action,
+			 GtkWidget *w)
+{
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  trip_stats_show(mw->stats);
+}
+
 static void change_sidebar_cb(gpointer callback_data,
 			      guint callback_action,
 			      GtkWidget *w)
@@ -1961,7 +1970,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {PATH_DISP_SEARCH_N,NULL,GTK_SIGNAL_FUNC(switch_searchdisp),0,"<CheckItem>"},
     {PATH_DISP_CROSSHAIR_N,NULL,GTK_SIGNAL_FUNC(switch_crosshair),0,"<CheckItem>"},
     {PATH_FOLLOW_GPS_N,NULL,GTK_SIGNAL_FUNC(switch_followgps),0,"<CheckItem>"},
-    
+    {N_("/View/Trip stats"),NULL,GTK_SIGNAL_FUNC(tripstats_cb),0,"<CheckItem>"},
     {N_("/View/Select line layer/0"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),0,"<RadioItem>"},
     {N_("/View/Select line layer/1"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),1,N_("/View/Select line layer/0")},
     {N_("/View/Select line layer/2"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),2,N_("/View/Select line layer/0")},
