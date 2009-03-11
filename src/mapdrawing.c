@@ -1150,8 +1150,6 @@ int mapwin_draw(struct mapwin *mw,
       src_y=src_y+map->tileheight-yoffset;
       dest_y=dest_y+map->tileheight-yoffset;
     }
-  gdk_draw_pixmap(mw->map->window,mygc,mw->map_store,dx,dy,dx,dy,width,
-		  height);
  
 #ifndef WIN32
   gettimeofday(&tv2,NULL);
