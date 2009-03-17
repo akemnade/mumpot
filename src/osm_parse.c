@@ -93,6 +93,61 @@ void set_osm_tag(struct osm_object *obj, char *key, char *v)
   }
 }
 
+void osm_split_way_at_node(struct osm_file *osmf,
+			   struct osm_way *way,
+			   struct osm_node *nd)
+{
+  int i;
+  GList *l;
+  struct osm_way *way2;
+  for(i=1;i<way->nr_nodes;i++) {
+    if (way->nodes[i]==nd->head.id)
+      break;
+  }
+  if ((i==0)||(i==way->nr_nodes)||((i+1)==way->nr_nodes)) {
+    return;
+  }
+  osmf->changed=1;
+  way2=add_new_osm_way(osmf);
+  way2->nr_nodes=way->nr_nodes-i;
+  way2->nodes=malloc(sizeof(int)*(way2->nr_nodes));
+  memcpy(way2->nodes,way->nodes+i,way2->nr_nodes*sizeof(int));
+  way->nr_nodes=i+1;
+  way->head.modified=1;
+  nd->way_list=g_list_append(nd->way_list,way2);
+  nd->nr_ways++;
+  for(i=1;i<way2->nr_nodes;i++) {
+    nd=get_osm_node(way2->nodes[i]);
+    if (nd) {
+      nd->way_list=g_list_remove(nd->way_list,way);
+      nd->way_list=g_list_append(nd->way_list,way2);
+    }
+  }
+  for(l=g_list_first(way->head.tag_list);l;l=g_list_next(l)) {
+    char *t;
+    char *t2;
+    int len;
+    t=(char *)l->data;
+    len=strlen(t);
+    len++;
+    len+=strlen(t+len);
+    len++;
+    t2=malloc(len);
+    memcpy(t2,t,len);
+    way2->head.tag_list=g_list_append(way2->head.tag_list,t2);
+  }
+  osmway_initialize_flags(way2);
+}
+
+void osm_split_ways_at_node(struct osm_file *osmf,
+			    struct osm_node *nd)
+{
+  GList *l;
+  for(l=g_list_first(nd->way_list);l;l=g_list_next(l)) {
+    osm_split_way_at_node(osmf,(struct osm_way *)l->data,nd);
+  }
+}
+
 void put_obj_id(struct osm_object *obj,int id)
 {
   struct osm_object ***ind;
@@ -212,7 +267,7 @@ void add_nodes_to_way(struct osm_way *way, GList *l)
   int la=g_list_length(l);
   int i;
   way->nr_nodes+=la;
-  way->nodes=realloc(way->nodes,sizeof(struct osm_node *)*way->nr_nodes);
+  way->nodes=realloc(way->nodes,sizeof(int)*way->nr_nodes);
   for(i=offset;l;l=g_list_next(l),i++) {
     struct osm_node *nd=(struct osm_node *)l->data;
     way->nodes[i]=nd->head.id;
