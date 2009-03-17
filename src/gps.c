@@ -59,9 +59,10 @@ void  save_nmea(FILE *f,GList *save_list)
 {
   int i;
   GList *l;
+  time_t t;
+  struct tm *tm;
   for(i=0,l=g_list_first(save_list);l;l=g_list_next(l),i++)
   {
-  char *ptime;
   char tbuf[40];
   struct t_punkt32 *p=(struct t_punkt32 *)l->data;
   int lattdeg, longdeg;
@@ -74,17 +75,17 @@ void  save_nmea(FILE *f,GList *save_list)
   lattmin = ((double)lattdeg)*3600.0;
   lattmin = p->latt - lattmin;
   lattmin /= 60.0;
-  ptime=p->time;
-  if (!ptime) {
-      snprintf(tbuf,sizeof(tbuf),"%02d%02d%02d.0",i/3600,(i/60)%60,i%60);
-      ptime=tbuf;
-  }
+  t=p->time;
+  tm=gmtime(&t);
+  if (tm->tm_year > 100)
+    tm->tm_year-=100;
   /*
   fprintf(f,"%.1f %.1f\n",p->latt,p->longg);
   */
-  fprintf(f,"$GPRMC,%s,A,%02d%07.4f,%c,%03d%07.4f,%c,%f,,170507,0.4,E,S\n",
-          ptime,
-          lattdeg,lattmin,'N',longdeg,longmin,'E',p->speed);
+  fprintf(f,"$GPRMC,%02d%02d%02d.0,A,%02d%07.4f,%c,%03d%07.4f,%c,%f,,%02d%02d%02d,0.4,E,S\n",
+          tm->tm_hour,tm->tm_min,tm->tm_sec,
+          lattdeg,lattmin,'N',longdeg,longmin,'E',p->speed,
+	  tm->tm_mday,tm->tm_mon+1,tm->tm_year);
   }
 }
  
@@ -122,7 +123,7 @@ static void gps_to_line(struct nmea_pointinfo *nmea,void  *data)
     p_new=calloc(1,sizeof(struct t_punkt32));
     p_new->longg=nmea->longsec;
     p_new->latt=nmea->lattsec;
-    p_new->time=g_strdup(nmea->time);
+    p_new->time=nmea->time;
     p_new->speed=nmea->speed;
     p_new->single_point=nmea->single_point;
     p_new->start_new=nmea->start_new;
@@ -320,14 +321,28 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
       char *fields[13];
       int numfields=my_split(gpsf->buf,fields,",",13);
       if (((numfields == 13)||(numfields == 12))&&(strlen(fields[3])>3)) {
-        gpsf->curpoint.lattsec=to_seconds(fields[3]);
+	struct tm tm;
+	struct tm *tmref;
+        time_t t;
+	time_t tref;
+	gpsf->curpoint.lattsec=to_seconds(fields[3]);
         gpsf->curpoint.longsec=to_seconds(fields[5]);
         if ((fields[4])[0] == 'S')
           gpsf->curpoint.lattsec=-gpsf->curpoint.lattsec;
         if ((fields[6])[0] == 'W')
           gpsf->curpoint.longsec=-gpsf->curpoint.longsec;
-        gpsf->curpoint.time=fields[1];
-        gpsf->curpoint.date=fields[9];
+	memset(&tm,0,sizeof(tm));
+	sscanf(fields[1],"%02d%02d%02d",&tm.tm_hour,&tm.tm_min,&tm.tm_sec);
+	sscanf(fields[9],"%02d%02d%02d",&tm.tm_mday,&tm.tm_mon,&tm.tm_year);
+	tm.tm_mon--;
+	if (tm.tm_year<70)
+	  tm.tm_year+=100;
+	t=mktime(&tm);  /* t=tm-tz */
+	tmref=gmtime(&t); /* tmref=t=tm-tz */
+	tref=mktime(tmref); /* tref=tmref-tz=tm-2*tz=t-tz */
+	                    /* tz=t-tref , tm=t+tz=t+(t-tref)*/
+        t=t*2-tref;
+        gpsf->curpoint.time=t;
         gpsf->curpoint.speed=atof(fields[7]);
         gpsf->curpoint.heading=atof(fields[8]);
         gpsf->curpoint.state=(numfields==13)?((fields[12])[0]):'?';

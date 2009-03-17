@@ -679,7 +679,7 @@ struct t_punkt32 *geosec2pointstruct(double long_sec, double latt_sec)
   p_new->latt=latt_sec;
   p_new->x=(int)x;
   p_new->y=(int)y;
-  p_new->time=NULL;
+  p_new->time=0;
   p_new->speed=0;
   return p_new;
 }
@@ -771,8 +771,6 @@ void point2geosec(double *longr, double *lattr, double x, double y)
 static void free_line(gpointer data,gpointer user_data)
 {
   struct t_punkt32 *p = (struct t_punkt32 *)data;
-  if (p->time)
-    free(p->time);
   free(data);
 }
 
@@ -1008,7 +1006,7 @@ static void gps_to_line(struct nmea_pointinfo *nmea,void  *data)
   GList **mll=data;
   struct t_punkt32 *p_new;
   p_new=geosec2pointstruct(nmea->longsec,nmea->lattsec);
-  p_new->time=g_strdup(nmea->time);
+  p_new->time=nmea->time;
   p_new->speed=nmea->speed;
   p_new->hdop=nmea->hdop;
   p_new->single_point=nmea->single_point;

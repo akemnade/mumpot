@@ -656,12 +656,21 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
   if (entf==0) {
     gtk_label_set_text(GTK_LABEL(mw->entf_label),"");
   } else {
+    char tbuf[80];
+    tbuf[0]=0;
+    if ((p1)&&(p1->time)) {
+      time_t t=p1->time;
+      struct tm *tm=localtime(&t);
+      snprintf(tbuf,sizeof(tbuf),
+	       " %02d:%02d:%02d",
+	       tm->tm_hour,tm->tm_min,tm->tm_sec);
+    }
     if (p1->speed!=0) {
       snprintf(buf,sizeof(buf),"%.3f km %.f km/h %s",entf,p1->speed*1.852,
-	       (p1&&p1->time)?p1->time:"");
+	       tbuf);
     } else {
       snprintf(buf,sizeof(buf),"%.3f km %s",entf,
-	       (p1&&p1->time)?p1->time:"");
+	       tbuf);
     }
     gtk_label_set_text(GTK_LABEL(mw->entf_label),buf);
   }
@@ -1587,7 +1596,7 @@ static void got_gps_position(struct nmea_pointinfo *nmea,
   struct t_punkt32 *p_new;
   mw->have_gpspos|=1;
   p_new=geosec2pointstruct(nmea->longsec,nmea->lattsec);
-  p_new->time=g_strdup(nmea->time);
+  p_new->time=nmea->time;
   p_new->speed=nmea->speed;
   p_new->hdop=nmea->hdop;
   p_new->single_point=nmea->single_point;
@@ -2252,7 +2261,7 @@ static void add_pkt_to_list(GList **l, int x, int y)
   p->x=x<<globalmap.zoomshift;
   p->y=y<<globalmap.zoomshift;
   point2geosec(&p->longg,&p->latt,(double)x,(double)y);
-  p->time=NULL;
+  p->time=0;
   *l=g_list_append(*l,p);
 }
 

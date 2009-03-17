@@ -16,8 +16,7 @@ struct nmea_pointinfo {
   double lattsec;
   double speed;
   double heading;
-  char *time;
-  char *date;
+  int time;
   char state;
   int hdop;  /* 10 times the hdop */
   unsigned start_new: 1;
@@ -30,7 +29,7 @@ struct t_punkt32 {
   int hdop;
   double longg;
   double latt;
-  char *time;
+  int time;
   unsigned start_new:1;
   unsigned single_point:1;
 };
