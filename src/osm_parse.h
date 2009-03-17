@@ -92,4 +92,10 @@ void osm_delete_node(struct osm_file *osmf,
 void osm_set_node_coords(struct osm_node *node,double lon, double lat);
 int save_osm_file(const char *fname, struct osm_file *osmf);
 void printtimediff(const char *format,const struct timeval *tvstart, const struct timeval *tvend);
+void osm_split_way_at_node(struct osm_file *osmf,
+			   struct osm_way *way,
+			   struct osm_node *nd);
+void osm_split_ways_at_node(struct osm_file *osmf,
+			    struct osm_node *nd);
+
 #endif

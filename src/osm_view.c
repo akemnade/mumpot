@@ -119,6 +119,7 @@ struct osm_info {
     GtkWidget *addwaybut;
     GtkWidget *delobjbut;
     GtkWidget *joinbut;
+    GtkWidget *splitbut;
   } editb;
   int clicktime;
   int moving_node;
@@ -1629,7 +1630,7 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
   mw->osm_inf->way_to_edit=NULL;
   if (mw->osm_inf->selected_object == NULL)
     return;
-  if (mw->osm_inf->selected_object->type == WAY)
+  if (mw->osm_inf->selected_object->type != NODE)
     return;
   node=(struct osm_node *)mw->osm_inf->selected_object;
   geosec2point(&x,&y,node->lon*3600.0,node->lat*3600.0);
@@ -1653,6 +1654,21 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
 		   node);
   }
   
+}
+
+static void osmedit_splitbut_cb(GtkWidget *w, gpointer data)
+{
+  struct mapwin *mw = (struct mapwin *)data;
+  struct osm_node *node;
+  mw->osm_inf->way_to_edit=NULL;
+  if (mw->osm_inf->selected_object == NULL)
+    return;
+  if (mw->osm_inf->selected_object->type != NODE)
+    return;
+  node=(struct osm_node *)mw->osm_inf->selected_object;
+  mw->osm_main_file->changed=1;
+  osm_split_ways_at_node(mw->osm_main_file,
+			 node);
 }
 
 static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
@@ -1749,19 +1765,31 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),
 		     mw->osm_inf->editb.joinbut,
 		     TRUE,TRUE,0);
+  mw->osm_inf->editb.splitbut=gtk_button_new_with_label(" S ");
+  gtk_tooltips_set_tip(tt,mw->osm_inf->editb.splitbut,
+		       _("split the ways going through the selected node"),
+		       NULL);
+  gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),
+		     mw->osm_inf->editb.splitbut,
+		     TRUE,TRUE,0);
   gtk_widget_show(mw->osm_inf->editb.delobjbut);
   gtk_widget_show(mw->osm_inf->editb.addwaybut);
   gtk_widget_show(mw->osm_inf->editb.selbut);
   gtk_widget_show(mw->osm_inf->editb.joinbut);
+  gtk_widget_show(mw->osm_inf->editb.splitbut);
   gtk_widget_set_sensitive(mw->osm_inf->editb.delobjbut,0);
   gtk_widget_set_sensitive(mw->osm_inf->editb.selbut,0);
   gtk_widget_set_sensitive(mw->osm_inf->editb.addwaybut,0);
-
+  gtk_widget_set_sensitive(mw->osm_inf->editb.joinbut,0);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.splitbut,0);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_selbut_cb),mw->osm_inf);
   
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",			    
 			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+
+  gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.splitbut),"clicked",
+		     GTK_SIGNAL_FUNC(osmedit_splitbut_cb),mw);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_addwaybut_cb),mw->osm_inf);
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",			    
@@ -1830,6 +1858,8 @@ void load_osm_gfx(struct mapwin *mw, const char *name)
   gtk_widget_set_sensitive(mw->osm_inf->editb.delobjbut,1);
   gtk_widget_set_sensitive(mw->osm_inf->editb.selbut,1);
   gtk_widget_set_sensitive(mw->osm_inf->editb.addwaybut,1);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.joinbut,1);
+  gtk_widget_set_sensitive(mw->osm_inf->editb.splitbut,1);
 
 }
 
