@@ -1396,15 +1396,28 @@ static void save_mark_line(GtkWidget *w,
   const char *fname;
   FILE *f;
   struct mapwin *mw;
+  GtkWidget *combo;
+  char *txt;
   mw=(struct mapwin *)gtk_object_get_user_data(GTK_OBJECT(data));
   fname=gtk_file_selection_get_filename(GTK_FILE_SELECTION(data));
   if (!*mw->mark_line_list)
     return;
-  f=fopen(fname,"w");
-  if (!f)
-    return;
-  save_nmea(f,*mw->mark_line_list);
-  fclose(f);
+  combo=GTK_WIDGET(gtk_object_get_data(GTK_OBJECT(data),"format"));
+#ifdef USE_GTK2
+  txt=gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo));
+#else
+  txt=gtk_editable_get_text(GTK_EDITABLE(GTK_COMBO(combo)->entry),
+			    0,-1);
+#endif
+  if (!strcasecmp("GPX",txt)) {
+    save_gpx(fname,*mw->mark_line_list);
+  } else {
+    f=fopen(fname,"w");
+    if (!f)
+      return;
+    save_nmea(f,*mw->mark_line_list);
+    fclose(f);
+  }
 }
 
 static void save_mark_line_menucb(gpointer callback_data,
@@ -1412,8 +1425,24 @@ static void save_mark_line_menucb(gpointer callback_data,
 			     GtkWidget *w)
 {
   GtkWidget *fs;
+  GtkWidget *combo;
   fs=gtk_file_selection_new(_("select a name for the new nmea file"));
+#ifdef USE_GTK2
+  combo=gtk_combo_box_new_text();
+  gtk_combo_box_append_text(GTK_COMBO_BOX(combo),"NMEA");
+  gtk_combo_box_append_text(GTK_COMBO_BOX(combo),"GPX");
+  gtk_combo_box_set_active(GTK_COMBO_BOX(combo),1);
+#else
+  combo=gtk_combo_new();
+  GList *l=g_list_append(g_list_append(NULL,"gpx"),"nmea");
+  gtk_combo_set_popdown_strings(GTK_COMBO(combo),l);
+  g_list_free(l);
+  gtk_combo_set_value_in_list(GTK_COMBO(combo),TRUE,FALSE);
+#endif
+  gtk_box_pack_end(GTK_BOX(GTK_FILE_SELECTION(fs)->main_vbox),
+		   combo,FALSE,TRUE,0);
   gtk_object_set_user_data(GTK_OBJECT(fs),callback_data);
+  gtk_object_set_data(GTK_OBJECT(fs),"format",combo);
   gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button),
 			    "clicked",GTK_SIGNAL_FUNC(gtk_widget_destroy),(void*)fs);
   gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button),"clicked",
