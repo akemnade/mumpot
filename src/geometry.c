@@ -105,7 +105,7 @@ GList * simplify_lines(GList *lines, GList *linelast, double allowed_distance) {
     firstp=(struct t_punkt32 *)lines->data;
     lastp=(struct t_punkt32 *)linelast->data;
     if (firstp->time) {
-      fprintf(stderr, " %s -> %s\n",firstp->time,lastp->time);
+      fprintf(stderr, " %d -> %d\n",firstp->time,lastp->time);
     }
     l = g_list_next(lines);
     if ((lines==linelast)||(l==linelast)) {
@@ -125,7 +125,7 @@ GList * simplify_lines(GList *lines, GList *linelast, double allowed_distance) {
     } else {
         GList *head;
         GList *tail;
-        fprintf(stderr,"splitting at %s\n",((struct t_punkt32 *)max->data)->time);
+        fprintf(stderr,"splitting at %d\n",((struct t_punkt32 *)max->data)->time);
         head=simplify_lines(lines,max,allowed_distance);
         tail=simplify_lines(max,linelast,allowed_distance);
         return g_list_concat(head,tail);
