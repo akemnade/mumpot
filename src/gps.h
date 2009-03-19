@@ -36,6 +36,7 @@ struct t_punkt32 {
 
 struct gpsfile;
 
+int save_gpx(const char  *f,GList *save_list);
 void  save_nmea(FILE *f,GList *save_list);
 void load_gps_line_noproj(const char *fname, GList **mll);
 struct gpsfile *open_gps_file(int fd);

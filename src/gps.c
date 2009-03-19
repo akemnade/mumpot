@@ -20,6 +20,7 @@
 #include <glib.h>
 #include <stdio.h>
 #include <libxml/parser.h>
+#include <libxml/xmlwriter.h>
 #include <locale.h>
 #include <zlib.h>
 #include "gps.h"
@@ -55,7 +56,59 @@ double to_seconds(char *str)
   return degs * 3600.0+mins*60.0;
   
 }
-void  save_nmea(FILE *f,GList *save_list)
+
+int save_gpx(const char *fname,GList *save_list)
+{
+  time_t t=time(NULL);
+  struct tm tm;
+  GList *l;
+  xmlTextWriterPtr writer;
+  writer=xmlNewTextWriterFilename(fname,0);
+  if (!writer)
+    return 0;
+  xmlTextWriterStartDocument(writer,NULL,"UTF-8",NULL);
+  xmlTextWriterStartElement(writer,(xmlChar *)"gpx");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"1.0");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"creator",(xmlChar *)PACKAGE " " VERSION);
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"xmlns:xsi",(xmlChar *)"http://www.w3.org/2001/XMLSchema-instance");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"xmlns",
+			      (xmlChar *)"http://www.topografix.com/GPX/1/0");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"xsi:schemaLocation",(xmlChar *)"http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd");
+  tm=*gmtime(&t);
+  xmlTextWriterWriteFormatElement(writer,(xmlChar *)"time","%04d-%02d-%02dT%02d:%02d:%02d",
+			    tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,
+			    tm.tm_hour,tm.tm_min,tm.tm_sec);
+  xmlTextWriterStartElement(writer,(xmlChar *)"trk");
+  xmlTextWriterStartElement(writer,(xmlChar *)"trkseg");
+  for(l=g_list_first(save_list);l;l=g_list_next(l)) {
+    struct t_punkt32 *p=(struct t_punkt32 *)l->data;
+    xmlTextWriterStartElement(writer,(xmlChar *)"trkpt");
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"lat","%f",
+				      p->latt/3600.0);
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"lon","%f",
+				      p->longg/3600.0);
+    if (p->time) {
+      t=p->time;
+      tm=*gmtime(&t);
+      xmlTextWriterWriteFormatElement(writer,(xmlChar*)"time",
+				"%04d-%02d-%02dT%02d:%02d:%02d",
+				tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,
+				tm.tm_hour,tm.tm_min,tm.tm_sec);
+    }
+    if (p->speed>0)
+      xmlTextWriterWriteFormatElement(writer,(xmlChar *)"speed","%f",p->speed*1.852/3.6);
+    xmlTextWriterEndElement(writer); /* /trkpt */
+    
+  }
+  xmlTextWriterEndElement(writer); /*trkseg */
+  xmlTextWriterEndElement(writer); /* trk */
+  xmlTextWriterEndElement(writer); /* gpx */
+  xmlTextWriterEndDocument(writer);
+  xmlFreeTextWriter(writer);
+  return 1;
+}
+
+void save_nmea(FILE *f,GList *save_list)
 {
   int i;
   GList *l;
@@ -114,6 +167,17 @@ static int my_split(char *bigstr, char **needle, char *delim, int maxsplit)
 }
 
 
+static time_t gmmktime(struct tm *tm)
+{
+  time_t t,tref;
+  struct tm *tmref;
+  t=mktime(tm);  /* t=tm-tz */
+  tmref=gmtime(&t); /* tmref=t=tm-tz */
+  tref=mktime(tmref); /* tref=tmref-tz=tm-2*tz=t-tz */
+  /* tz=t-tref , tm=t+tz=t+(t-tref)*/
+  t=t*2-tref;
+  return t;
+}
 
 static void gps_to_line(struct nmea_pointinfo *nmea,void  *data)
 {
@@ -225,7 +289,8 @@ static void mystarthandler(void *ctx,
   }
   if ((!strcmp((char *)name,"speed")) ||
       (!strcmp((char *)name,"fix")) ||
-      (!strcmp((char *)name,"course"))) {
+      (!strcmp((char *)name,"course")) ||
+      (!strcmp((char *)name,"time"))) {
     gpsf->contreading=1;
     gpsf->xmlbufpos=0;
   }
@@ -248,6 +313,19 @@ static void myendhandler(void *ctx,
   } else if (!strcmp((char *)name,"speed")) {
     gpsf->xmlbuf[gpsf->xmlbufpos]=0;
     gpsf->curpoint.speed=atof(gpsf->xmlbuf)*3.6/1.852;
+    gpsf->contreading=0;
+    gpsf->xmlbufpos=0;
+  } else if (!strcmp((char *)name,"time")) {
+    struct tm tm;
+    memset(&tm,0,sizeof(tm));
+    gpsf->xmlbuf[gpsf->xmlbufpos]=0;
+    sscanf(gpsf->xmlbuf,
+	   "%04d-%02d-%02dT%02d:%02d:%02d",
+	   &tm.tm_year,&tm.tm_mon,&tm.tm_mday,
+	   &tm.tm_hour,&tm.tm_min,&tm.tm_sec);
+    tm.tm_year-=1900;
+    tm.tm_mon--;
+    gpsf->curpoint.time=gmmktime(&tm);
     gpsf->contreading=0;
     gpsf->xmlbufpos=0;
   } else if (!strcmp((char *)name,"course")) {
@@ -337,11 +415,7 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
 	tm.tm_mon--;
 	if (tm.tm_year<70)
 	  tm.tm_year+=100;
-	t=mktime(&tm);  /* t=tm-tz */
-	tmref=gmtime(&t); /* tmref=t=tm-tz */
-	tref=mktime(tmref); /* tref=tmref-tz=tm-2*tz=t-tz */
-	                    /* tz=t-tref , tm=t+tz=t+(t-tref)*/
-        t=t*2-tref;
+	t=gmmktime(&tm);  /* t=tm-tz */
         gpsf->curpoint.time=t;
         gpsf->curpoint.speed=atof(fields[7]);
         gpsf->curpoint.heading=atof(fields[8]);
