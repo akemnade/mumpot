@@ -210,6 +210,7 @@ static void remove_node_from_way(struct osm_way *way,
       j++;
     }
   }
+  way->head.modified=1;
   way->nr_nodes=j;
 }
 
