@@ -98,10 +98,10 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 	  bm=hte->bm;
 	}
 	if (!gdkpm)
-	  gdkpm=gdk_pixmap_create_from_xpm(win->window,&bm,NULL,pi->img);
+	  gdkpm=my_gdk_pixmap_create_from_gfx(win->window,&bm,pi->img);
 	if (!gdkpm) {
 	  snprintf(fbuf,sizeof(fbuf),MUMPOT_DATADIR "/pixmaps/%s",pi->img);
-	  gdkpm=gdk_pixmap_create_from_xpm(win->window,&bm,NULL,fbuf);
+	  gdkpm=my_gdk_pixmap_create_from_gfx(win->window,&bm,fbuf);
 	}
 	if (!gdkpm) {
 	  char *h;

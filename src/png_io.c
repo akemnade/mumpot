@@ -31,6 +31,10 @@ void free_pinfo(struct pixmap_info *p_info)
     if (p_info->row_len)
       free(p_info->row_pointers[0]);
     free(p_info->row_pointers);
+    if (p_info->row_mask_pointers) {
+      free(p_info->row_mask_pointers[0]);
+      free(p_info->row_mask_pointers);
+    }
   }
   free(p_info);
 }
@@ -101,6 +105,27 @@ void save_pinfo(const char *filename,struct pixmap_info *pinfo)
 
 }
 
+static void convert_alpha(struct pixmap_info *pinfo)
+{
+  int row,i;
+  for(row=0;row<pinfo->height;row++) {
+    png_bytep *dest=pinfo->row_pointers[row];
+    png_bytep *src=pinfo->row_pointers[row];
+    png_bytep *mask=pinfo->row_mask_pointers[row];
+    for(i=0;i<pinfo->width;i++) {
+      *dest=*src;
+      dest++; src++;
+      *dest=*src;
+      dest++; src++;
+      *dest=*src;
+      dest++; src++;
+      *mask=*src;
+      mask++;
+      src++;
+    }
+  }
+}
+
 /* load a png file and store it in a pixmap_info struct */
 struct pixmap_info *load_gfxfile(const char *filename)
 {
@@ -164,6 +189,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
                &pinfo.color_type,
                &pinfo.interlace_type, NULL, NULL);
   pinfo.num_palette=0;
+  pinfo.row_mask_pointers=NULL;
   if (pinfo.color_type & PNG_COLOR_TYPE_PALETTE)
     {
       int i;
@@ -185,7 +211,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
     }
   num_channels=png_get_channels(png_ptr,info_ptr);
   if (num_channels == 4) {
-    png_set_strip_alpha(png_ptr);
+    /* png_set_strip_alpha(png_ptr); */
     pinfo.color_type &= (~PNG_COLOR_MASK_ALPHA);
   }
   if (pinfo.bit_depth > 8) {
@@ -209,17 +235,27 @@ struct pixmap_info *load_gfxfile(const char *filename)
   /* alloc the bitmap memory */
   pinfo.row_pointers=malloc(sizeof(png_bytep)*pinfo.height);
   pinfo.row_len=(png_get_rowbytes(png_ptr,info_ptr)+3)&(~3);
+  pinfo.row_mask_len=pinfo.width;
   pinfo.row_pointers[0]=malloc(pinfo.height*pinfo.row_len);
-  for (row = 1; row < pinfo.height; row++)
-    {
-      pinfo.row_pointers[row] = pinfo.row_pointers[row-1]+pinfo.row_len;
-    }  
+  for (row = 1; row < pinfo.height; row++) {
+    pinfo.row_pointers[row] = pinfo.row_pointers[row-1]+pinfo.row_len;
+  }  
+  if (num_channels==4) {
+    pinfo.row_mask_pointers=malloc(height*sizeof(unsigned char *));
+    pinfo.row_mask_pointers[0]=malloc(pinfo.width*pinfo.height);
+    for (row = 1; row < pinfo.height; row++) {
+      pinfo.row_mask_pointers[row] = pinfo.row_mask_pointers[row-1]+pinfo.row_mask_len;
+    }
+  }
   /* read the whole image */
   png_read_image(png_ptr, pinfo.row_pointers); 
   png_read_end(png_ptr, info_ptr);  
   png_destroy_read_struct(&png_ptr, &info_ptr,
 			  NULL);
   fclose(fh);
+  if (num_channels == 4) {
+    convert_alphs(&pinfo);
+  }
   pi_ret=(struct pixmap_info *)malloc(sizeof(struct pixmap_info));
   memcpy(pi_ret,&pinfo,sizeof(struct pixmap_info));
   return pi_ret;

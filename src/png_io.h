@@ -15,15 +15,17 @@
 #define K_PNG_IO_H
 /* pixmap info struct */
 struct pixmap_info {
-  png_bytep *row_pointers; /* bitmap data pointers, one pointer per row */
+  unsigned char **row_pointers; /* bitmap data pointers, one pointer per row */
+  unsigned char **row_mask_pointers;
   int num_palette; /* number of colors */
   unsigned long width;  
   unsigned long height;
   int row_len;        /* length of a row in bytes */
+  int row_mask_len;
   unsigned int gdk_palette[256];  
   int bit_depth;
   int color_type;
-  int interlace_type;   
+  int interlace_type;
 };
 void save_pinfo(const char *filename,struct pixmap_info *pinfo);
 void free_pinfo(struct pixmap_info *p_info);

@@ -17,6 +17,7 @@
 #include <glib.h>
 #include <stdio.h>
 #include "myintl.h"
+#include "png_io.h"
 #include "gps.h"
 #include "mapconfig_data.h"
 #include "mapdrawing.h"
@@ -65,3 +66,43 @@ void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data)
 		     FALSE,FALSE,0);
   gtk_widget_show_all(dialog);
 }
+
+GdkPixmap *my_gdk_pixmap_creyte_from_gfx(GdkWindow *win,GdkBitmap **bm,
+					 char *fname)
+{
+  GdkPixmap *pm;
+  GdkGC *mygc;
+  struct pixmap_info *pinfo=load_gfxfile(fname);
+  if (!pinfo)
+    return NULL;
+  pm=gdk_pixmap_new(win,pinfo->width,pinfo->height,-1);
+  mygc=gdk_gc_new(win);
+  if ((bm)&&(pinfo->row_mask_pointers)) {
+    GdkGC *bmgc;
+    *bm=gdk_pixmap_new(NULL,pinfo->width,pinfo->height,1);
+    bmgc=gdk_gc_new(*bm);
+    gdk_draw_gray_image(*bm,mygc,0,0,pinfo->width,pinfo->height,
+			GDK_RGB_DITHER_NONE,pinfo->row_mask_pointers[0],
+			pinfo->row_mask_len);
+    gdk_gc_unref(bmgc);
+  } else {
+    *bm=NULL;
+  }
+  if (pinfo->num_palette) {
+    GdkRgbCmap* cmap=gdk_rgb_cmap_new(pinfo->gdk_palette,
+				      pinfo->num_palette);
+    gdk_draw_indexed_image(pm,mygc,0,0,pinfo->width,pinfo->height,
+			   GDK_RGB_DITHER_NONE,pinfo->row_pointers[0],
+			   pinfo->row_len,cmap);
+    gdk_rgb_cmap_free(cmap);
+			   
+  } else {
+    gdk_draw_rgb_image(pm,mygc,0,0,
+		      pinfo->width,pinfo->height,
+		      GDK_RGB_DITHER_NONE,pinfo->row_pointers[0],
+		      pinfo->row_len);
+  }
+  gdk_gc_unref(mygc);
+  return pm;
+}
+
