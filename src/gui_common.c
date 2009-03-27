@@ -67,7 +67,7 @@ void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data)
   gtk_widget_show_all(dialog);
 }
 
-GdkPixmap *my_gdk_pixmap_creyte_from_gfx(GdkWindow *win,GdkBitmap **bm,
+GdkPixmap *my_gdk_pixmap_create_from_gfx(GdkWindow *win,GdkBitmap **bm,
 					 char *fname)
 {
   GdkPixmap *pm;

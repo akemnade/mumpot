@@ -241,7 +241,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
     pinfo.row_pointers[row] = pinfo.row_pointers[row-1]+pinfo.row_len;
   }  
   if (num_channels==4) {
-    pinfo.row_mask_pointers=malloc(height*sizeof(unsigned char *));
+    pinfo.row_mask_pointers=malloc(pinfo.height*sizeof(unsigned char *));
     pinfo.row_mask_pointers[0]=malloc(pinfo.width*pinfo.height);
     for (row = 1; row < pinfo.height; row++) {
       pinfo.row_mask_pointers[row] = pinfo.row_mask_pointers[row-1]+pinfo.row_mask_len;
@@ -254,7 +254,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
 			  NULL);
   fclose(fh);
   if (num_channels == 4) {
-    convert_alphs(&pinfo);
+    convert_alpha(&pinfo);
   }
   pi_ret=(struct pixmap_info *)malloc(sizeof(struct pixmap_info));
   memcpy(pi_ret,&pinfo,sizeof(struct pixmap_info));
