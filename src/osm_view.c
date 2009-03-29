@@ -823,10 +823,15 @@ static void osm_set_tag_cb(GtkWidget *w, gpointer user_data)
 
 static struct mapwin *sigmw;
 
-int osm_save_file(const char *fname, struct osm_file *osmf)
+int osm_save_file(const char *fname, struct osm_file *osmf,
+		  int only_changes)
 {
-  return save_osm_file(fname,osmf);
+  if (only_changes)
+    return save_osmchange_file(fname,osmf);
+  else
+    return save_osm_file(fname,osmf);
 }
+
 
 static void mysigh(int bla)
 {

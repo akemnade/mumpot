@@ -1548,9 +1548,26 @@ static void osm_filesel_save(GtkWidget *w, gpointer data)
   if (!f)
     return;
   if (mw->osm_main_file) {
-    osm_save_file(f,mw->osm_main_file);
+    osm_save_file(f,mw->osm_main_file,0);
   }
 }
+
+static void osm_filesel_savechanges(GtkWidget *w, gpointer data)
+{
+  struct mapwin *mw;
+  const char *f;
+  mw=(struct mapwin *)gtk_object_get_user_data(GTK_OBJECT(data));
+  f=gtk_file_selection_get_filename(GTK_FILE_SELECTION(data));
+  if (!f)
+    return;
+  if (mw->osm_main_file) {
+    osm_save_file(f,mw->osm_main_file,1);
+  }
+}
+
+
+
+
 
 static void load_osm_menucb(gpointer callback_data,
                             guint callback_action,
@@ -1582,6 +1599,23 @@ static void clear_osm_menucb(gpointer callback_data,
 }
 
 
+static void save_osmchange_menucb(gpointer callback_data,
+				  guint callback_action,
+				  GtkWidget *w)
+{
+  GtkWidget *fs;
+  fs=gtk_file_selection_new(_("save OSM changes as OSC file"));
+  gtk_object_set_user_data(GTK_OBJECT(fs),callback_data);
+  gtk_signal_connect_object(GTK_OBJECT(GTK_FILE_SELECTION(fs)->cancel_button),
+			    "clicked",GTK_SIGNAL_FUNC(gtk_widget_destroy),(void*)fs);
+  gtk_signal_connect(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button),"clicked",
+		     GTK_SIGNAL_FUNC(osm_filesel_savechanges),(void *)fs);
+  gtk_signal_connect_object_after(GTK_OBJECT(GTK_FILE_SELECTION(fs)->ok_button),
+				  "clicked",GTK_SIGNAL_FUNC(gtk_widget_destroy),
+				  (void *)fs);
+  gtk_widget_show_all(fs);
+
+}
 
 static void save_osm_menucb(gpointer callback_data,
 			    guint callback_action,
@@ -2001,6 +2035,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/Project/load OSM data"),NULL,GTK_SIGNAL_FUNC(load_osm_menucb),0,NULL},
     {N_("/Project/download OSM data for selected region"),NULL,GTK_SIGNAL_FUNC(download_osm_data_cb),0,NULL},
     {N_("/Project/save OSM data"),NULL,GTK_SIGNAL_FUNC(save_osm_menucb),0,NULL},
+    {N_("/Project/save OSM changes (OSC file)"),NULL,GTK_SIGNAL_FUNC(save_osmchange_menucb),0,NULL},
     {N_("/Project/clear OSM data"),NULL,GTK_SIGNAL_FUNC(clear_osm_menucb),0,NULL},
 #ifndef _WIN32
     {N_("/Project/Connect to GPS receiver"),NULL,GTK_SIGNAL_FUNC(connect_gps_cb),0,NULL},
