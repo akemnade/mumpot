@@ -776,8 +776,10 @@ static void osmparse_endhandler(void *ctx,
       octxt->way_node_count=0;
     }
   } else if (!strcmp((char *)name,"node")) {
-    octxt->osmf->nodes=g_list_prepend(octxt->osmf->nodes,octxt->node);
-    octxt->node=NULL;
+    if (octxt->node) {
+      octxt->osmf->nodes=g_list_prepend(octxt->osmf->nodes,octxt->node);
+      octxt->node=NULL;
+    }
   }
 }
 				 
