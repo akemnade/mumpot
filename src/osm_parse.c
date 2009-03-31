@@ -636,11 +636,11 @@ int save_osmchange_file(const char *fname, struct osm_file *osmf)
     return 0;
   xmlTextWriterStartDocument(writer,NULL,"UTF-8",NULL);
   xmlTextWriterStartElement(writer,(xmlChar *)"osmChange");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.3");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   xmlTextWriterStartElement(writer,(xmlChar *)"create");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.3");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
@@ -656,7 +656,7 @@ int save_osmchange_file(const char *fname, struct osm_file *osmf)
   xmlTextWriterEndElement(writer);
   
   xmlTextWriterStartElement(writer,(xmlChar *)"modify");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.3");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
     if (((struct osm_object *)l->data)->id>0) {
@@ -671,7 +671,7 @@ int save_osmchange_file(const char *fname, struct osm_file *osmf)
   xmlTextWriterEndElement(writer);
   
   xmlTextWriterStartElement(writer,(xmlChar *)"delete");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.3");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   for(i=0;i<osmf->deleted_way_count;i++) {
