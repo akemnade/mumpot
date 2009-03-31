@@ -1657,6 +1657,7 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
   } else if (nearest_obj->type == NODE) {
     osm_merge_node(mw->osm_main_file,(struct osm_node *)nearest_obj,
 		   node);
+    mw->osm_inf->selected_object=nearest_obj;
   }
   
 }
