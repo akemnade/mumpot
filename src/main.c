@@ -147,7 +147,7 @@ static void change_sidebar_cb(gpointer callback_data,
 #define PATH_FOLLOW_GPS_N N_("/View/Follow GPS")
 #define PATH_ZOOM_OUT_N N_("/View/Zoom out")
 #define PATH_ZOOM_IN_N N_("/View/Zoom in")
-#define PATH_DISP_COLOR_N N_("/View/Draw selected line colored")
+#define PATH_DISP_COLOR_N N_("/View/Color tracks by velocity")
 #define PATH_DISP_SEARCH _(PATH_DISP_SEARCH_N)
 #define PATH_DISP_CROSSHAIR  _(PATH_DISP_CROSSHAIR_N)
 #define PATH_FOLLOW_GPS _(PATH_FOLLOW_GPS_N)
