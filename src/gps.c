@@ -389,6 +389,7 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
   while ((endp=memchr(gpsf->buf,'\n',gpsf->bufpos))) {
     int readlen;
     *endp=0;
+    /* printf("gps line: %s ENDLINE\n",gpsf->buf); */
     if (strstr(gpsf->buf,"<?xml")) {
       *endp='\n';
       gpsf->handling_procedure=proc_gps_gpx;
@@ -427,9 +428,8 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
     } else if (!strncmp(gpsf->buf,"$GPGGA",6)) {
       char *fields[15];
       int numfields=my_split(gpsf->buf,fields,",",15);
-      if (numfields>=8)
+      if (numfields>8)
 	gpsf->curpoint.hdop=10.0*atof(fields[8]);
-     
     }
     endp++;
     readlen=endp-gpsf->buf;
