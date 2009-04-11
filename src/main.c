@@ -2221,10 +2221,12 @@ struct mapwin * create_mapwin()
 		   GTK_EXPAND | GTK_FILL,
 		   0,0);
   vb1=gtk_vbox_new(FALSE,0);
+/*
   label=gtk_label_new(_("file name"));
   gtk_box_pack_start(GTK_BOX(vb1),label,FALSE,TRUE,0);
   w->dlabel=gtk_label_new(NULL);
   gtk_box_pack_start(GTK_BOX(vb1),w->dlabel,FALSE,TRUE,0);
+*/
   label2=gtk_label_new(_("place name:"));
   gtk_box_pack_start(GTK_BOX(vb1),label2,FALSE,TRUE,10);
   w->entry=gtk_entry_new();
@@ -2296,9 +2298,9 @@ struct mapwin * create_mapwin()
   gtk_widget_show(w->koords_label);
   gtk_widget_show(okbut);
   gtk_widget_show(label2);
-  gtk_widget_show(label);
+/*  gtk_widget_show(label); */
   gtk_widget_show(w->entry);
-  gtk_widget_show(w->dlabel);
+/*  gtk_widget_show(w->dlabel); */
   gtk_widget_show(w->list);
   gtk_widget_show(w->scrwin);
   gtk_widget_show(vb1);
