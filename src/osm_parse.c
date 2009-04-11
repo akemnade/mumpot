@@ -30,6 +30,10 @@
 #include <bzlib.h>
 #endif
 #include "osm_parse.h"
+#ifndef OSMAPI_VERSION
+#define OSMAPI_VERSION "0.5"
+#endif
+
 static GMemChunk *node_chunk;
 static GMemChunk *way_chunk;
 static struct osm_object ***all_objects[65536];
@@ -200,6 +204,44 @@ struct osm_node *new_osm_node_from_point(struct osm_file *f,
   add_created_tag(&nd->head);
   return nd;
 }
+
+void osm_way_update_id(struct osm_file *osmf,
+		       int fromnum,int tonum,int version)
+{
+  struct osm_way *way=get_osm_way(fromnum);
+  if (!way)
+    return;
+  way->head.id=tonum;
+  way->head.version=version;
+  way->head.modified=0;
+  put_obj_id(NULL,fromnum);
+  put_obj_id(&way->head,tonum);
+}
+
+void osm_node_update_id(struct osm_file *osmf,
+			int fromnum,int tonum,int version)
+{
+  struct osm_node *nd=get_osm_node(fromnum);
+  GList *l;
+  if (!nd)
+    return;
+  nd->head.id=tonum;
+  nd->head.version=version;
+  nd->head.modified=0;
+  put_obj_id(NULL,fromnum);
+  put_obj_id(nd,tonum);
+
+  for(l=g_list_first(nd->way_list);l;l=g_list_next(l)) {
+    int i;
+    struct osm_way *way=(struct osm_way *)l->data;
+    for(i=0;i<way->nr_nodes;i++) {
+      if (way->nodes[i]==fromnum)
+	way->nodes[i]=tonum;
+    }
+  }
+}
+
+
 
 static void remove_node_from_way(struct osm_way *way,
 				 struct osm_node *node)
@@ -577,7 +619,7 @@ static int osm_write_tags(xmlTextWriterPtr writer,
 
 static int osm_write_node_xml(xmlTextWriterPtr writer,
 			      struct osm_node *node,
-			      enum format_type fmt)
+			      enum format_type fmt, int changeset)
 {
   if ((!node->head.modified)&&(node->head.id>0)&&(fmt == FORMAT_OSC))
     return 1;
@@ -585,10 +627,16 @@ static int osm_write_node_xml(xmlTextWriterPtr writer,
   xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",node->head.id);
   xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"lon","%.7f",node->lon);
   xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"lat","%.7f",node->lat);
+  if (node->head.version)
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"version","%d",node->head.version);
   if (fmt == FORMAT_JOSM) {
     if ((node->head.modified)&&(node->head.id>0)) {
       xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"modify");
     }
+  } else if (fmt == FORMAT_OSC) {
+    if (changeset)
+      xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
+					changeset);
   }
   if (node->head.user)
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"user",(xmlChar *)node->head.user);
@@ -600,7 +648,7 @@ static int osm_write_node_xml(xmlTextWriterPtr writer,
 }
 
 static int osm_write_way_xml(xmlTextWriterPtr writer,
-			     struct osm_way *way,enum format_type fmt)
+			     struct osm_way *way,enum format_type fmt, int changeset)
 {
   int i;
   if ((!way->head.modified)&&(way->head.id>0)&&(fmt == FORMAT_OSC))
@@ -611,10 +659,18 @@ static int osm_write_way_xml(xmlTextWriterPtr writer,
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"user",(xmlChar *)way->head.user);
   if (way->head.timestamp)
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"timestamp",(xmlChar *)way->head.timestamp);
+  if (way->head.version) {
+    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"version",
+				      "%d",way->head.version);
+  }
   if (fmt == FORMAT_JOSM) {
     if ((way->head.modified)&&(way->head.id>0)) {
       xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"modify");
     }
+  } else {
+    if (changeset)
+      xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
+					changeset);
   }
   for(i=0;i<way->nr_nodes;i++) {
     xmlTextWriterStartElement(writer,(xmlChar *)"nd");
@@ -626,58 +682,58 @@ static int osm_write_way_xml(xmlTextWriterPtr writer,
   return 1;
 }
 
-int save_osmchange_file(const char *fname, struct osm_file *osmf)
+static int save_osmchange_xmlwriter(xmlTextWriterPtr writer, struct osm_file *osmf,
+			     int changeset)
 {
-  xmlTextWriterPtr writer;
   GList *l;
   int i;
-  writer=xmlNewTextWriterFilename(fname,0);
-  if (!writer) 
-    return 0;
   xmlTextWriterStartDocument(writer,NULL,"UTF-8",NULL);
   xmlTextWriterStartElement(writer,(xmlChar *)"osmChange");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)OSMAPI_VERSION);
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   xmlTextWriterStartElement(writer,(xmlChar *)"create");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)OSMAPI_VERSION);
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
     if (((struct osm_object *)l->data)->id<0) {
-      osm_write_node_xml(writer,(struct osm_node *)l->data,FORMAT_OSC);
+      osm_write_node_xml(writer,(struct osm_node *)l->data,FORMAT_OSC,changeset);
     }
   }
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
     if (((struct osm_object *)l->data)->id<0) {
-      osm_write_way_xml(writer,(struct osm_way *)l->data,FORMAT_OSC);
+      osm_write_way_xml(writer,(struct osm_way *)l->data,FORMAT_OSC,changeset);
     }
   }
   xmlTextWriterEndElement(writer);
   
   xmlTextWriterStartElement(writer,(xmlChar *)"modify");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)OSMAPI_VERSION);
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
     if (((struct osm_object *)l->data)->id>0) {
-      osm_write_node_xml(writer,(struct osm_node *)l->data,FORMAT_OSC);
+      osm_write_node_xml(writer,(struct osm_node *)l->data,FORMAT_OSC,changeset);
     }
   }
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
     if (((struct osm_object *)l->data)->id>0) {
-      osm_write_way_xml(writer,(struct osm_way *)l->data,FORMAT_OSC);
+      osm_write_way_xml(writer,(struct osm_way *)l->data,FORMAT_OSC,changeset);
     }
   }
   xmlTextWriterEndElement(writer);
   
   xmlTextWriterStartElement(writer,(xmlChar *)"delete");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)OSMAPI_VERSION);
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   for(i=0;i<osmf->deleted_way_count;i++) {
     xmlTextWriterStartElement(writer,(xmlChar *)"way");
     xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
 				      osmf->deleted_ways[i]);
+    if (changeset)
+      xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
+					changeset);
     xmlTextWriterEndElement(writer);
   }
 
@@ -687,6 +743,9 @@ int save_osmchange_file(const char *fname, struct osm_file *osmf)
 				      osmf->deleted_nodes[i]);
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"lat",(xmlChar *)"0");
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"lon",(xmlChar *)"0");
+    if (changeset)
+      xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
+					changeset);
     xmlTextWriterEndElement(writer);
   }
   
@@ -701,6 +760,32 @@ int save_osmchange_file(const char *fname, struct osm_file *osmf)
   return 1;
 }
 
+int save_osmchange_file(const char *fname, struct osm_file *osmf,
+			int changeset)
+{
+  xmlTextWriterPtr writer;
+  writer=xmlNewTextWriterFilename(fname,0);
+  if (!writer) 
+    return 0;
+  save_osmchange_xmlwriter(writer,osmf,changeset);
+  return 1;
+}
+
+char *save_osmchange_buf(struct osm_file *osmf, int changeset)
+{
+  char *dst;
+  xmlBufferPtr xmlbuf=xmlBufferCreate();
+  xmlTextWriterPtr writer=xmlNewTextWriterMemory(xmlbuf,0);
+  if (!writer)
+    return NULL;
+  save_osmchange_xmlwriter(writer,osmf,changeset);
+  dst=malloc(xmlbuf->use+1);
+  memcpy(dst,xmlbuf->content,xmlbuf->use);
+  dst[xmlbuf->use]=0;
+  xmlBufferFree(xmlbuf);
+  return dst;
+}
+
 
 
 int save_osm_file(const char *fname, struct osm_file *osmf)
@@ -713,15 +798,15 @@ int save_osm_file(const char *fname, struct osm_file *osmf)
     return 0;
   xmlTextWriterStartDocument(writer,NULL,"UTF-8",NULL);
   xmlTextWriterStartElement(writer,(xmlChar *)"osm");
-  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)"0.5");
+  xmlTextWriterWriteAttribute(writer,(xmlChar *)"version",(xmlChar *)OSMAPI_VERSION);
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
 
   for(l=g_list_first(osmf->nodes);l;l=g_list_next(l)) {
-    osm_write_node_xml(writer,(struct osm_node *)l->data,FORMAT_JOSM);
+    osm_write_node_xml(writer,(struct osm_node *)l->data,FORMAT_JOSM,0);
   }
 
   for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
-    osm_write_way_xml(writer,(struct osm_way *)l->data,FORMAT_JOSM);
+    osm_write_way_xml(writer,(struct osm_way *)l->data,FORMAT_JOSM,0);
   }
   
   for(i=0;i<osmf->deleted_way_count;i++) {
@@ -814,6 +899,7 @@ static void osmparse_starthandler(void *ctx,
       char*timestamp=NULL;
       char*user=NULL;
       int id=0;
+      int version=0;
       for(i=0;atts[i];i+=2) {
 	if (!strcmp((char *)atts[i],"lon")) {
 	  if (atts[i+1]) {
@@ -835,6 +921,8 @@ static void osmparse_starthandler(void *ctx,
 	  } else if (!strcmp((char *)atts[i+1],"delete")) {
 	    deleted=1;
 	  }
+	} else if (!strcmp((char *)atts[i],"version")) {
+	  version=atoi((char *)atts[i+1]);
 	}
       }
       if (id&&lat&&lon) {
@@ -861,6 +949,7 @@ static void osmparse_starthandler(void *ctx,
 	    octxt->node->head.modified=1;
 	  octxt->node->lon=atof(lon);
 	  octxt->node->lat=atof(lat);
+	  octxt->node->head.version=version;
 	  if (user)
 	    octxt->node->head.user=strdup(user);
 	  if (timestamp)
@@ -870,6 +959,7 @@ static void osmparse_starthandler(void *ctx,
     } else if (!strcmp("way",(char *)name)) {
       int modified=0;
       int deleted=0;
+      int version=0;
       int id=0;
       char *user=NULL;
       char *timestamp=NULL;
@@ -886,6 +976,8 @@ static void osmparse_starthandler(void *ctx,
 	  } else if (!strcmp((char *)atts[i+1],"delete")) {
 	    deleted=1;
 	  }
+	} else if (!strcmp((char *)atts[i],"version")) {
+	  version=atoi((char *)atts[i+1]);
 	}
 	
       }
@@ -921,6 +1013,7 @@ static void osmparse_starthandler(void *ctx,
 	  octxt->way->head.timestamp=strdup(timestamp);
 	if (modified)
 	  octxt->way->head.modified=1;
+	octxt->way->head.version=version;
       }
     }
   } else if (!strcmp("tag",(char *)name)) {

@@ -49,6 +49,7 @@
 #include "create_connection.h"
 #include "gui_common.h"
 #include "osm_view.h"
+#include "osm_upload.h"
 #include "trip_stats.h"
 
 #include "zoomin.xpm"
@@ -1617,6 +1618,15 @@ static void save_osmchange_menucb(gpointer callback_data,
 
 }
 
+#ifdef ENABLE_OSM_UPLOAD
+static void upload_osm_menucb(gpointer callback_data,
+			      guint callback_action,
+			      GtkWidget *w)
+{
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  start_osm_upload("demo",mw->osm_main_file);
+}
+#endif
 static void save_osm_menucb(gpointer callback_data,
 			    guint callback_action,
 			    GtkWidget *w)
@@ -1946,6 +1956,7 @@ static void download_osm_data_cb(gpointer callback_data,
   double minlon=180;
   double minlat=90;
   char *url;
+  char *urlbase;
   GList *l=*mw->mark_line_list;
   for(l=g_list_first(l);l;l=g_list_next(l)) {
     struct t_punkt32 *p=(struct t_punkt32 *)l->data;
@@ -1965,13 +1976,17 @@ static void download_osm_data_cb(gpointer callback_data,
     return;
   }
   setlocale(LC_NUMERIC,"C");
+  urlbase=getenv("OSMAPIURL");
+  if (!urlbase)
+    urlbase="http://www.openstreetmap.org/api/0.5";
 #ifndef _WIN32
-  url=g_strdup_printf("http://www.openstreetmap.org/api/0.5/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
+  url=g_strdup_printf("%s/map?bbox=%f,%f,%f,%f",urlbase,
+		      minlon,minlat,maxlon,maxlat);
 #else
 /* there seems to be broken g_strdup_printf()s out there which ignore LC_NUMERIC */
   {
     char b[512];
-    _snprintf(b,sizeof(b),"http://www.openstreetmap.org/api/0.5/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
+    _snprintf(b,sizeof(b),"%s/map?bbox=%f,%f,%f,%f",minlon,minlat,maxlon,maxlat);
     url=strdup(b); 
   }
 #endif
@@ -2037,6 +2052,10 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/Project/save OSM data"),NULL,GTK_SIGNAL_FUNC(save_osm_menucb),0,NULL},
     {N_("/Project/save OSM changes (OSC file)"),NULL,GTK_SIGNAL_FUNC(save_osmchange_menucb),0,NULL},
     {N_("/Project/clear OSM data"),NULL,GTK_SIGNAL_FUNC(clear_osm_menucb),0,NULL},
+#ifdef ENABLE_OSM_UPLOAD
+    {N_("/Project/upload OSM data"),NULL,GTK_SIGNAL_FUNC(upload_osm_menucb),
+     0,NULL},
+#endif
 #ifndef _WIN32
     {N_("/Project/Connect to GPS receiver"),NULL,GTK_SIGNAL_FUNC(connect_gps_cb),0,NULL},
 #endif

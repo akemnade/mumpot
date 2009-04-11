@@ -17,6 +17,7 @@ struct osm_object {
   char *timestamp;
   char *user;
   int id;
+  int version;
   int modified:1;
   enum { NODE, RELATION, WAY } type:8;
 };
@@ -91,6 +92,13 @@ void osm_delete_node(struct osm_file *osmf,
 		     struct osm_node *node);
 void osm_set_node_coords(struct osm_node *node,double lon, double lat);
 int save_osm_file(const char *fname, struct osm_file *osmf);
+int save_osmchange_file(const char *fname, struct osm_file *osmf,
+			int changeset);
+char *save_osmchange_buf(struct osm_file *osmf, int changeset);
+void osm_way_update_id(struct osm_file *osmf,
+		       int fromnum,int tonum,int version);
+void osm_node_update_id(struct osm_file *osmf,
+			int fromnum,int tonum,int version);
 void printtimediff(const char *format,const struct timeval *tvstart, const struct timeval *tvend);
 void osm_split_way_at_node(struct osm_file *osmf,
 			   struct osm_way *way,

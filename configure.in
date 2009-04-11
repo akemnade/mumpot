@@ -19,7 +19,17 @@ AM_GNU_GETTEXT
 AC_ARG_WITH(oldgtk,[--with-oldgtk  Use gtk1.x],try_gtk1=yes,try_gtk1=no)
 use_gtk1=no
 
+osm_upload=yes
+AC_ARG_ENABLE(osmupload,[--disable-osmupload  Disable code to do osm uploads],osm_upload=yes,osm_upload=no)
 PKG_CHECK_MODULES(LIBXML2, libxml-2.0)
+
+if test $osm_upload = yes  ; then
+  PKG_CHECK_MODULES(LIBCURL,libcurl, osm_upload=yes, osm_upload=no)
+fi
+if test $osm_upload = yes  ; then
+  AC_DEFINE(ENABLE_OSM_UPLOAD,1,[enable osm upload code])
+fi
+AM_CONDITIONAL(OSM_UPLOAD, test $osm_upload = yes)
 use_gtk2=no
 if test x$try_gtk1 = xno ; then
 AM_PATH_GTK_2_0(2.0.0,use_gtk2=yes, use_gtk=no)

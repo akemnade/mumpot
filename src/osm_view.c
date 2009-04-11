@@ -827,7 +827,8 @@ int osm_save_file(const char *fname, struct osm_file *osmf,
 		  int only_changes)
 {
   if (only_changes)
-    return save_osmchange_file(fname,osmf);
+    
+    return save_osmchange_file(fname,osmf,0);
   else
     return save_osm_file(fname,osmf);
 }
