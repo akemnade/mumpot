@@ -1108,7 +1108,8 @@ int mapwin_draw(struct mapwin *mw,
 	      }
 #endif
 	  }
-	  gtk_label_set_text(GTK_LABEL(mw->dlabel),filename);
+/*	  gtk_label_set_text(GTK_LABEL(mw->dlabel),filename); 
+*/
 	  if (src) {
 #ifdef USE_IMLIB
 	    gdk_draw_pixmap(mw->map->window,mygc,src,
