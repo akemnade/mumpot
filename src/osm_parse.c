@@ -31,7 +31,7 @@
 #endif
 #include "osm_parse.h"
 #ifndef OSMAPI_VERSION
-#define OSMAPI_VERSION "0.5"
+#define OSMAPI_VERSION "0.6"
 #endif
 
 static GMemChunk *node_chunk;
@@ -58,12 +58,14 @@ struct osm_object *get_obj_id(int id)
     return (ind[(id>>8)&0xff])[id&0xff];
 }
 
+#if 0
 static void add_created_tag(struct osm_object *obj)
 {
   char *ctag=malloc(sizeof("created_by\0" PACKAGE));
   memcpy(ctag,"created_by\0" PACKAGE,sizeof("created_by\0" PACKAGE));
   obj->tag_list=g_list_append(obj->tag_list,ctag);
 }
+#endif
 
 xmlNodePtr next_named_node(xmlNodePtr node, char *name)
 {
@@ -189,7 +191,6 @@ struct osm_way *new_osm_way(int id)
 struct osm_way *add_new_osm_way(struct osm_file *f)
 {
   struct osm_way *way=new_osm_way(max_free_num);
-  add_created_tag(&way->head);
   f->ways=g_list_append(f->ways,way);
   return way;
 }
@@ -201,7 +202,6 @@ struct osm_node *new_osm_node_from_point(struct osm_file *f,
   nd->lon=lon;
   nd->lat=lat;
   f->nodes=g_list_append(f->nodes,nd);
-  add_created_tag(&nd->head);
   return nd;
 }
 

@@ -2100,7 +2100,7 @@ static void download_osm_data_cb(gpointer callback_data,
   setlocale(LC_NUMERIC,"C");
   urlbase=getenv("OSMAPIURL");
   if (!urlbase)
-    urlbase="http://www.openstreetmap.org/api/0.5";
+    urlbase="http://www.openstreetmap.org/api/0.6";
 #ifndef _WIN32
   url=g_strdup_printf("%s/map?bbox=%f,%f,%f,%f",urlbase,
 		      minlon,minlat,maxlon,maxlat);
