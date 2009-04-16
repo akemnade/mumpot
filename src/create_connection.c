@@ -50,6 +50,7 @@ struct connection_dialog {
   GtkWidget *hostnamefield;
   GtkWidget *portfield;
   GtkWidget *chooser;
+  GtkWidget *savecheckbox;
   GtkWidget *failedlabel;
   void *data;
   int current_mode;
@@ -357,6 +358,8 @@ struct connection_dialog *create_connection_dialog(void (*conn_created)(struct c
   gtk_table_attach(GTK_TABLE(cdlg->tableinet),cdlg->portfield,1,2,1,2,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
   gtk_entry_set_text(GTK_ENTRY(cdlg->portfield),"2947");
+  cdlg->savecheckbox=gtk_check_button_new_with_label(_("Save GPS configuration"));
+  gtk_box_pack_start(GTK_BOX(vbox),cdlg->savecheckbox,FALSE,TRUE,0);
   hbox=gtk_hbox_new(TRUE,0);
   gtk_box_pack_start(GTK_BOX(vbox),hbox,FALSE,FALSE,0);
   but=gtk_button_new_with_label(_("OK"));

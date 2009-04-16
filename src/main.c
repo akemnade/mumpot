@@ -1635,6 +1635,7 @@ struct upload_msg_dlg {
   GtkWidget *entry;
   GtkWidget *username;
   GtkWidget *password;
+  GtkWidget *savecheckbox;
   GtkWidget *cancelbut;
   GtkWidget *okbut;
   GtkWidget *msg;
@@ -1724,6 +1725,9 @@ static void upload_osm_menucb(gpointer callback_data,
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
 		     umd->password,FALSE,TRUE,0);
   gtk_entry_set_visibility(GTK_ENTRY(umd->password),FALSE);
+  umd->savecheckbox=gtk_check_button_new_with_label(_("Save osm account data"));
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+                     umd->savecheckbox,FALSE,TRUE,0);
   label=gtk_label_new(_("Upload comment"));
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
                     label,FALSE,TRUE,0);
