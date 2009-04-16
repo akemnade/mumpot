@@ -1630,12 +1630,123 @@ static void save_osmchange_menucb(gpointer callback_data,
 }
 
 #ifdef ENABLE_OSM_UPLOAD
+struct upload_msg_dlg {
+  GtkWidget *win;
+  GtkWidget *entry;
+  GtkWidget *username;
+  GtkWidget *password;
+  GtkWidget *cancelbut;
+  GtkWidget *okbut;
+  GtkWidget *msg;
+  struct mapwin *mw;
+  int uploading;
+};
+
+static void upl_check_close_cancel(GtkWidget *w,
+                                   gpointer data)
+{
+  struct upload_msg_dlg *umd=(struct upload_msg_dlg *)data;
+  if (!umd->uploading)
+    gtk_widget_destroy(umd->win);
+}                             
+
+static int upld_finished(gpointer data)
+{
+  upl_check_close_cancel(NULL,data);
+  return 0;   
+}
+
+static void disp_upload_msg(void *data, char *msg,
+                             int finished)
+{
+  struct upload_msg_dlg *umd=(struct upload_msg_dlg *)data;
+  gtk_label_set_text(GTK_LABEL(umd->msg),msg);
+  if (finished) {
+    umd->uploading=0;
+    g_timeout_add(2000,upld_finished,umd);
+  }
+}
+
+static void ok_osm_upload_cb(GtkWidget *w,
+			     gpointer data)
+{
+  struct upload_msg_dlg *umd=(struct upload_msg_dlg *)data;
+  char *txt=gtk_editable_get_chars(GTK_EDITABLE(umd->entry),0,-1);
+  if (umd->mw->osm_main_file) {
+    char *username;
+    char *pw;
+    username=gtk_editable_get_chars(GTK_EDITABLE(umd->username),0,-1);
+    pw=gtk_editable_get_chars(GTK_EDITABLE(umd->password),0,-1);
+    if ((strlen(username)>0)&&(strlen(pw)>0)) {
+      umd->uploading=1;
+      start_osm_upload(txt,username,pw,umd->mw->osm_main_file,disp_upload_msg,umd);
+    } else {
+      display_text_box(_("Please enter your OSM username and password!"));
+      return;
+    }
+    g_free(username);
+    g_free(pw);
+  }
+  gtk_widget_set_sensitive(umd->okbut,FALSE);
+  gtk_widget_set_sensitive(umd->cancelbut,FALSE);
+  //gtk_widget_destroy(umd->win);
+}
+
+static void upl_check_close(GtkWidget *w, GdkEventAny *event, gpointer data)
+{
+   upl_check_close_cancel(w,data);
+}
+
 static void upload_osm_menucb(gpointer callback_data,
 			      guint callback_action,
 			      GtkWidget *w)
 {
-  struct mapwin *mw=(struct mapwin *)callback_data;
-  start_osm_upload("demo",mw->osm_main_file);
+  GtkWidget *but;
+  GtkWidget *label;
+  struct mapwin *mw=(struct mapwin *)callback_data;;
+  struct upload_msg_dlg *umd;
+  if (!mw->osm_main_file)
+    return;
+  umd=malloc(sizeof(struct upload_msg_dlg));
+  umd->win=gtk_dialog_new();
+  umd->mw=mw;
+  umd->uploading=0;
+  label=gtk_label_new(_("Username"));
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+		     label,FALSE,FALSE,0);
+  umd->username=gtk_entry_new();
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+		     umd->username,FALSE,TRUE,0);
+  label=gtk_label_new(_("Password"));
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+		     label,FALSE,TRUE,0);
+  umd->password=gtk_entry_new();
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+		     umd->password,FALSE,TRUE,0);
+  gtk_entry_set_visibility(GTK_ENTRY(umd->password),FALSE);
+  label=gtk_label_new(_("Upload comment"));
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+                    label,FALSE,TRUE,0);
+  umd->entry=gtk_entry_new();
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+		     umd->entry,FALSE,TRUE,0);
+  umd->msg=gtk_label_new("");
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
+                     umd->msg,TRUE,TRUE,0);
+  umd->okbut=gtk_button_new_with_label(_("OK"));
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->action_area),
+		     umd->okbut,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(umd->okbut),"clicked",
+		     GTK_SIGNAL_FUNC(ok_osm_upload_cb),
+		     umd);
+  umd->cancelbut=gtk_button_new_with_label(_("Cancel"));
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->action_area),
+		     umd->cancelbut,TRUE,TRUE,0);
+  gtk_signal_connect(GTK_OBJECT(umd->cancelbut),"clicked",
+		     GTK_SIGNAL_FUNC(upl_check_close_cancel),umd);
+  gtk_signal_connect(GTK_OBJECT(umd->win),"delete-event",
+                     GTK_SIGNAL_FUNC(upl_check_close),umd);
+  gtk_widget_show_all(umd->win);
 }
 #endif
 static void save_osm_menucb(gpointer callback_data,

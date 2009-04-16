@@ -24,6 +24,7 @@
 #include <libxml/tree.h>
 #include <libxml/xmlwriter.h>
 #include <glib.h>
+#include "myintl.h"
 #include "osm_parse.h"
 #include "osm_upload.h"
 
@@ -32,12 +33,14 @@ struct osm_upload_data {
   char url[512];
   char *inbuf;
   int inbuflen;
+  char *userpw;
   CURLM *curlm;
   CURL *curl;
   xmlParserCtxtPtr diffparser;
   int ioc_source;
   int flagschanged;
   GIOChannel *ioc;
+  char *finishedmsg;
   int socket;
   long result;
   int changeset;
@@ -45,6 +48,8 @@ struct osm_upload_data {
   int bufpos;
   int buflen;
   char *buf;
+  void (*msg_callback)(void *,char *,int);
+  void *msg_cb_data;
   enum {REQ_CSET, UPLOAD, CLOSE_CSET } upload_state;
 };
 
@@ -82,6 +87,11 @@ static void close_cset(struct osm_upload_data *oud)
   curl_easy_setopt(oud->curl,CURLOPT_POST,0L);
   oud->upload_state=CLOSE_CSET;
   curl_multi_add_handle(oud->curlm,oud->curl);
+  if (oud->msg_callback) {
+    char *buf=g_strdup_printf(_("closing changeset %d"),oud->changeset);
+    oud->msg_callback(oud->msg_cb_data,buf,0);
+    free(buf);
+  }
   while(CURLM_CALL_MULTI_PERFORM==(ret=curl_multi_socket_all(oud->curlm,&running)));
 }
 
@@ -91,6 +101,18 @@ static void handle_upload_finished(struct osm_upload_data *oud)
   free(oud->buf);
   oud->buf=NULL;
   oud->buflen=0;
+  if (oud->result==200) {
+    oud->finishedmsg=strdup(_("uploading successful"));
+    if (oud->msg_callback)
+      oud->msg_callback(oud->msg_cb_data,_("uploading changeset finished"),0);
+  } else {
+    oud->finishedmsg=g_strdup_printf("%d:\n%s",(int)oud->result,(oud->inbuf)?oud->inbuf:NULL);
+    if (oud->inbuf)
+      free(oud->inbuf);
+    if (oud->msg_callback)
+      oud->msg_callback(oud->msg_cb_data,_("uploading changeset failed"),0);
+  } 
+  
   oud->inbuflen=0;
   oud->inbuf=NULL;
   if (oud->diffparser) {
@@ -161,7 +183,7 @@ static size_t process_diff(void *ptr, ssize_t size, ssize_t nmemb,
       xmlParseChunk(oud->diffparser,ptr,len,0);
     }
   } else {
-    return fwrite(ptr,size,nmemb,stderr);
+    return mycurl_writebuf(ptr,size,nmemb,stderr);
   }
   return len;
 }
@@ -189,8 +211,18 @@ static void start_upload(struct osm_upload_data *oud)
   while(CURLM_CALL_MULTI_PERFORM==(ret=curl_multi_socket_all(oud->curlm,&running)));
 }
 
-static void handle_req_cset(struct osm_upload_data *oud)
+static int handle_req_cset(struct osm_upload_data *oud)
 {
+  long result=0;
+  curl_easy_getinfo(oud->curl,CURLINFO_RESPONSE_CODE,
+                    &result);
+  if (result!=200) {
+    char *buf=g_strdup_printf(_("Error creating changeset: %d\n%s"),
+                              (int)result,(oud->inbuflen)?oud->inbuf:"");  
+    if (oud->msg_callback)
+      oud->msg_callback(oud->msg_cb_data,buf,1);
+    return 0; 
+  }
   if (oud->inbuflen) {
     oud->changeset=atoi(oud->inbuf);
     oud->bufpos=0;
@@ -201,11 +233,22 @@ static void handle_req_cset(struct osm_upload_data *oud)
     free(oud->inbuf);
     oud->inbuf=NULL;
     if (oud->changeset) {
+      if (oud->msg_callback) {
+        char buf[80];
+        snprintf(buf,sizeof(buf),_("created changeset %d"),oud->changeset);
+        oud->msg_callback(oud->msg_cb_data,buf,0);
+      }
       fprintf(stderr,"got changeset %d\n",oud->changeset);
       start_upload(oud);
-    }
+      return 1;
+    } 
   }
-
+  if (oud->msg_callback) {
+    char *buf=g_strdup_printf(_("got strange result:\n%s"),oud->inbuflen?oud->inbuf:"");
+    oud->msg_callback(oud->msg_cb_data,buf,1);
+    g_free(buf);
+  }
+  return 0;
 }
 
 static void cleanup_upload(struct osm_upload_data *oud)
@@ -214,6 +257,8 @@ static void cleanup_upload(struct osm_upload_data *oud)
     free(oud->buf);
   if (oud->inbuf)
     free(oud->inbuf);
+  if (oud->userpw)
+    free(oud->userpw);
   curl_multi_cleanup(oud->curlm);
   curl_easy_cleanup(oud->curl);
 }
@@ -238,12 +283,18 @@ static int my_curl_iocb(GIOChannel *source,
     fprintf(stderr,"transfer completed\n");
     switch(oud->upload_state) {
     case REQ_CSET:
-      handle_req_cset(oud);
+      if (!handle_req_cset(oud))
+        cleanup_upload(oud);
       break;
     case UPLOAD:
       handle_upload_finished(oud);
       break;
     case CLOSE_CSET:
+      if (oud->msg_callback) {
+        oud->msg_callback(oud->msg_cb_data,oud->finishedmsg?oud->finishedmsg:_("uploading changes failed"),1);
+      }
+      if (oud->finishedmsg)
+        free(oud->finishedmsg);
       if (oud->inbuf)
 	fprintf(stderr,"close cset ret: %s\n",oud->inbuf);
       fprintf(stderr,"close cset no ret\n");
@@ -351,7 +402,9 @@ static char *create_cset_buf(char *csetmsg)
   return dst;
 }
 
-void start_osm_upload(char *csetmsg, struct osm_file *osmf)
+void start_osm_upload(char *csetmsg, char *user, char *pw,
+		      struct osm_file *osmf,
+                      void (*msg_callback)(void *,char *,int), void *msg_data)
 {
   static int initialized;
   int running=0;
@@ -362,6 +415,12 @@ void start_osm_upload(char *csetmsg, struct osm_file *osmf)
     initialized=1;
   }
   oud->osmf=osmf;
+  oud->msg_callback=msg_callback; 
+  oud->msg_cb_data=msg_data;
+  if ((user)&&(pw))
+    oud->userpw=g_strdup_printf("%s:%s",user,pw);
+  else if (getenv("OSMACCOUNT"))
+    oud->userpw=strdup(getenv("OSMACCOUNT"));
   oud->curlm=curl_multi_init();
   oud->curl=curl_easy_init();
   curl_multi_setopt(oud->curlm,CURLMOPT_SOCKETDATA,
@@ -379,7 +438,8 @@ void start_osm_upload(char *csetmsg, struct osm_file *osmf)
   curl_easy_setopt(oud->curl, CURLOPT_READFUNCTION, mycurl_readbuf);
   curl_easy_setopt(oud->curl, CURLOPT_PUT, 1L);
   curl_easy_setopt(oud->curl, CURLOPT_UPLOAD, 1L);
-  curl_easy_setopt(oud->curl, CURLOPT_USERPWD, getenv("OSMACCOUNT"));
+  if (oud->userpw)
+    curl_easy_setopt(oud->curl, CURLOPT_USERPWD, oud->userpw);
   curl_easy_setopt(oud->curl, CURLOPT_READDATA, oud);
   curl_easy_setopt(oud->curl, CURLOPT_WRITEDATA, oud);
   curl_easy_setopt(oud->curl, CURLOPT_WRITEFUNCTION, mycurl_writebuf);
@@ -388,6 +448,8 @@ void start_osm_upload(char *csetmsg, struct osm_file *osmf)
   
   curl_multi_add_handle(oud->curlm, oud->curl);
   oud->upload_state=REQ_CSET;
+  if (oud->msg_callback)
+    oud->msg_callback(oud->msg_cb_data,"requesting changeset",0);
   while(CURLM_CALL_MULTI_PERFORM==(ret=curl_multi_socket_all(oud->curlm,&running)));
   
 }

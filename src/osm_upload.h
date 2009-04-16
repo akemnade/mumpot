@@ -15,6 +15,8 @@
 #ifndef OSM_UPLOAD_H
 #define OSM_UPLOAD_H
 
-void start_osm_upload(char *csetmsg, struct osm_file *osmf);
+void start_osm_upload(char *csetmsg,char *user, char *pw,
+		      struct osm_file *osmf,
+                      void (*msg_callback)(void *,char *,int), void *msg_data);
 
 #endif
