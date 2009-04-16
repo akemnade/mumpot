@@ -205,7 +205,7 @@ msgstr "/Projekt/Verbinden mit GPS-Empfänger"
 
 #: src/main.c:2191
 msgid "/View/Trip stats"
-msgstr "/View/Fahrtstatistik"
+msgstr "/Ansicht/Fahrtstatistik"
 
 #: src/main.c:2192 src/main.c:2193 src/main.c:2194 src/main.c:2195
 #: src/main.c:2196
