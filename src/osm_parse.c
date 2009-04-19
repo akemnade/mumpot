@@ -44,7 +44,8 @@ static int total_node_count;
 static void osmway_initialize_flags(struct osm_way *way);
 enum format_type {
   FORMAT_OSC,
-  FORMAT_JOSM
+  FORMAT_JOSM,
+  FORMAT_JOSMDEL
 };
 
 struct osm_object *get_obj_id(int id)
@@ -229,7 +230,7 @@ void osm_node_update_id(struct osm_file *osmf,
   nd->head.version=version;
   nd->head.modified=0;
   put_obj_id(NULL,fromnum);
-  put_obj_id(nd,tonum);
+  put_obj_id(&nd->head,tonum);
 
   for(l=g_list_first(nd->way_list);l;l=g_list_next(l)) {
     int i;
@@ -274,13 +275,13 @@ void osm_delete_way(struct osm_file *osmf,
     }
   }
   if (0==(osmf->deleted_way_count&0xf)) {
-    osmf->deleted_ways=(int *)realloc(osmf->deleted_ways,
-				      osmf->deleted_way_count+sizeof(int)*16);
+    osmf->deleted_ways=(struct osm_way **)realloc(osmf->deleted_ways,
+						 (16+osmf->deleted_way_count)*sizeof(struct osm_way *));
   }
-  osmf->deleted_ways[osmf->deleted_way_count]=way->head.id;
+  osmf->deleted_ways[osmf->deleted_way_count]=way;
   osmf->deleted_way_count++;
-  
-  free_osm_way(way->head.id);
+  way->head.modified=1;
+  put_obj_id(NULL,way->head.id);
   osmf->ways=g_list_remove(osmf->ways,way);
   osmf->changed=1;
 }
@@ -297,14 +298,14 @@ void osm_delete_node(struct osm_file *osmf,
     }
   }
   if ((osmf->deleted_node_count&0xf)==0) {
-    osmf->deleted_nodes=(int *)realloc(osmf->deleted_nodes,
-				       osmf->deleted_node_count+sizeof(int)*16);
+    osmf->deleted_nodes=(struct osm_node **)realloc(osmf->deleted_nodes,
+						    (osmf->deleted_node_count+16)*sizeof(struct osm_node *));
   }
-  osmf->deleted_nodes[osmf->deleted_node_count]=node->head.id;
+  osmf->deleted_nodes[osmf->deleted_node_count]=node;
   osmf->deleted_node_count++;
-
+  node->head.modified=1;
   osmf->nodes=g_list_remove(osmf->nodes,node);
-  free_osm_node(node->head.id);
+  put_obj_id(NULL,node->head.id);
   osmf->changed=1;
 }
 
@@ -637,6 +638,8 @@ static int osm_write_node_xml(xmlTextWriterPtr writer,
     if (changeset)
       xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
 					changeset);
+  } else if (fmt == FORMAT_JOSMDEL) {
+    xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"delete");
   }
   if (node->head.user)
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"user",(xmlChar *)node->head.user);
@@ -667,10 +670,12 @@ static int osm_write_way_xml(xmlTextWriterPtr writer,
     if ((way->head.modified)&&(way->head.id>0)) {
       xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"modify");
     }
-  } else {
+  } else if (fmt == FORMAT_OSC) {
     if (changeset)
       xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
 					changeset);
+  } else if (fmt == FORMAT_JOSMDEL) {
+    xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"delete");
   }
   for(i=0;i<way->nr_nodes;i++) {
     xmlTextWriterStartElement(writer,(xmlChar *)"nd");
@@ -728,25 +733,14 @@ static int save_osmchange_xmlwriter(xmlTextWriterPtr writer, struct osm_file *os
   xmlTextWriterWriteAttribute(writer,(xmlChar *)"generator",(xmlChar *)PACKAGE " " VERSION);
   
   for(i=0;i<osmf->deleted_way_count;i++) {
-    xmlTextWriterStartElement(writer,(xmlChar *)"way");
-    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
-				      osmf->deleted_ways[i]);
-    if (changeset)
-      xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
-					changeset);
-    xmlTextWriterEndElement(writer);
+    if (osmf->deleted_ways[i]->head.id>0)
+      osm_write_way_xml(writer,osmf->deleted_ways[i],FORMAT_OSC,changeset);
   }
 
   for(i=0;i<osmf->deleted_node_count;i++) {
-    xmlTextWriterStartElement(writer,(xmlChar *)"node");
-    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
-				      osmf->deleted_nodes[i]);
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"lat",(xmlChar *)"0");
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"lon",(xmlChar *)"0");
-    if (changeset)
-      xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"changeset","%d",
-					changeset);
-    xmlTextWriterEndElement(writer);
+    if (osmf->deleted_nodes[i]->head.id>0)
+      osm_write_node_xml(writer,osmf->deleted_nodes[i],
+			 FORMAT_OSC,changeset);
   }
   
 
@@ -810,21 +804,11 @@ int save_osm_file(const char *fname, struct osm_file *osmf)
   }
   
   for(i=0;i<osmf->deleted_way_count;i++) {
-    xmlTextWriterStartElement(writer,(xmlChar *)"way");
-    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
-				      osmf->deleted_ways[i]);
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"delete");
-    xmlTextWriterEndElement(writer);
+    osm_write_way_xml(writer,osmf->deleted_ways[i],FORMAT_JOSMDEL,0);
   }
 
   for(i=0;i<osmf->deleted_node_count;i++) {
-    xmlTextWriterStartElement(writer,(xmlChar *)"node");
-    xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",
-				      osmf->deleted_nodes[i]);
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"lat",(xmlChar *)"0");
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"lon",(xmlChar *)"0");
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"action",(xmlChar *)"delete");
-    xmlTextWriterEndElement(writer);
+    osm_write_node_xml(writer,osmf->deleted_nodes[i],FORMAT_JOSMDEL,0);
   }
   
 
@@ -853,16 +837,26 @@ static void osmparse_endhandler(void *ctx,
   struct osm_parser_ctxt *octxt=(struct osm_parser_ctxt *)ctx;
   if (!strcmp((char *)name,"way")) {
     if (octxt->way) {
+      int deleted=0;
       octxt->way->nodes=malloc(sizeof(int)*octxt->way_node_count);
       octxt->way->nr_nodes=octxt->way_node_count;
       memcpy(octxt->way->nodes,octxt->way_nodes,sizeof(int)*octxt->way_node_count);
-      octxt->osmf->ways=g_list_prepend(octxt->osmf->ways,octxt->way); 
+      if ((octxt->osmf->deleted_way_count) &&
+	  (octxt->osmf->deleted_ways[octxt->osmf->deleted_way_count-1]==octxt->way))
+	deleted=1;
+      if (!deleted)
+	octxt->osmf->ways=g_list_prepend(octxt->osmf->ways,octxt->way); 
       octxt->way=NULL;
       octxt->way_node_count=0;
     }
   } else if (!strcmp((char *)name,"node")) {
     if (octxt->node) {
-      octxt->osmf->nodes=g_list_prepend(octxt->osmf->nodes,octxt->node);
+      int deleted=0;
+      if ((octxt->osmf->deleted_node_count) &&
+	  (octxt->osmf->deleted_nodes[octxt->osmf->deleted_node_count-1]==octxt->node))
+	deleted=1;
+      if (!deleted)
+	octxt->osmf->nodes=g_list_prepend(octxt->osmf->nodes,octxt->node);
       octxt->node=NULL;
     }
   }
@@ -927,34 +921,34 @@ static void osmparse_starthandler(void *ctx,
       }
       if (id&&lat&&lon) {
 	struct osm_node *nd;
+	nd=get_osm_node(id);
+	if (!nd) {
+	  octxt->node = new_osm_node(id);
+	} else if (!nd->head.modified) {
+	  octxt->node = nd;
+	  free_tag_list(nd->head.tag_list);
+	  nd->head.tag_list=NULL;
+	}
+	if (modified)
+	  octxt->node->head.modified=1;
+	octxt->node->lon=atof(lon);
+	octxt->node->lat=atof(lat);
+	octxt->node->head.version=version;
+	if (user)
+	  octxt->node->head.user=strdup(user);
+	if (timestamp)
+	  octxt->node->head.timestamp=strdup(timestamp);
 	if (deleted) {
 	  struct osm_file *osmf=octxt->osmf;
 	  if ((osmf->deleted_node_count&0xf)==0) {
-	    osmf->deleted_nodes=(int *)realloc(osmf->deleted_nodes,
-					       osmf->deleted_node_count+sizeof(int)*16);
+	    osmf->deleted_nodes=(struct osm_node **)realloc(osmf->deleted_nodes,
+							    (osmf->deleted_node_count+16)*sizeof(struct osm_node *));
 	  }
-	  osmf->deleted_nodes[osmf->deleted_node_count]=id;
+	  osmf->deleted_nodes[osmf->deleted_node_count]=octxt->node;
+	  octxt->node->head.modified=1;
 	  osmf->deleted_node_count++;
-	  
-	} else {
-	  nd=get_osm_node(id);
-	  if (!nd) {
-	    octxt->node = new_osm_node(id);
-	  } else if (!nd->head.modified) {
-	    octxt->node = nd;
-	    free_tag_list(nd->head.tag_list);
-	    nd->head.tag_list=NULL;
-	  }
-	  if (modified)
-	    octxt->node->head.modified=1;
-	  octxt->node->lon=atof(lon);
-	  octxt->node->lat=atof(lat);
-	  octxt->node->head.version=version;
-	  if (user)
-	    octxt->node->head.user=strdup(user);
-	  if (timestamp)
-	    octxt->node->head.timestamp=strdup(timestamp);
-	}
+	  put_obj_id(NULL,id);
+	} 
       }
     } else if (!strcmp("way",(char *)name)) {
       int modified=0;
@@ -982,27 +976,28 @@ static void osmparse_starthandler(void *ctx,
 	
       }
       if (id) {
-	if (!deleted) {
-	  struct osm_way *way;
-	  way=get_osm_way(id);
-	  if (!way) {
-	    octxt->way = new_osm_way(id);
-	  } else if (!way->head.modified) {
-	    octxt->way = way;
-	    remove_way_from_nodes(octxt->way);
-	    free(way->nodes);
-	    way->nodes = NULL;
-	    way->nr_nodes = 0;
-	    free_tag_list(octxt->way->head. tag_list);
-	    octxt->way->head.tag_list = NULL;
-	  } 
-	} else {
+	struct osm_way *way;
+	way=get_osm_way(id);
+	if (!way) {
+	  octxt->way = new_osm_way(id);
+	} else if (!way->head.modified) {
+	  octxt->way = way;
+	  remove_way_from_nodes(octxt->way);
+	  free(way->nodes);
+	  way->nodes = NULL;
+	  way->nr_nodes = 0;
+	  free_tag_list(octxt->way->head. tag_list);
+	  octxt->way->head.tag_list = NULL;
+	} 
+	if (deleted) {
 	  struct osm_file *osmf=octxt->osmf;
 	  if (0==(osmf->deleted_way_count&0xf)) {
-	    osmf->deleted_ways=(int *)realloc(osmf->deleted_ways,
-					      osmf->deleted_way_count+sizeof(int)*16);
+	    osmf->deleted_ways=(struct osm_way  **)realloc(osmf->deleted_ways,
+							   (osmf->deleted_way_count+16)*sizeof(struct osm_way *));
 	  }
-	  osmf->deleted_ways[osmf->deleted_way_count]=id;
+	  put_obj_id(NULL,octxt->way->head.id);
+	  osmf->deleted_ways[osmf->deleted_way_count]=octxt->way;
+	  octxt->way->head.modified=1;
 	  osmf->deleted_way_count++;
 	}
       }
