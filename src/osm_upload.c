@@ -53,6 +53,8 @@ struct osm_upload_data {
   enum {REQ_CSET, UPLOAD, CLOSE_CSET } upload_state;
 };
 
+static void cleanup_upload(struct osm_upload_data *oud);
+
 static size_t mycurl_writebuf(void *ptr, size_t size,
 			      size_t nmemb, void *data)
 {
@@ -93,6 +95,11 @@ static void close_cset(struct osm_upload_data *oud)
     free(buf);
   }
   while(CURLM_CALL_MULTI_PERFORM==(ret=curl_multi_socket_all(oud->curlm,&running)));
+  if (!running) {
+    if (oud->msg_callback)
+      oud->msg_callback(oud->msg_cb_data,oud->finishedmsg?oud->finishedmsg:_("uploading changes failed"),1);
+    cleanup_upload(oud);
+  }
 }
 
 static void handle_upload_finished(struct osm_upload_data *oud)
@@ -106,7 +113,7 @@ static void handle_upload_finished(struct osm_upload_data *oud)
     if (oud->msg_callback)
       oud->msg_callback(oud->msg_cb_data,_("uploading changeset finished"),0);
   } else {
-    oud->finishedmsg=g_strdup_printf("%d:\n%s",(int)oud->result,(oud->inbuf)?oud->inbuf:NULL);
+    oud->finishedmsg=g_strdup_printf("uploading changeset failed %d:\n%s",(int)oud->result,(oud->inbuf)?oud->inbuf:"");
     if (oud->inbuf)
       free(oud->inbuf);
     if (oud->msg_callback)
@@ -183,7 +190,7 @@ static size_t process_diff(void *ptr, ssize_t size, ssize_t nmemb,
       xmlParseChunk(oud->diffparser,ptr,len,0);
     }
   } else {
-    return mycurl_writebuf(ptr,size,nmemb,stderr);
+    return mycurl_writebuf(ptr,size,nmemb,data);
   }
   return len;
 }
@@ -209,6 +216,11 @@ static void start_upload(struct osm_upload_data *oud)
   oud->upload_state=UPLOAD;
   curl_multi_add_handle(oud->curlm,oud->curl);
   while(CURLM_CALL_MULTI_PERFORM==(ret=curl_multi_socket_all(oud->curlm,&running)));
+  if (!running) {
+    if (oud->msg_callback)
+      oud->msg_callback(oud->msg_cb_data,oud->finishedmsg?oud->finishedmsg:_("uploading changes failed"),1);
+    cleanup_upload(oud);
+  }
 }
 
 static int handle_req_cset(struct osm_upload_data *oud)
@@ -451,5 +463,9 @@ void start_osm_upload(char *csetmsg, char *user, char *pw,
   if (oud->msg_callback)
     oud->msg_callback(oud->msg_cb_data,"requesting changeset",0);
   while(CURLM_CALL_MULTI_PERFORM==(ret=curl_multi_socket_all(oud->curlm,&running)));
-  
+  if (!running) {
+    if (oud->msg_callback)
+      oud->msg_callback(oud->msg_cb_data,oud->finishedmsg?oud->finishedmsg:_("uploading changes failed"),1);
+    cleanup_upload(oud);
+  }
 }
