@@ -39,6 +39,50 @@ void menu_item_set_state(struct mapwin *mw,char *path,int state)
   gtk_widget_set_sensitive(w,state);
 }
 
+void create_path(const char *path)
+{
+  char *cpy=g_strdup(path);
+  char *endpos;
+  int endp;
+  while((endpos=strrchr(cpy,'/'))) {
+    endpos[0]=0;
+    if (endpos==cpy) {
+      endpos=NULL;
+      break;
+    }
+#ifndef _WIN32
+    if (!mkdir(cpy,0777))
+#else
+    if (!mkdir(cpy))
+#endif
+      break;
+  }
+  if (!endpos) {
+    g_free(cpy);
+    return;
+  }
+  endp=endpos-cpy;
+  endp++;
+  strcpy(cpy,path);
+  endp+=strcspn(cpy+endp,"/");
+  while(cpy[endp]) {
+    cpy[endp]=0;
+#ifndef _WIN32
+    if (mkdir(cpy,0777))
+#else
+    if (mkdir(cpy))
+#endif
+      break;
+    cpy[endp]='/';
+    endp++;
+    endp+=strcspn(cpy+endp,"/");
+    
+  }
+  g_free(cpy);
+}
+
+
+
 void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data)
 {
   GtkWidget *dialog;
@@ -172,6 +216,12 @@ void cfg_write_out()
     char *h=expand_home(h1);
     FILE *f;
     f=fopen(h,"wb");
+    if (!f) {
+      create_path(h);
+      f=fopen(h,"wb");
+    }
+    if (!f)
+      return;
     if (h!=h1)
       free(h);
     g_hash_table_foreach(confight,write_ht_entry,f);

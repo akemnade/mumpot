@@ -37,6 +37,7 @@
 #include <errno.h>
 
 #include "png_io.h"
+#include "gui_common.h"
 #include "geometry.h"
 #include "mapconfig_data.h"
 #include "gps.h"
@@ -417,48 +418,6 @@ static gboolean do_http_send(GIOChannel *source,
     cleanup_http_buf(hfb);
   }
   return FALSE;
-}
-
-static void create_path(const char *path)
-{
-  char *cpy=g_strdup(path);
-  char *endpos;
-  int endp;
-  while((endpos=strrchr(cpy,'/'))) {
-    endpos[0]=0;
-    if (endpos==cpy) {
-      endpos=NULL;
-      break;
-    }
-#ifndef _WIN32
-    if (!mkdir(cpy,0777))
-#else
-    if (!mkdir(cpy))
-#endif
-      break;
-  }
-  if (!endpos) {
-    g_free(cpy);
-    return;
-  }
-  endp=endpos-cpy;
-  endp++;
-  strcpy(cpy,path);
-  endp+=strcspn(cpy+endp,"/");
-  while(cpy[endp]) {
-    cpy[endp]=0;
-#ifndef _WIN32
-    if (mkdir(cpy,0777))
-#else
-    if (mkdir(cpy))
-#endif
-      break;
-    cpy[endp]='/';
-    endp++;
-    endp+=strcspn(cpy+endp,"/");
-    
-  }
-  g_free(cpy);
 }
 
 static int check_create_file(char *fullname)

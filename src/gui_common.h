@@ -22,3 +22,4 @@ void cfg_set_string(char *name,char *val);
 void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data);
 GdkPixmap *my_gdk_pixmap_creyte_from_gfx(GdkWindow *win,GdkBitmap **bm,
 					 char *fname);
+void create_path(const char *path);
