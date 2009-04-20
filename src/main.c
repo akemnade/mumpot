@@ -1118,9 +1118,15 @@ void scrollbar_moved(GtkWidget *w,gpointer data)
   printf("dx: %d dy: %d\n",dx,dy);
   gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
   if ((MY_ABS(dx)<mw->page_width)&&(MY_ABS(dy)<mw->page_height)) {
+#ifndef USE_GTK2
+    gdk_draw_pixmap(mw->map_store,mw->map->style->fg_gc[mw->map->state],mw->map_store,
+		    (dx>0)?dx:0,(dy>0)?dy:0,(dx>0)?0:-dx,(dy>0)?0:-dy,
+		    mw->page_width-MY_ABS(dx),mw->page_height-MY_ABS(dy));
+#else
     gdk_draw_drawable(mw->map_store,mw->map->style->fg_gc[mw->map->state],mw->map_store,
 		      (dx>0)?dx:0,(dy>0)?dy:0,(dx>0)?0:-dx,(dy>0)?0:-dy,
 		      mw->page_width-MY_ABS(dx),mw->page_height-MY_ABS(dy));
+#endif
     if (dx) {
       int dxoff=dx>0?(mw->page_width-dx):0;
       
@@ -1418,7 +1424,7 @@ static void save_mark_line(GtkWidget *w,
 #ifdef USE_GTK2
   txt=gtk_combo_box_get_active_text(GTK_COMBO_BOX(combo));
 #else
-  txt=gtk_editable_get_text(GTK_EDITABLE(GTK_COMBO(combo)->entry),
+  txt=gtk_editable_get_chars(GTK_EDITABLE(GTK_COMBO(combo)->entry),
 			    0,-1);
 #endif
   if (!strcasecmp("GPX",txt)) {

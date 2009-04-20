@@ -23,6 +23,7 @@
 #include <libxml/xmlwriter.h>
 #include <locale.h>
 #include <zlib.h>
+#include <time.h>
 #include "gps.h"
 
 struct gpsfile {
