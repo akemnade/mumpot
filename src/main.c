@@ -2684,7 +2684,6 @@ int main(int argc, char **argv)
       
     }
     gdk_color_alloc(cmap,&speedcolor[i]);
-    printf("%08x",speedcolor[i].pixel);
   }
   
   if ((globalmap.first)&&(!globalmap.zoomable)) {

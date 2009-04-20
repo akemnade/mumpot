@@ -363,16 +363,16 @@ static size_t mycurl_readbuf(void *ptr, size_t size,
 {
   struct osm_upload_data *oud=(struct osm_upload_data *)data;
   size_t ret=size*nmemb;
-  fprintf(stderr,"write xml to net: %d\n",ret);
+  /* fprintf(stderr,"write xml to net: %d\n",ret); */
   if (!oud->buf)
     return 0;
   if (ret > (oud->buflen-oud->bufpos))
     ret=oud->buflen-oud->bufpos;
   memcpy(ptr,oud->buf+oud->bufpos,ret);
 
-  fprintf(stderr,"write xml to net: ");
+  /*  fprintf(stderr,"write xml to net: ");
   fwrite(oud->buf+oud->bufpos,ret,1,stderr);
-  fprintf(stderr,"\n");
+  fprintf(stderr,"\n"); */
   oud->bufpos+=ret;
   return ret;
 }
