@@ -1680,6 +1680,11 @@ static void ok_osm_upload_cb(GtkWidget *w,
     pw=gtk_editable_get_chars(GTK_EDITABLE(umd->password),0,-1);
     if ((strlen(username)>0)&&(strlen(pw)>0)) {
       umd->uploading=1;
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(umd->savecheckbox))) {
+	cfg_set_string("osm_user",username);
+	cfg_set_string("osm_password",pw);
+	cfg_write_out();
+      }
       start_osm_upload(txt,username,pw,umd->mw->osm_main_file,disp_upload_msg,umd);
     } else {
       display_text_box(_("Please enter your OSM username and password!"));
@@ -1704,6 +1709,7 @@ static void upload_osm_menucb(gpointer callback_data,
 {
   GtkWidget *but;
   GtkWidget *label;
+  char *cfgstr;
   struct mapwin *mw=(struct mapwin *)callback_data;;
   struct upload_msg_dlg *umd;
   if (!mw->osm_main_file)
@@ -1716,12 +1722,18 @@ static void upload_osm_menucb(gpointer callback_data,
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
 		     label,FALSE,FALSE,0);
   umd->username=gtk_entry_new();
+  cfgstr=cfg_get_string("osm_user");
+  if (cfgstr)
+    gtk_entry_set_text(GTK_ENTRY(umd->username),cfgstr);
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
 		     umd->username,FALSE,TRUE,0);
   label=gtk_label_new(_("Password"));
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
 		     label,FALSE,TRUE,0);
   umd->password=gtk_entry_new();
+  cfgstr=cfg_get_string("osm_password");
+  if (cfgstr)
+    gtk_entry_set_text(GTK_ENTRY(umd->password),cfgstr);
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(umd->win)->vbox),
 		     umd->password,FALSE,TRUE,0);
   gtk_entry_set_visibility(GTK_ENTRY(umd->password),FALSE);

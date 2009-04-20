@@ -15,6 +15,8 @@
 #endif
 #include <gtk/gtk.h>
 #include <glib.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include "myintl.h"
 #include "png_io.h"
@@ -22,6 +24,9 @@
 #include "mapconfig_data.h"
 #include "mapdrawing.h"
 #include "gui_common.h"
+
+static GHashTable *confight=NULL;
+
 void check_item_set_state(struct mapwin *mw,char *path,int state)
 {
     GtkWidget *w=gtk_item_factory_get_item(GTK_ITEM_FACTORY(mw->fac),path);
@@ -106,3 +111,70 @@ GdkPixmap *my_gdk_pixmap_create_from_gfx(GdkWindow *win,GdkBitmap **bm,
   return pm;
 }
 
+static void load_cfgfile(char *path)
+{
+  FILE *f=fopen(path,"rb");
+  char buf[256];
+  if (!f)
+    return;
+  confight=g_hash_table_new(g_str_hash,g_str_equal);
+  while(fgets(buf,sizeof(buf),f)) {
+    int spos;
+    buf[strcspn(buf,"\r\n")]=0;
+    spos=strcspn(buf,"=");
+    if (buf[spos]) {
+      buf[spos]=0;
+      g_hash_table_insert(confight,
+			  strdup(buf),strdup(buf+spos+1));
+    }
+  }
+}
+
+char * cfg_get_string(const char *name)
+{
+  if (!confight) {
+    char *h1="~/.mumpot/guiconf";
+    char *h=expand_home(h1);
+    load_cfgfile(h);
+    if (h!=h1)
+      free(h);
+  }
+  if (!confight)
+    return NULL;
+  return g_hash_table_lookup(confight,name);
+}
+
+void cfg_set_string(char *name,char *val)
+{
+  if (!confight) {
+    char *h1="~/.mumpot/guiconf";
+    char *h=expand_home(h1);
+    load_cfgfile(h);
+    if (h!=h1)
+      free(h);
+  }
+  if (!confight)
+    confight=g_hash_table_new(g_str_hash,g_str_equal);
+  g_hash_table_insert(confight,
+		      strdup(name),strdup(val));
+}
+
+static void write_ht_entry(gpointer key, gpointer value,
+			   gpointer data)
+{
+  fprintf((FILE *)data,"%s=%s\n",(char *)key,(char *)value);
+}
+
+void cfg_write_out()
+{
+  if (confight) {
+    char *h1="~/.mumpot/guiconf";
+    char *h=expand_home(h1);
+    FILE *f;
+    f=fopen(h,"wb");
+    if (h!=h1)
+      free(h);
+    g_hash_table_foreach(confight,write_ht_entry,f);
+    fclose(f);
+  }
+} 

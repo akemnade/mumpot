@@ -37,6 +37,7 @@
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/rfcomm.h>
 #include "myintl.h"
+#include "gui_common.h"
 
 struct connection_dialog {
   GtkWidget *win;
@@ -216,29 +217,50 @@ static void conn_ok(GtkWidget *w, gpointer data)
   struct connection_dialog *cdlg = (struct connection_dialog *)data;
   printf("OK pressed\n");
   if (cdlg->conn_created) {
-  if (cdlg->current_mode == 0) {
-    char *host = gtk_editable_get_chars(GTK_EDITABLE(cdlg->btaddrfield),0,-1);
-    char *channel = gtk_editable_get_chars(GTK_EDITABLE(cdlg->channelfield),0,-1);
-    fd = open_bluetooth(host,atoi(channel));
-    g_free(host);
-    g_free(channel);
-  } else if (cdlg->current_mode == 1) {
-    char *host = gtk_editable_get_chars(GTK_EDITABLE(cdlg->hostnamefield),0,-1);
-    char *port = gtk_editable_get_chars(GTK_EDITABLE(cdlg->portfield),0,-1);
-    fd=open_tcp(host,atoi(port));
-    g_free(host);
-    g_free(port);
-  } else {
-    char *dev = gtk_editable_get_chars(GTK_EDITABLE(cdlg->serfield),0,-1);
-    char *baudrate = gtk_editable_get_chars(GTK_EDITABLE(cdlg->baudratefield),0,-1);
-    fd=open_ser(dev,atoi(baudrate));
-  }
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cdlg->savecheckbox))) {
+      
+      char buf[4];
+      snprintf(buf,sizeof(buf),"%d",cdlg->current_mode);
+      cfg_set_string("gpsconn_type",buf);
+    }
+    if (cdlg->current_mode == 0) {
+      char *host = gtk_editable_get_chars(GTK_EDITABLE(cdlg->btaddrfield),0,-1);
+      char *channel = gtk_editable_get_chars(GTK_EDITABLE(cdlg->channelfield),0,-1);
+      fd = open_bluetooth(host,atoi(channel));
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cdlg->savecheckbox))) {
+	cfg_set_string("gpsconn_btaddr",host);
+	cfg_set_string("gpsconn_btchannel",channel);
+      }
+      g_free(host);
+      g_free(channel);
+    } else if (cdlg->current_mode == 1) {
+      char *host = gtk_editable_get_chars(GTK_EDITABLE(cdlg->hostnamefield),0,-1);
+      char *port = gtk_editable_get_chars(GTK_EDITABLE(cdlg->portfield),0,-1);
+      fd=open_tcp(host,atoi(port));
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cdlg->savecheckbox))) {
+	cfg_set_string("gps_host",host);
+	cfg_set_string("gps_port",port);
+      }
+      g_free(host);
+      g_free(port);
+    } else {
+      char *dev = gtk_editable_get_chars(GTK_EDITABLE(cdlg->serfield),0,-1);
+      char *baudrate = gtk_editable_get_chars(GTK_EDITABLE(cdlg->baudratefield),0,-1);
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cdlg->savecheckbox))) {
+	cfg_set_string("gps_serdev",dev);
+	cfg_set_string("gps_baudrate",baudrate);
+      }
+      fd=open_ser(dev,atoi(baudrate));
+    }
   }
   if (!(fd < 0)) {
     gtk_widget_hide(cdlg->win);
     cdlg->conn_created(cdlg,fd,cdlg->data);
   } else {
-    gtk_widget_show(cdlg->failedlabel);
+    if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cdlg->savecheckbox))) {
+      cfg_write_out();
+      gtk_widget_show(cdlg->failedlabel);
+    }
   }
 }
 
@@ -293,6 +315,7 @@ struct connection_dialog *create_connection_dialog(void (*conn_created)(struct c
   GtkWidget *label;
   GtkWidget *but;
   GList *l;
+  char *cfgstr;
   cdlg->data=data;
   cdlg->conn_created=conn_created;
   cdlg->dlg_canceled=dlg_canceled;
@@ -311,6 +334,15 @@ struct connection_dialog *create_connection_dialog(void (*conn_created)(struct c
   gtk_box_pack_start(GTK_BOX(hbox),label,FALSE,FALSE,0);
   gtk_box_pack_start(GTK_BOX(hbox),cdlg->chooser,FALSE,FALSE,0);
   gtk_combo_set_popdown_strings(GTK_COMBO(cdlg->chooser),l);
+  cfgstr=cfg_get_string("gpsconn_type");
+  if (cfgstr) {
+    int num=atoi(cfgstr);
+    cfgstr=(char *)g_list_nth_data(l,num);
+    if (cfgstr) {
+      gtk_entry_set_text(GTK_ENTRY(GTK_COMBO(cdlg->chooser)->entry),
+			 cfgstr);
+    }
+  }
   g_list_free(l);
   cdlg->tableser=gtk_table_new(2,2,FALSE);
   gtk_box_pack_start(GTK_BOX(vbox),cdlg->tableser,FALSE,FALSE,0);
@@ -318,12 +350,19 @@ struct connection_dialog *create_connection_dialog(void (*conn_created)(struct c
   gtk_table_attach(GTK_TABLE(cdlg->tableser),label,0,1,0,1,
 		   GTK_FILL,GTK_FILL,0,0);
   cdlg->serfield=gtk_entry_new();
+  cfgstr=cfg_get_string("gps_serdev");
+  if (cfgstr)
+    gtk_entry_set_text(GTK_ENTRY(cdlg->serfield),cfgstr);
   gtk_table_attach(GTK_TABLE(cdlg->tableser),cdlg->serfield,1,2,0,1,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
   label = gtk_label_new(_("baud rate:"));
   gtk_table_attach(GTK_TABLE(cdlg->tableser),label,0,1,1,2,
 		   GTK_FILL,GTK_FILL,0,0);
   cdlg->baudratefield = gtk_entry_new();
+  cfgstr=cfg_get_string("gps_baudrate");
+  if (cfgstr) {
+    gtk_entry_set_text(GTK_ENTRY(cdlg->baudratefield),cfgstr);
+  }
   gtk_table_attach(GTK_TABLE(cdlg->tableser),cdlg->baudratefield,1,2,1,2,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
   
@@ -333,12 +372,18 @@ struct connection_dialog *create_connection_dialog(void (*conn_created)(struct c
   gtk_table_attach(GTK_TABLE(cdlg->tablebt),label,0,1,0,1,
 		   GTK_FILL,GTK_FILL,0,0);
   cdlg->btaddrfield=gtk_entry_new();
+  cfgstr=cfg_get_string("gpsconn_btaddr");
+  if (cfgstr)
+    gtk_entry_set_text(GTK_ENTRY(cdlg->btaddrfield),cfgstr);
   gtk_table_attach(GTK_TABLE(cdlg->tablebt),cdlg->btaddrfield,1,2,0,1,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
   label = gtk_label_new(_("Channel:"));
   gtk_table_attach(GTK_TABLE(cdlg->tablebt),label,0,1,1,2,
 		   GTK_FILL,GTK_FILL,0,0);
   cdlg->channelfield = gtk_entry_new();
+  cfgstr=cfg_get_string("gpsconn_btchannel");
+  if (cfgstr)
+    gtk_entry_set_text(GTK_ENTRY(cdlg->channelfield),cfgstr);
   gtk_table_attach(GTK_TABLE(cdlg->tablebt),cdlg->channelfield,1,2,1,2,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
   
@@ -348,16 +393,27 @@ struct connection_dialog *create_connection_dialog(void (*conn_created)(struct c
   gtk_table_attach(GTK_TABLE(cdlg->tableinet),label,0,1,0,1,
 		   GTK_FILL,GTK_FILL,0,0);
   cdlg->hostnamefield=gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(cdlg->hostnamefield),"localhost");
+  cfgstr=cfg_get_string("gps_host");
+  if (cfgstr)
+    gtk_entry_set_text(GTK_ENTRY(cdlg->hostnamefield),
+		       cfgstr);
+  else
+     gtk_entry_set_text(GTK_ENTRY(cdlg->hostnamefield),"localhost");
   gtk_table_attach(GTK_TABLE(cdlg->tableinet),cdlg->hostnamefield,1,2,0,1,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
   label = gtk_label_new(_("Port:"));
   gtk_table_attach(GTK_TABLE(cdlg->tableinet),label,0,1,1,2,
 		   GTK_FILL,GTK_FILL,0,0);
   cdlg->portfield = gtk_entry_new();
+  cfgstr=cfg_get_string("gps_port");
+  if (cfgstr) {
+    gtk_entry_set_text(GTK_ENTRY(cdlg->portfield),cfgstr);
+  } else {
+    gtk_entry_set_text(GTK_ENTRY(cdlg->portfield),"2947");
+  }
   gtk_table_attach(GTK_TABLE(cdlg->tableinet),cdlg->portfield,1,2,1,2,
 		   GTK_FILL|GTK_EXPAND,GTK_FILL,0,0);
-  gtk_entry_set_text(GTK_ENTRY(cdlg->portfield),"2947");
+ 
   cdlg->savecheckbox=gtk_check_button_new_with_label(_("Save GPS configuration"));
   gtk_box_pack_start(GTK_BOX(vbox),cdlg->savecheckbox,FALSE,TRUE,0);
   hbox=gtk_hbox_new(TRUE,0);
