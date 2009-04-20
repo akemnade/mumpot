@@ -1848,11 +1848,12 @@ void load_osm_gfx(struct mapwin *mw, const char *name)
     return;
   mw->osm_inf->way_to_edit=NULL;
   mw->osm_inf->selected_object=NULL;
-  recalc_node_coordinates(mw,osmf);
+ 
   if (mw->osm_main_file)
     free_osm_file(osmf);
   else
     mw->osm_main_file=osmf;
+  recalc_node_coordinates(mw,mw->osm_main_file);
   menu_item_set_state(mw,  MENU_VIEW_OSM_DATA, 1);
   menu_item_set_state(mw, MENU_OSM_AUTO_SELECT,1);
   menu_item_set_state(mw, MENU_OSM_DISPLAY_NODES,1);

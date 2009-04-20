@@ -844,8 +844,7 @@ static void osmparse_endhandler(void *ctx,
       if ((octxt->osmf->deleted_way_count) &&
 	  (octxt->osmf->deleted_ways[octxt->osmf->deleted_way_count-1]==octxt->way))
 	deleted=1;
-      if (!deleted)
-	octxt->osmf->ways=g_list_prepend(octxt->osmf->ways,octxt->way); 
+
       octxt->way=NULL;
       octxt->way_node_count=0;
     }
@@ -855,8 +854,6 @@ static void osmparse_endhandler(void *ctx,
       if ((octxt->osmf->deleted_node_count) &&
 	  (octxt->osmf->deleted_nodes[octxt->osmf->deleted_node_count-1]==octxt->node))
 	deleted=1;
-      if (!deleted)
-	octxt->osmf->nodes=g_list_prepend(octxt->osmf->nodes,octxt->node);
       octxt->node=NULL;
     }
   }
@@ -924,13 +921,15 @@ static void osmparse_starthandler(void *ctx,
 	nd=get_osm_node(id);
 	if (!nd) {
 	  octxt->node = new_osm_node(id);
-	} else if (!nd->head.modified) {
+	  if (!deleted)
+	    octxt->osmf->nodes=g_list_prepend(octxt->osmf->nodes,octxt->node);
+	} else if ((!nd->head.modified)||(version>nd->head.version)) {
 	  octxt->node = nd;
 	  free_tag_list(nd->head.tag_list);
 	  nd->head.tag_list=NULL;
-	}
-	if (modified)
-	  octxt->node->head.modified=1;
+	} else
+	  return;
+	octxt->node->head.modified=modified;
 	octxt->node->lon=atof(lon);
 	octxt->node->lat=atof(lat);
 	octxt->node->head.version=version;
@@ -980,7 +979,9 @@ static void osmparse_starthandler(void *ctx,
 	way=get_osm_way(id);
 	if (!way) {
 	  octxt->way = new_osm_way(id);
-	} else if (!way->head.modified) {
+	  if (!deleted)
+	    octxt->osmf->ways=g_list_prepend(octxt->osmf->ways,octxt->way); 
+	} else if ((!way->head.modified)||(version>way->head.version)) {
 	  octxt->way = way;
 	  remove_way_from_nodes(octxt->way);
 	  free(way->nodes);
@@ -988,7 +989,8 @@ static void osmparse_starthandler(void *ctx,
 	  way->nr_nodes = 0;
 	  free_tag_list(octxt->way->head. tag_list);
 	  octxt->way->head.tag_list = NULL;
-	} 
+	} else
+	  return;
 	if (deleted) {
 	  struct osm_file *osmf=octxt->osmf;
 	  if (0==(osmf->deleted_way_count&0xf)) {
@@ -1007,7 +1009,7 @@ static void osmparse_starthandler(void *ctx,
 	if (timestamp)
 	  octxt->way->head.timestamp=strdup(timestamp);
 	if (modified)
-	  octxt->way->head.modified=1;
+	  octxt->way->head.modified=modified;
 	octxt->way->head.version=version;
       }
     }
