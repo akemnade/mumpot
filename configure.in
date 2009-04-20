@@ -20,7 +20,7 @@ AC_ARG_WITH(oldgtk,[--with-oldgtk  Use gtk1.x],try_gtk1=yes,try_gtk1=no)
 use_gtk1=no
 
 osm_upload=yes
-AC_ARG_ENABLE(osmupload,[--disable-osmupload  Disable code to do osm uploads],osm_upload=yes,osm_upload=no)
+AC_ARG_ENABLE(osmupload,[--disable-osmupload  Disable code to do osm uploads],osm_upload=$enableval,osm_upload=yes)
 PKG_CHECK_MODULES(LIBXML2, libxml-2.0)
 
 if test $osm_upload = yes  ; then
