@@ -16,6 +16,7 @@
 #endif
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <gtk/gtk.h>
 #include "myintl.h"
 #include "geometry.h"
