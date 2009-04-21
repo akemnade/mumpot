@@ -2211,7 +2211,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {PATH_DISP_SEARCH_N,NULL,GTK_SIGNAL_FUNC(switch_searchdisp),0,"<CheckItem>"},
     {PATH_DISP_CROSSHAIR_N,NULL,GTK_SIGNAL_FUNC(switch_crosshair),0,"<CheckItem>"},
     {PATH_FOLLOW_GPS_N,NULL,GTK_SIGNAL_FUNC(switch_followgps),0,"<CheckItem>"},
-    {N_("/View/Trip stats"),NULL,GTK_SIGNAL_FUNC(tripstats_cb),0,"<CheckItem>"},
+    {N_("/View/Trip stats"),NULL,GTK_SIGNAL_FUNC(tripstats_cb),0,NULL},
     {N_("/View/Select line layer/0"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),0,"<RadioItem>"},
     {N_("/View/Select line layer/1"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),1,N_("/View/Select line layer/0")},
     {N_("/View/Select line layer/2"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),2,N_("/View/Select line layer/0")},

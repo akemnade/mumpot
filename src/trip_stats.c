@@ -128,7 +128,9 @@ void trip_stats_line(struct trip_stats *ts,
  
 void trip_stats_show(struct trip_stats *ts)
 {
+  gtk_widget_hide(ts->trp_stat_win);
   gtk_widget_show_all(ts->trp_stat_win);
+  gdk_window_raise(ts->trp_stat_win->window);
 }
 
 void trip_stats_hide(struct trip_stats *ts)
