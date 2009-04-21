@@ -29,6 +29,10 @@ using the corresponding menu item in the project menu.
 A bounding box is then constructed around your route
 and the corresponding OSM data is downloaded.
 
+The URL for the OSM API can be changed using
+the OSMAPIURL environment variable. But that
+should not be needed in normal operation.
+
 Routing with osm data:
 Select View->Mode->routing in the menu.
 on the right side, you see three buttons.
