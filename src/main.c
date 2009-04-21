@@ -946,9 +946,14 @@ static void handle_print_new_click(struct mapwin *mw, GdkEventButton *event, int
 static void paste_coords(GtkWidget *widget,
         GtkSelectionData *data, guint inf, guint t)
 {
-  if (clip_coord_buf)
-  gtk_selection_data_set(data,GDK_SELECTION_TYPE_STRING,
-          8,(guchar *)clip_coord_buf,strlen(clip_coord_buf));
+  if (clip_coord_buf) {
+#ifdef USE_GTK2
+    gtk_selection_data_set_text(data,clip_coord_buf,-1);
+#else
+    gtk_selection_data_set(data,GDK_SELECTION_TYPE_STRING,
+			 8,(guchar *)clip_coord_buf,strlen(clip_coord_buf));
+#endif
+  }
 }
 
 
