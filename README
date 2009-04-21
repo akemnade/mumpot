@@ -62,6 +62,7 @@ with existing ways.
 To insert POIs, you click in live edit mode to the
 corresponding place on the map. A dialog will pop up in
 which you can choose the POI type.
+
 The editing mode gives three buttons on the right side.
 The first one is for selecting and moving objects.
 If you click on a OSM node or way, it will be selected.
@@ -75,11 +76,13 @@ object. If it is a way, the nodes will be deleted, too,
 if they do not belong to another way.
 If you want to edit areas or OSM ways which are not roads,
 then you have to select the menu item OSM->Display non-street-ways.
+The join buttonmerges the selected node with the nearest way or node.
+The split button splits every way going through the selected node.
 
-You can save the OSM data and
-load it with JOSM and have a final look on it and upload
-it there. Also the bulk uploader script used for the 
-big data imports into OSM works.
+You can save the OSM data to have a final look on it with
+other editors, or save it as an OSMChange file so that
+bulk uploaders can process it. 
+Of course, also direct uploading is supported.
 
 POI file (tagpresets)
 --------
@@ -93,7 +96,7 @@ waypreset { <menudef> }
 <menudef> can contain the following lines
 settag "<name>" "<value>"
 for setting tags and/or
-pos <x> <y> ["<name>"] [gfx "<xpmfile>"] { <menudef> }
+pos <x> <y> ["<name>"] [gfx "<pngfile>"] { <menudef> }
 
 <x> and <y> start counting at zero and can be used to group the entries
 in one menu. <name> can also be enclosed with _("") to mark
