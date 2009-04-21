@@ -109,9 +109,9 @@ static void convert_alpha(struct pixmap_info *pinfo)
 {
   int row,i;
   for(row=0;row<pinfo->height;row++) {
-    png_bytep *dest=pinfo->row_pointers[row];
-    png_bytep *src=pinfo->row_pointers[row];
-    png_bytep *mask=pinfo->row_mask_pointers[row];
+    png_bytep dest=pinfo->row_pointers[row];
+    png_bytep src=pinfo->row_pointers[row];
+    png_bytep mask=pinfo->row_mask_pointers[row];
     for(i=0;i<pinfo->width;i++) {
       *dest=*src;
       dest++; src++;
@@ -253,7 +253,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
   png_destroy_read_struct(&png_ptr, &info_ptr,
 			  NULL);
   fclose(fh);
-  if (num_channels == 4) {
+  if ((pinfo.bit_depth==24)&&(num_channels == 4)) {
     convert_alpha(&pinfo);
   }
   pi_ret=(struct pixmap_info *)malloc(sizeof(struct pixmap_info));
