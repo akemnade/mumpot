@@ -90,7 +90,13 @@ pos 1 0 "unclassified" { settag "highway" "unclassified" }
 pos 1 1 "service" { settag "highway" "service" }
 pos 1 2 "residential" { settag "highway" "residential" }
 pos 1 3 "living street" { settag "highway" "living street" }
-pos 1 4 "track" { settag "highway" "track" }
+pos 1 4 "track" { settag "highway" "track" 
+  pos 0 0 "grade1" { settag "tracktype" "grade1" }
+  pos 0 1 "grade2" { settag "tracktype" "grade2" }
+  pos 0 2 "grade3" { settag "tracktype" "grade3" }
+  pos 0 3 "grade4" { settag "tracktype" "grade4" }
+  pos 0 4 "grade5" { settag "tracktype" "grade5" }
+}
 pos 2 0 "path" { settag "highway" "path" } 
 pos 2 1 "cycleway" { settag "highway" "cycleway" } 
 pos 2 2 "footway" { settag "highway" "footway" }
