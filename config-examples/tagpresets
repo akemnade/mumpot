@@ -3,7 +3,7 @@ pos 0 0 _("Shops") {
     pos 0 0 _("bakery") { 
       settag "shop" "bakery"
     }
-    pos 0 1 _("supermarket") {
+    pos 0 1 _("supermarket") gfx "shopping/supermarket.png" {
       settag "shop" "supermarket"
       pos 0 0 "Edeka" { settag "name" "Edeka" }
       pos 0 1 "Aldi" { settag "name" "Aldi" }
@@ -12,30 +12,30 @@ pos 0 0 _("Shops") {
       pos 0 4 "familia" { settag "name" "familia" }
       pos 1 0 _("no name") { }
     }
-    pos 0 2 _("outdoor") {
+    pos 0 2 _("outdoor") gfx "shopping/sports/outdoor.png" {
       settag "shop" "outdoor"
     }
     pos 0 3 _("bicycle") {
       settag "shop" "bicycle"
     }
-    pos 1 0 _("kiosk") {
+    pos 1 0 _("kiosk") gfx "shopping/kiosk.png" {
       settag "shop" "kiosk"
     }
 }
 pos 0 1 _("Accommodation") {
-    pos 0 0 _("Hotel") {
+    pos 0 0 _("Hotel") gfx "accommodation/hotel.png" {
       settag "tourism" "hotel"
     }
-    pos 0 1 _("Motel") {
+    pos 0 1 _("Motel") gfx "accommodation/motel.png" {
       settag "tourism" "motel"
     }
-    pos 0 2 _("Guest House") {
+    pos 0 2 _("Guest House") gfx "accommodation/guest_house.png" {
       settag "tourism" "guest_house"
     }
-    pos 0 3 _("Hostel") {
+    pos 0 3 _("Hostel") gfx "accommodation/hostel.png" {
       settag "tourism" "hostel"
     }
-    pos 1 0 _("Camping Site") {
+    pos 1 0 _("Camping Site") gfx "accommodation/camping.png" {
       settag "tourism" "camp_site"
     }
     pos 1 1 _("Caravan Site") {
@@ -43,39 +43,39 @@ pos 0 1 _("Accommodation") {
     }
 }
 pos 0 2 _("Food+Drinks") {
-    pos 0 0 "Restaurant" {
+    pos 0 0 "Restaurant" gfx "food/restaurant.png" {
       settag "amenity" "restaurant"
     }
-    pos 0 1 _("Fast Food") {
+    pos 0 1 _("Fast Food") gfx "food/fastfood.png" {
       settag "amenity" "fast_foot"
     }
-    pos 0 2 _("Cafe") {
+    pos 0 2 _("Cafe") gfx "food/cafe.png" {
       settag "amenity" "cafe"
     }
 }
-pos 1 0 _("Post box") {
+pos 1 0 _("Post box") gfx "public/post_box.png" {
     settag "amenity" "post_box"
 }
 pos 1 1 _("Park bench") {
     settag "amenity" "bench"
 }
 pos 1 2 _("Man made") {
-    pos 0 0 _("windmill") {
+    pos 0 0 _("windmill") gfx "misc/landmark/windmill.png" {
       settag "man_made" "windmill"
     }
-    pos 0 1 _("sewage") {
+    pos 0 1 _("sewage") gfx "misc/landmark/wastewater_plant.png" {
       settag "man_made" "wastewater_plant"
     }
 }
-pos 2 0  _("Bank") {
+pos 2 0  _("Bank") gfx "money/bank.png" {
     settag "amenity" "bank"
     pos 0 0 _("with ATM") { settag "atm" "yes" }
     pos 0 1 _("without ATM") { settag "atm" "no" }
 }
-pos 2 1 _("ATM") {
+pos 2 1 _("ATM") gfx "money/atm.png" {
     settag "amenity" "atm"
 }
-pos 2 2 _("Playground") {
+pos 2 2 _("Playground") gfx "recreation/playground.png" {
     settag "leisure" "playground"
 }
 }
