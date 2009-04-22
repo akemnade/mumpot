@@ -1352,6 +1352,8 @@ static void get_way_dist(struct osm_way *way, int x, int y, int *md,
   if (!node)
     return;
   nrd = (struct node_render_data *)node->user_data;
+  if (!nrd)
+    return;
   x2=nrd->x;
   y2=nrd->y;
   for(i=1;i<way->nr_nodes;i++) {
@@ -1362,6 +1364,8 @@ static void get_way_dist(struct osm_way *way, int x, int y, int *md,
     if (!node)
       return;
     nrd = (struct node_render_data *)node->user_data;
+    if (!nrd)
+      return;
     x2=nrd->x;
     y2=nrd->y;
     dist = (int) get_distance_r(x1,y1,x2,y2,x,y);
@@ -1411,6 +1415,8 @@ static struct osm_object * find_nearest_object(struct osm_file *osmf,
     int dist;
     struct osm_node *node = (struct osm_node *)l->data;
     struct node_render_data *nrd = (struct node_render_data *) node->user_data;
+    if (!nrd)
+      continue;
     dist=abs(nrd->x-x);
     dist+=abs(nrd->y-y);
     if ((dist < md) && (not_that != &node->head)) {
