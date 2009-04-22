@@ -128,13 +128,28 @@ GdkPixmap *my_gdk_pixmap_create_from_gfx(GdkWindow *win,GdkBitmap **bm,
   pm=gdk_pixmap_new(win,pinfo->width,pinfo->height,-1);
   mygc=gdk_gc_new(win);
   if ((bm)&&(pinfo->row_mask_pointers)) {
+    int x,y;
+    unsigned char *m;
     GdkGC *bmgc;
-    *bm=gdk_pixmap_new(NULL,pinfo->width,pinfo->height,1);
+    GdkImage *img;
+    *bm=gdk_pixmap_new(win,pinfo->width,pinfo->height,1);
     bmgc=gdk_gc_new(*bm);
-    gdk_draw_gray_image(*bm,mygc,0,0,pinfo->width,pinfo->height,
-			GDK_RGB_DITHER_NONE,pinfo->row_mask_pointers[0],
-			pinfo->row_mask_len);
-    gdk_gc_unref(bmgc);
+    img=gdk_image_get(*bm,0,0,pinfo->width,pinfo->height);
+    for(y=0;y<pinfo->height;y++) {
+      m=pinfo->row_mask_pointers[y];
+      for(x=0;x<pinfo->width;x++) {
+	if ((m[x]!=0)&&(m[x]!=0xff))
+	  printf("fname: %s x: %d y: %d %d\n",fname,x,y,(int)m[x]);
+	gdk_image_put_pixel(img,x,y,(m[x]>127)?0xffffffff:0);
+      }
+    }
+    gdk_draw_image(*bm,bmgc,img,0,0,0,0,pinfo->width,pinfo->height);
+    /*
+      bmgc=gdk_gc_new(*bm);
+      gdk_draw_gray_image(*bm,bmgc,0,0,pinfo->width,pinfo->height,
+      GDK_RGB_DITHER_NONE,pinfo->row_mask_pointers[0],
+      pinfo->row_mask_len);
+      gdk_gc_unref(bmgc); */
   } else {
     *bm=NULL;
   }

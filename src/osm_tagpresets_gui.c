@@ -112,6 +112,14 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 	  if (h!=fbuf)
 	    free(h);
 	}
+        if (!gdkpm) {
+          snprintf(fbuf,sizeof(fbuf),"/usr/share/icons/openstreetmap/square.big/%s",pi->img);
+	  gdkpm=my_gdk_pixmap_create_from_gfx(win->window,&bm,fbuf);
+        }
+	if (!gdkpm) {
+	  snprintf(fbuf,sizeof(fbuf),"/usr/share/icons/openstreetmap/classic.big/%s",pi->img);
+	  gdkpm=my_gdk_pixmap_create_from_gfx(win->window,&bm,fbuf); 
+	}
 	if (gdkpm) {
 	  if (!hte) {
 	    hte=g_new0(struct pixmap_ht_entry,1);
