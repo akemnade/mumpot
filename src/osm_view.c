@@ -341,7 +341,6 @@ static void tag_hash_free(gpointer key, gpointer value,
 static void display_tags(struct osm_info *osmf,
 			 struct osm_object *way)
 {
-  xmlNodePtr node;
   GList *keys=NULL;
   if (osmf->tag_hash) {
     g_hash_table_foreach(osmf->tag_hash,tag_hash_free,NULL);

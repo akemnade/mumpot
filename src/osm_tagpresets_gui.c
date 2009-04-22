@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gtk/gtk.h>
+#include "gui_common.h"
 #include "mapconfig_data.h"
 #include "osm_tagpresets_data.h"
 #include "osm_tagpresets_gui.h"

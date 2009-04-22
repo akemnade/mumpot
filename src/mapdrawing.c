@@ -729,7 +729,6 @@ void point2geosec(double *longr, double *lattr, double x, double y)
 /* callback for freeing a line struct */
 static void free_line(gpointer data,gpointer user_data)
 {
-  struct t_punkt32 *p = (struct t_punkt32 *)data;
   free(data);
 }
 

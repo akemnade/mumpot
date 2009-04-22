@@ -117,7 +117,6 @@ void save_nmea(FILE *f,GList *save_list)
   struct tm *tm;
   for(i=0,l=g_list_first(save_list);l;l=g_list_next(l),i++)
   {
-  char tbuf[40];
   struct t_punkt32 *p=(struct t_punkt32 *)l->data;
   int lattdeg, longdeg;
   double lattmin, longmin;
@@ -211,7 +210,7 @@ static int proc_gps_decompress(struct gpsfile *gpsf,
 				void (*gpsproc)(struct nmea_pointinfo *,void *), void *data)
 {
   while(gpsf->zstream.avail_in>0) {
-    gpsf->zstream.next_out=gpsf->buf+gpsf->bufpos;
+    gpsf->zstream.next_out=(unsigned char *)gpsf->buf+gpsf->bufpos;
     gpsf->zstream.avail_out=sizeof(gpsf->buf)-gpsf->bufpos;
     if (Z_OK != inflate(&gpsf->zstream,Z_SYNC_FLUSH))
       return 0;
@@ -229,7 +228,7 @@ int proc_gps_input(struct gpsfile *gpsf,
     l=read(gpsf->fd,gpsf->gzbuf,sizeof(gpsf->gzbuf));
     if (l>0) {
       gpsf->zstream.avail_in=l;
-      gpsf->zstream.next_in=gpsf->gzbuf;
+      gpsf->zstream.next_in=(unsigned char *)gpsf->gzbuf;
       if (!proc_gps_decompress(gpsf,gpsproc,data)) {
 	perror("decompress error");
 	return -1;
@@ -251,9 +250,9 @@ int proc_gps_input(struct gpsfile *gpsf,
       } else {
 	memcpy(gpsf->gzbuf,gpsf->buf,gpsf->bufpos);
 	gpsf->zstream.avail_in=gpsf->bufpos;
-	gpsf->zstream.next_in=gpsf->gzbuf;
+	gpsf->zstream.next_in=(unsigned char *)gpsf->gzbuf;
 	gpsf->zstream.avail_out=sizeof(gpsf->buf);
-	gpsf->zstream.next_out=gpsf->buf;
+	gpsf->zstream.next_out=(unsigned char *)gpsf->buf;
 	gpsf->bufpos=0;
 	if (Z_OK==inflateInit2(&gpsf->zstream,31)) {
 	  gpsf->use_zlib=1;
@@ -402,9 +401,7 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
       int numfields=my_split(gpsf->buf,fields,",",13);
       if (((numfields == 13)||(numfields == 12))&&(strlen(fields[3])>3)) {
 	struct tm tm;
-	struct tm *tmref;
         time_t t;
-	time_t tref;
 	gpsf->curpoint.lattsec=to_seconds(fields[3]);
         gpsf->curpoint.longsec=to_seconds(fields[5]);
         if ((fields[4])[0] == 'S')

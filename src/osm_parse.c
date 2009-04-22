@@ -497,30 +497,6 @@ static int build_references(struct osm_file *osmf)
   return ret;
 }
 
-
-static char *get_tag_value_xml(xmlNodePtr node,const char *key)
-{
-  if (!node)
-    return NULL;
-  node=node->children;
-  while(node) {
-    node=next_el_node(node);
-    if (!node)
-      return 0;
-    if (!strcmp((char *)node->name,"tag")) {
-      char *k=(char *)xmlGetProp(node,(xmlChar *)"k");
-      if (k) {
-	if (!strcmp(k,key)) {
-	  return (char *)xmlGetProp(node,(xmlChar *)"v");
-	}
-	xmlFree(k);
-      }
-    }
-    node=node->next;
-  }
-  return 0;
-}
-
 char *get_tag_value(struct osm_object *obj,const char *key)
 {
   GList *l=obj->tag_list;

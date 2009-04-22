@@ -1718,7 +1718,6 @@ static void upload_osm_menucb(gpointer callback_data,
 			      guint callback_action,
 			      GtkWidget *w)
 {
-  GtkWidget *but;
   GtkWidget *label;
   char *cfgstr;
   struct mapwin *mw=(struct mapwin *)callback_data;;
@@ -2306,7 +2305,6 @@ struct mapwin * create_mapwin()
   GtkWidget *hb1;
   GtkWidget *okbut;
   GtkWidget *vb1;
-  GtkWidget *label;
   GtkWidget *label2;
   GtkTooltips *tt;
   struct sidebar_mode *sm;
