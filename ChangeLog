@@ -1,3 +1,17 @@
+Changes between 0.5 and 0.4:
+- optionally color lines by speed
+- support for gzipped gps streams
+- join node to nearest way function
+- merge newly-downloaded data with existing data
+- statistics window with speed, maxspeed and total
+  distance,
+- split ways at selected node
+- save format selection: GPX/NMEA
+- save changes as OSMChange file
+- API0.6 compability
+- upload support
+- GPS settings and OSM account settings are saved
+
 Changes between 0.4 and 0.3.2:
 - inserting POIs 
 - configurable tag presets gui for ways and POIs
