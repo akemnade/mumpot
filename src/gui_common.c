@@ -138,8 +138,6 @@ GdkPixmap *my_gdk_pixmap_create_from_gfx(GdkWindow *win,GdkBitmap **bm,
     for(y=0;y<pinfo->height;y++) {
       m=pinfo->row_mask_pointers[y];
       for(x=0;x<pinfo->width;x++) {
-	if ((m[x]!=0)&&(m[x]!=0xff))
-	  printf("fname: %s x: %d y: %d %d\n",fname,x,y,(int)m[x]);
 	gdk_image_put_pixel(img,x,y,(m[x]>127)?0xffffffff:0);
       }
     }
