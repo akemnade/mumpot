@@ -22,6 +22,12 @@
 #include "geometry.h"
 #include "gps.h"
 #include "trip_stats.h"
+#ifdef USE_GTK2
+#define DEG_CHR "\xc2\xb0"
+#else
+#define DEG_CHR "°"
+#endif
+
 
 struct trip_stats {
   double old_lon;
@@ -34,6 +40,7 @@ struct trip_stats {
   GtkWidget *spdlabel;
   GtkWidget *maxspdlabel;
   GtkWidget *distlabel;
+  GtkWidget *coordlabel;
 };
 
 static int ts_delete(GtkWidget *w,
@@ -88,6 +95,8 @@ struct trip_stats * trip_stats_new()
   gtk_box_pack_start(GTK_BOX(vbox),ts->distlabel,FALSE,FALSE,0);
   ts->maxspdlabel=gtk_label_new("max: 0km");
   gtk_box_pack_start(GTK_BOX(vbox),ts->maxspdlabel,FALSE,FALSE,0);
+  ts->coordlabel=gtk_label_new("");
+  gtk_box_pack_start(GTK_BOX(vbox),ts->coordlabel,FALSE,FALSE,0);
   gtk_container_add(GTK_CONTAINER(ts->trp_stat_win),vbox);
   gtk_signal_connect(GTK_OBJECT(ts->trp_stat_win),"delete-event",
 		     GTK_SIGNAL_FUNC(ts_delete),
@@ -98,6 +107,10 @@ struct trip_stats * trip_stats_new()
 void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
 {
   char buf[80];
+  int latti,longi;
+  char ns='N';
+  char ew='E';
+  
   if (nmea->speed > ts->maxspeed)
     ts->maxspeed = nmea->speed;
   if (!nmea->start_new) {
@@ -107,6 +120,26 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   ts->speed = nmea->speed;
   ts->old_lon = nmea->longsec/3600.0;
   ts->old_lat = nmea->lattsec/3600.0;
+  longi=(int)nmea->longsec;
+  latti=(int)nmea->lattsec;
+  if (latti<0) {
+    ns='S';
+    latti=-latti;
+  }
+  if (longi<0) {
+    ew='W';
+    longi=-longi;
+  }
+  snprintf(buf,sizeof(buf),"%0d" DEG_CHR "%02d'%02d''%c %0d"DEG_CHR"%02d'%02d''%c",
+	   latti/3600,
+	   (latti/60)%60,
+	   latti%60,
+	   ns,
+	   longi/3600,
+	   (longi/60)%60,
+	   longi%60,
+	   ew);
+  gtk_label_set_text(GTK_LABEL(ts->coordlabel),buf);
   snprintf(buf,sizeof(buf),"%.1f km/h",ts->speed*1.852);
   gtk_label_set_text(GTK_LABEL(ts->spdlabel),buf);
   snprintf(buf,sizeof(buf),"%.2f km",ts->dist/1000.0);
