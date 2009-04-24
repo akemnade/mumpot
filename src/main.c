@@ -1658,8 +1658,12 @@ static void upl_check_close_cancel(GtkWidget *w,
                                    gpointer data)
 {
   struct upload_msg_dlg *umd=(struct upload_msg_dlg *)data;
-  if (!umd->uploading)
+  if (!umd->uploading) {
+#ifdef USE_GTK2
+    gtk_grab_remove(umd->win);
+#endif
     gtk_widget_destroy(umd->win);
+  }
 }                             
 
 static int upld_finished(gpointer data)
@@ -1696,6 +1700,9 @@ static void ok_osm_upload_cb(GtkWidget *w,
 	cfg_set_string("osm_password",pw);
 	cfg_write_out();
       }
+#ifdef USE_GTK2
+      gtk_grab_add(umd->win);
+#endif
       start_osm_upload(txt,username,pw,umd->mw->osm_main_file,disp_upload_msg,umd);
     } else {
       display_text_box(_("Please enter your OSM username and password!"));
