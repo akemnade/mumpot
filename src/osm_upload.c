@@ -419,11 +419,14 @@ void start_osm_upload(char *csetmsg, char *user, char *pw,
                       void (*msg_callback)(void *,char *,int), void *msg_data)
 {
   static int initialized;
+  static struct curl_slist *headerlist=NULL;
+
   int running=0;
   CURLMcode ret;
   struct osm_upload_data *oud=calloc(1,sizeof(struct osm_upload_data));
   if (!initialized) {
     curl_global_init(CURL_GLOBAL_ALL);
+    headerlist=curl_slist_append(headerlist,"Expect:");
     initialized=1;
   }
   oud->osmf=osmf;
@@ -457,7 +460,7 @@ void start_osm_upload(char *csetmsg, char *user, char *pw,
   curl_easy_setopt(oud->curl, CURLOPT_WRITEFUNCTION, mycurl_writebuf);
   curl_easy_setopt(oud->curl, CURLOPT_INFILESIZE,
 		   (long)oud->buflen);
-  
+  curl_easy_setopt(oud->curl, CURLOPT_HTTPHEADER,headerlist); 
   curl_multi_add_handle(oud->curlm, oud->curl);
   oud->upload_state=REQ_CSET;
   if (oud->msg_callback)
