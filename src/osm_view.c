@@ -1514,7 +1514,12 @@ static void handle_node_move(struct mapwin *mw, int x, int y)
 {
   double nx,ny;
   double lon,lat;
-  struct osm_node *node=(struct osm_node *)
+  struct osm_node *node;
+  if (!(mw->osm_inf->selected_object))
+    return;
+  if (mw->osm_inf->selected_object->type!=NODE)
+    return;
+  node=(struct osm_node *)
     mw->osm_inf->selected_object;
   geosec2point(&nx,&ny,node->lon*3600.0,node->lat*3600.0);
   nx=x-mw->mouse_x+nx;
