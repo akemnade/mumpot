@@ -22,5 +22,7 @@ dist-hook:
 	done
 
 
+appsdir = $(datadir)/applications
+apps_DATA = mumpot.desktop
 
 ACLOCAL_AMFLAGS = -I m4
