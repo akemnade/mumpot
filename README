@@ -87,6 +87,10 @@ You can save the OSM data to have a final look on it with
 other editors, or save it as an OSMChange file so that
 bulk uploaders can process it. 
 Of course, also direct uploading is supported.
+The data is saved is a file named dump.osm in the
+current directory when mumpot receives a SIGHUP
+or is otherwise terminated with unsaved data.
+
 
 POI file (tagpresets)
 --------
@@ -154,9 +158,6 @@ channel, no need to create a serial device for the
 bluetooth connection). You also can connect to serial
 ports or to any source with streams NMEA data or gpx data
 over tcp (the operation mode for connecting it to gpsd).
-It is strongly recommended to log the gps
-recordings external (for example using
-nc localhost 2947 >filename ), but you can also
-save the track in mumpot, simply select View->Select line layer->4
+You can save the track in mumpot, simply select View->Select line layer->4
 and select Project->save route
 
