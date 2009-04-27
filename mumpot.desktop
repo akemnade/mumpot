@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=Mumpot
 Comment=Mumpot
-Exec=mumpot
-Terminal=0
+Encoding=UTF-8
 Type=Application
-Categories=Application;PIM;GTK
-StartupNotify=True
+Exec=mumpot
+Terminal=false
+Categories=Application;PIM;GTK;Graphics;GPS;
