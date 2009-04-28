@@ -48,6 +48,7 @@
 
 #include "start_route.xpm"
 #include "end_route.xpm"
+#include "split_way.xpm"
 #include "routestartgps.xpm"
 #include "delosmobj.xpm"
 #include "selosmobj.xpm"
@@ -1782,7 +1783,7 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),
 		     mw->osm_inf->editb.joinbut,
 		     TRUE,TRUE,0);
-  mw->osm_inf->editb.splitbut=gtk_button_new_with_label(" S ");
+  mw->osm_inf->editb.splitbut=make_pixmap_button(mw,split_way);
   gtk_tooltips_set_tip(tt,mw->osm_inf->editb.splitbut,
 		       _("split the ways going through the selected node"),
 		       NULL);
