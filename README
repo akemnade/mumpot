@@ -86,7 +86,8 @@ The split button splits every way going through the selected node.
 You can save the OSM data to have a final look on it with
 other editors, or save it as an OSMChange file so that
 bulk uploaders can process it. 
-Of course, also direct uploading is supported.
+Of course, also direct uploading is supported (when
+libcurl is available).
 The data is saved is a file named dump.osm in the
 current directory when mumpot receives a SIGHUP
 or is otherwise terminated with unsaved data.
