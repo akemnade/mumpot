@@ -49,6 +49,7 @@
 #include "start_route.xpm"
 #include "end_route.xpm"
 #include "split_way.xpm"
+#include "join_way.xpm"
 #include "routestartgps.xpm"
 #include "delosmobj.xpm"
 #include "selosmobj.xpm"
@@ -1776,7 +1777,7 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 		       _("delete the currently selected object"),NULL);
   gtk_box_pack_start(GTK_BOX(mw->osm_inf->meditbar),mw->osm_inf->editb.delobjbut,
 		     TRUE,TRUE,0);
-  mw->osm_inf->editb.joinbut=gtk_button_new_with_label(" J ");
+  mw->osm_inf->editb.joinbut=make_pixmap_button(mw,join_way);
   gtk_tooltips_set_tip(tt,mw->osm_inf->editb.joinbut,
 		       _("join the selected node with the nearest way"),
 		       NULL);
