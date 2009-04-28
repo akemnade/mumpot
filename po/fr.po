@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mumpot 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-04-27 19:55+0200\n"
+"POT-Creation-Date: 2009-04-28 21:19+0200\n"
 "PO-Revision-Date: 2009-01-15 08:29+0100\n"
 "Last-Translator: Georgy Baudart <georgyatbaweticdotbe>\n"
 "Language-Team: French\n"
@@ -342,97 +342,97 @@ msgstr "De la page: "
 msgid "to: "
 msgstr "à: "
 
-#: src/osm_view.c:56
+#: src/osm_view.c:58
 msgid "/OSM/View OSM Layer"
 msgstr "/OSM/Montrer les données OSM"
 
-#: src/osm_view.c:58
+#: src/osm_view.c:60
 msgid "/OSM/Auto-Select way in center"
 msgstr "/OSM/Choisir automatiquement le centre du chemin"
 
-#: src/osm_view.c:60
+#: src/osm_view.c:62
 msgid "/OSM/Display nodes"
 msgstr "/OSM/Montrer intersections"
 
-#: src/osm_view.c:62
+#: src/osm_view.c:64
 msgid "/OSM/Display street borders"
 msgstr "/OSM/Montrer bord de route"
 
-#: src/osm_view.c:64
+#: src/osm_view.c:66
 msgid "/OSM/Display non-street ways"
 msgstr "/OSM/Montrer les routes non-carrossables"
 
-#: src/osm_view.c:66
+#: src/osm_view.c:68
 msgid "/OSM/Display tags"
 msgstr "/OSM/Montrer propriétés"
 
-#: src/osm_view.c:896
+#: src/osm_view.c:898
 msgid "set"
 msgstr "Fixer"
 
-#: src/osm_view.c:951
+#: src/osm_view.c:953
 msgid ""
 "The OSM data is modified.\n"
 "Do you really want to loose it"
 msgstr ""
 
-#: src/osm_view.c:1724
+#: src/osm_view.c:1726
 msgid "start a new way"
 msgstr "Commencer un nouveau chemin"
 
-#: src/osm_view.c:1732
+#: src/osm_view.c:1734
 msgid "finish a new way"
 msgstr "Terminer un nouveau chemin"
 
-#: src/osm_view.c:1736
+#: src/osm_view.c:1738
 msgid "finish a way and start a new one at the same place"
 msgstr "Terminer un chemin et commencer un nouveau chemin en ce point"
 
-#: src/osm_view.c:1744
+#: src/osm_view.c:1746
 msgid "auto-merge the start/end of a way to an existing way"
 msgstr "Commencer/Terminer un chemin à un point déja existant"
 
-#: src/osm_view.c:1754
+#: src/osm_view.c:1756
 msgid "set the start point for the route calculation"
 msgstr "Déterminer le point de départ"
 
-#: src/osm_view.c:1756
+#: src/osm_view.c:1758
 msgid "set the destination point for the route calculation"
 msgstr "Déterminer le point de destination"
 
-#: src/osm_view.c:1758
+#: src/osm_view.c:1760
 msgid "navigate to the given destination"
 msgstr "Naviguer vers le point de destination"
 
-#: src/osm_view.c:1766
+#: src/osm_view.c:1768
 msgid "select the object to edit"
 msgstr "Sélectionnier l'objet à éditer"
 
-#: src/osm_view.c:1770
+#: src/osm_view.c:1772
 msgid "add a new way"
 msgstr "Ajouter un nouveau chemin"
 
-#: src/osm_view.c:1775
+#: src/osm_view.c:1777
 msgid "delete the currently selected object"
 msgstr "Effacer l'objet sélectionné"
 
-#: src/osm_view.c:1780
+#: src/osm_view.c:1782
 msgid "join the selected node with the nearest way"
 msgstr ""
 
-#: src/osm_view.c:1787
+#: src/osm_view.c:1789
 msgid "split the ways going through the selected node"
 msgstr ""
 
-#: src/osm_view.c:1820
+#: src/osm_view.c:1822
 msgid "routing"
 msgstr "Calcul de la navigation"
 
-#: src/osm_view.c:1824
+#: src/osm_view.c:1826
 msgid "live edit"
 msgstr "Mode édition directe"
 
-#: src/osm_view.c:1828
+#: src/osm_view.c:1830
 msgid "editing"
 msgstr "Editer"
 
