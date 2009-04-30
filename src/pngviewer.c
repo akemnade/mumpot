@@ -29,6 +29,7 @@ GtkAdjustment *zoom_adj;
 struct pixmap_info *my_pinfo;
 int allow_redraw=1;
 int zoom_fac=1;
+int zoomout_fac=2;
 void draw_pinfo(GdkWindow *w, GdkGC *gc,struct pixmap_info *p_info,
                 int srcx,int srcy, int destx, int desty,
                 int width, int height)
@@ -67,8 +68,7 @@ void draw_pinfo_zoomed(GdkWindow *w, GdkGC *gc,struct pixmap_info *p_info,
   guchar *row_new;
   guchar *bitbuf_new; 
 
-  GdkRgbCmap* cmap=gdk_rgb_cmap_new(p_info->gdk_palette,
-				    p_info->num_palette);
+  GdkRgbCmap* cmap;
   width+=destx%zoom_fac;
   height+=desty%zoom_fac;
   destx-=(destx%zoom_fac);
@@ -79,28 +79,51 @@ void draw_pinfo_zoomed(GdkWindow *w, GdkGC *gc,struct pixmap_info *p_info,
     return;
   if (srcy+height>my_pinfo->height)
     return;
-  bitbuf_new=malloc(width*height*zoom_fac*zoom_fac);
+  bitbuf_new=malloc(width*height*zoom_fac*zoom_fac*p_info->bit_depth/8);
   row_new=bitbuf_new;
   for(y=0;y<height;y++) {
-    row_old=my_pinfo->row_pointers[srcy+y]+srcx;
-    
-    for(x=0,xn=0;x<width;x++) {
-      guchar b;
-      b=row_old[x];
-      for(i=0;i<zoom_fac;i++,xn++) {
-	row_new[xn]=b;
+    row_old=my_pinfo->row_pointers[srcy+y]+srcx*p_info->bit_depth/8;
+    if (p_info->bit_depth==8) { 
+      for(x=0,xn=0;x<width;x++) {
+        guchar b;
+        b=row_old[x];
+        for(i=0;i<zoom_fac;i++,xn++) {
+        	row_new[xn]=b;
+        }
       }
+    } else if (p_info->bit_depth==24) {
+      int rowlen=width*3;
+      for(x=0,xn=0;x<rowlen;x+=3) {
+        guchar b[3];
+        b[0]=row_old[x];
+        b[1]=row_old[x+1];
+        b[2]=row_old[x+2];
+        for(i=0;i<zoom_fac;i++,xn+=3) {
+            row_new[xn]=b[0];
+            row_new[xn+1]=b[1];
+            row_new[xn+2]=b[2];
+        }
+         
+      }  
     }
-    row_new+=width*zoom_fac;
-    for(i=1;i<zoom_fac;i++,row_new+=width*zoom_fac) {
-      memcpy(row_new,row_new-width*zoom_fac,width*zoom_fac);
+    row_new+=width*zoom_fac*p_info->bit_depth/8;
+    for(i=1;i<zoom_fac;i++,row_new+=width*zoom_fac*p_info->bit_depth/8) {
+      memcpy(row_new,row_new-width*zoom_fac*p_info->bit_depth/8,width*zoom_fac*p_info->bit_depth/8);
     }
   } 
+  if (p_info->num_palette) {
+  cmap=gdk_rgb_cmap_new(p_info->gdk_palette,
+				    p_info->num_palette);
   gdk_draw_indexed_image(w,gc,destx,desty,width*zoom_fac,height*zoom_fac,
                          GDK_RGB_DITHER_NONE,
                          bitbuf_new,width*zoom_fac,
                          cmap);
   gdk_rgb_cmap_free(cmap);
+  } else {
+    gdk_draw_rgb_image(w,gc,destx,desty,width*zoom_fac,height*zoom_fac,
+                       GDK_RGB_DITHER_NONE,bitbuf_new,
+                       width*zoom_fac*p_info->bit_depth/8);
+  }
   free(bitbuf_new);
 }
 
