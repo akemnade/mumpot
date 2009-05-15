@@ -28,6 +28,8 @@
 #define DEG_CHR "°"
 #endif
 
+#define MAX_FIX_INTERVAL 5
+#define MIN_ACTIVE_SPEED (3.0/1.852) /* 2km/h */
 
 struct trip_stats {
   double old_lon;
@@ -36,11 +38,15 @@ struct trip_stats {
   double spdsum;
   double dist;
   double maxspeed;
+  int old_time;
+  int travel_time; 
   GtkWidget *trp_stat_win;
   GtkWidget *spdlabel;
   GtkWidget *maxspdlabel;
   GtkWidget *distlabel;
   GtkWidget *coordlabel;
+  GtkWidget *averagelabel;
+  GtkWidget *traveledtimelabel; 
 };
 
 static int ts_delete(GtkWidget *w,
@@ -65,6 +71,7 @@ struct trip_stats * trip_stats_new()
   ts->spdsum=0;
   ts->dist=0;
   ts->maxspeed=0;
+  ts->travel_time=0;
   ts->trp_stat_win=gtk_window_new(GTK_WINDOW_TOPLEVEL);
   vbox=gtk_vbox_new(FALSE,0);
   label=gtk_label_new(_("Speed:"));
@@ -97,6 +104,10 @@ struct trip_stats * trip_stats_new()
   gtk_box_pack_start(GTK_BOX(vbox),ts->maxspdlabel,FALSE,FALSE,0);
   ts->coordlabel=gtk_label_new("");
   gtk_box_pack_start(GTK_BOX(vbox),ts->coordlabel,FALSE,FALSE,0);
+  ts->averagelabel=gtk_label_new(_("average:"));
+  gtk_box_pack_start(GTK_BOX(vbox),ts->averagelabel,FALSE,FALSE,0);
+  ts->traveledtimelabel=gtk_label_new(_("time traveled:\n"));
+  gtk_box_pack_start(GTK_BOX(vbox),ts->traveledtimelabel,FALSE,FALSE,0);
   gtk_container_add(GTK_CONTAINER(ts->trp_stat_win),vbox);
   gtk_signal_connect(GTK_OBJECT(ts->trp_stat_win),"delete-event",
 		     GTK_SIGNAL_FUNC(ts_delete),
@@ -113,6 +124,15 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   
   if (nmea->speed > ts->maxspeed)
     ts->maxspeed = nmea->speed;
+  if (ts->speed > MIN_ACTIVE_SPEED) {
+    int tdiff = nmea->time-ts->old_time;
+    if (tdiff > MAX_FIX_INTERVAL) {
+      tdiff=5;
+    }
+    ts->travel_time+=tdiff;
+    ts->spdsum+=nmea->speed*(double)tdiff;
+  }
+  ts->old_time=nmea->time;
   if (!nmea->start_new) {
     ts->dist+=point_dist(nmea->longsec/3600.0,nmea->lattsec/3600.0,
 			 ts->old_lon,ts->old_lat);
@@ -146,6 +166,12 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   gtk_label_set_text(GTK_LABEL(ts->distlabel),buf);
   snprintf(buf,sizeof(buf),"max: %.1f km/h",ts->maxspeed*1.852);
   gtk_label_set_text(GTK_LABEL(ts->maxspdlabel),buf);
+  snprintf(buf,sizeof(buf),_("average:\n%.1f km/h"),ts->spdsum/((double)ts->travel_time)*1.852);
+  gtk_label_set_text(GTK_LABEL(ts->averagelabel),buf);
+  snprintf(buf,sizeof(buf),_("travel time:\n%02d:%02d:%02d"),
+	   ts->travel_time/3600,(ts->travel_time/60)&60,ts->travel_time%60);
+  gtk_label_set_text(GTK_LABEL(ts->traveledtimelabel),
+		     buf);
 }
 
 void trip_stats_line(struct trip_stats *ts,
