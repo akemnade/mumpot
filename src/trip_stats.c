@@ -169,7 +169,7 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   snprintf(buf,sizeof(buf),_("average:\n%.1f km/h"),ts->spdsum/((double)ts->travel_time)*1.852);
   gtk_label_set_text(GTK_LABEL(ts->averagelabel),buf);
   snprintf(buf,sizeof(buf),_("travel time:\n%02d:%02d:%02d"),
-	   ts->travel_time/3600,(ts->travel_time/60)&60,ts->travel_time%60);
+	   ts->travel_time/3600,(ts->travel_time/60)%60,ts->travel_time%60);
   gtk_label_set_text(GTK_LABEL(ts->traveledtimelabel),
 		     buf);
 }
