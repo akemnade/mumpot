@@ -4,5 +4,6 @@ Comment=Mumpot
 Encoding=UTF-8
 Type=Application
 Exec=mumpot
+Icon=mumpot.png
 Terminal=false
 Categories=Application;PIM;GTK;Graphics;GPS;
