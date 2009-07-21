@@ -48,8 +48,9 @@ if test x$use_gtk2  = xyes ;then
 
 AC_DEFINE(USE_GTK2,1,[use gtk2])
 fi
+BZ2=no
 AC_CHECK_HEADERS(bzlib.h)
-AC_CHECK_LIB(bz2, BZ2_bzRead, LIBS="-lbz2 $LIBS")
+AC_CHECK_LIB(bz2, BZ2_bzRead, LIBS="-lbz2 $LIBS" ; BZ2=yes)
 GETTEXT_PACKAGE=mumpot
 AC_SUBST(GETTEXT_PACKAGE)
 BTLIBS="-lbluetooth"
@@ -89,6 +90,15 @@ if test "x$GCC" = "xyes"; then
   *) CFLAGS="$CFLAGS -Wall" ;;
   esac
 fi
+echo Summary:
+if  x$use_gtk2 = xyes ; then
+  echo "Using GTK 2"
+else
+  echo "Using GTK 1.2"
+fi
+echo "Support for .bt2 decompression of osm files: $BZ2"
+
+
 changequote([,])dnl
 
 AC_OUTPUT([ 
