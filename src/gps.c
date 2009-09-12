@@ -417,8 +417,11 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
 	t=gmmktime(&tm);  /* t=tm-tz */
         gpsf->curpoint.time=t;
         gpsf->curpoint.speed=atof(fields[7]);
-        gpsf->curpoint.heading=atof(fields[8]);
-        gpsf->curpoint.state=(numfields==13)?((fields[12])[0]):'?';
+	if (strlen(fields[8]))
+	  gpsf->curpoint.heading=atof(fields[8]);
+        else
+	  gpsf->curpoint.heading=INVALID_HEADING;
+	gpsf->curpoint.state=(numfields==13)?((fields[12])[0]):'?';
 	gpsf->curpoint.start_new=gpsf->first?1:0;
         gpsproc(&gpsf->curpoint,data);
 	gpsf->first=0;

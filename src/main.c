@@ -145,12 +145,14 @@ static void change_sidebar_cb(gpointer callback_data,
 
 #define PATH_DISP_SEARCH_N N_("/View/Show place searchbox")
 #define PATH_DISP_CROSSHAIR_N N_("/View/Show crosshairs")
+#define PATH_DISP_HEADING_ARROW_N N_("/View/Show heading arrow")
 #define PATH_FOLLOW_GPS_N N_("/View/Follow GPS")
 #define PATH_ZOOM_OUT_N N_("/View/Zoom out")
 #define PATH_ZOOM_IN_N N_("/View/Zoom in")
 #define PATH_DISP_COLOR_N N_("/View/Color tracks by velocity")
 #define PATH_DISP_SEARCH _(PATH_DISP_SEARCH_N)
 #define PATH_DISP_CROSSHAIR  _(PATH_DISP_CROSSHAIR_N)
+#define PATH_DISP_HEADING_ARROW _(PATH_DISP_HEADING_ARROW_N)
 #define PATH_FOLLOW_GPS _(PATH_FOLLOW_GPS_N)
 #define PATH_ZOOM_OUT _(PATH_ZOOM_OUT_N)
 #define PATH_ZOOM_IN _(PATH_ZOOM_IN_N)
@@ -341,6 +343,33 @@ static void display_text_box(char *b)
 			    "delete-event",GTK_SIGNAL_FUNC(gtk_widget_destroy),
 			    (void*)dialog);
   gtk_widget_show_all(dialog);
+}
+
+static void draw_heading_arrow(struct mapwin *mw)
+{
+  int x2,y2;
+  float heading;
+  if (1&mw->last_nmea.time)
+    return;
+  if (!mw->follow_gps)
+    return;
+  if (mw->last_nmea.heading == INVALID_HEADING)
+    return;
+  heading=mw->last_nmea.heading/180.0*M_PI;
+  gdk_gc_set_foreground(mygc,&crosshair_color);
+  
+  gdk_gc_set_line_attributes(mygc,5,
+			     GDK_LINE_SOLID,
+			     GDK_CAP_BUTT,
+			     GDK_JOIN_BEVEL);
+  x2=mw->page_width/2+70.0*sin(heading);
+  y2=mw->page_height/2-70.0*cos(heading);
+  gdk_draw_line(mw->map->window,mygc,mw->page_width/2,mw->page_height/2,
+		x2,y2);
+  gdk_draw_line(mw->map->window,mygc,x2,y2,
+		x2+20.0*sin(heading-2.8),y2-20.0*cos(heading-2.8));
+  gdk_draw_line(mw->map->window,mygc,x2,y2,
+		x2+20.0*sin(heading+2.8),y2-20.0*cos(heading+2.8));
 }
 
 
@@ -1061,6 +1090,9 @@ expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
   draw_marks(mw);
   if (mw->draw_crosshair) {
     draw_crosshair(mw);
+  }
+  if (mw->draw_heading_arrow) {
+    draw_heading_arrow(mw);
   }
   osm_center_handler(mw,mygc,mw->page_x+mw->page_width/2,mw->page_y+mw->page_height/2);
   gdk_gc_set_clip_rectangle (widget->style->fg_gc[widget->state],
@@ -1808,6 +1840,11 @@ static gboolean set_gps_position(gpointer data)
   if (mw->follow_gps) {
     center_map(mw,nmea->longsec,nmea->lattsec);
   }
+  if (mw->draw_heading_arrow) {
+    gtk_widget_queue_draw_area(mw->map,0,0,
+			       mw->page_width,
+			       mw->page_height);
+  }
   trip_stats_line(mw->stats,buf2,sizeof(buf2),1);
   snprintf(buf,sizeof(buf),"%c %s",nmea->state,buf2);
   gtk_label_set_text(GTK_LABEL(mw->gps_label),buf);
@@ -1937,6 +1974,14 @@ static void switch_crosshair(gpointer callback_data,
 {
   struct mapwin *mw=(struct mapwin *)callback_data;
   mw->draw_crosshair=GTK_CHECK_MENU_ITEM(w)->active;
+}
+
+static void switch_heading_arrow(gpointer callback_data,
+				 guint callback_action,
+				 GtkWidget*w)
+{
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  mw->draw_heading_arrow=GTK_CHECK_MENU_ITEM(w)->active;
 }
 
 static void switch_followgps(gpointer callback_data,
@@ -2216,6 +2261,7 @@ GtkWidget *create_menu(struct mapwin *mw)
 #endif
     {PATH_DISP_SEARCH_N,NULL,GTK_SIGNAL_FUNC(switch_searchdisp),0,"<CheckItem>"},
     {PATH_DISP_CROSSHAIR_N,NULL,GTK_SIGNAL_FUNC(switch_crosshair),0,"<CheckItem>"},
+    {PATH_DISP_HEADING_ARROW_N,NULL,GTK_SIGNAL_FUNC(switch_heading_arrow),0,"<CheckItem>"},
     {PATH_FOLLOW_GPS_N,NULL,GTK_SIGNAL_FUNC(switch_followgps),0,"<CheckItem>"},
     {N_("/View/Trip stats"),NULL,GTK_SIGNAL_FUNC(tripstats_cb),0,NULL},
     {N_("/View/Select line layer/0"),NULL,GTK_SIGNAL_FUNC(sel_layer_cb),0,"<RadioItem>"},

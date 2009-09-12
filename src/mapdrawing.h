@@ -71,6 +71,7 @@ struct mapwin {
   int have_gpspos;
   int mouse_x, mouse_y;
   int draw_crosshair;
+  int draw_heading_arrow;
   struct osm_info *osm_inf;
   struct osm_file *osm_main_file;
   struct nmea_pointinfo last_nmea;
