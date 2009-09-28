@@ -39,6 +39,7 @@ struct gpsfile {
   int contreading;
   void (*handling_procedure)(struct gpsfile *,void (*)(struct nmea_pointinfo *,void *), void *data);
   struct nmea_pointinfo curpoint;
+  int last_fix;
   xmlParserCtxtPtr ctxt;
   void *gpsproc_data;
   void (*gpsproc)(struct nmea_pointinfo *, void *);
@@ -416,13 +417,17 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
 	  tm.tm_year+=100;
 	t=gmmktime(&tm);  /* t=tm-tz */
         gpsf->curpoint.time=t;
+	gpsf->curpoint.start_new=gpsf->first?1:0;
+        if ((gpsf->curpoint.time-gpsf->last_fix)>20) {
+          gpsf->curpoint.start_new=1; 
+        }
+        gpsf->last_fix=t;
         gpsf->curpoint.speed=atof(fields[7]);
 	if (strlen(fields[8]))
 	  gpsf->curpoint.heading=atof(fields[8]);
         else
 	  gpsf->curpoint.heading=INVALID_HEADING;
 	gpsf->curpoint.state=(numfields==13)?((fields[12])[0]):'?';
-	gpsf->curpoint.start_new=gpsf->first?1:0;
         gpsproc(&gpsf->curpoint,data);
 	gpsf->first=0;
       }
