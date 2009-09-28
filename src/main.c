@@ -702,9 +702,7 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
     if ((p1)&&(p1->time)) {
       time_t t=p1->time;
       struct tm *tm=localtime(&t);
-      snprintf(tbuf,sizeof(tbuf),
-	       " %02d:%02d:%02d",
-	       tm->tm_hour,tm->tm_min,tm->tm_sec);
+      strftime(tbuf,sizeof(tbuf),"%Y-%m-%d %a %H:%M:%S",tm);
     }
     if (p1->speed!=0) {
       snprintf(buf,sizeof(buf),"%.3f km %.f km/h %s",entf,p1->speed*1.852,
