@@ -2647,10 +2647,10 @@ int main(int argc, char **argv)
   globalmap.fullwidth=50000;
   globalmap.fullheight=50000;
   orts_hash=g_hash_table_new(g_str_hash,g_str_equal);
-  if (argc==2) {
+  if (argc>=2) {
     configfilename=argv[1];
     if (strcmp(configfilename,"--help")==0) {
-      printf(_("Usage: %s configfile\n"),argv[0]);
+      printf(_("Usage: %s [configfile [gpsfile | osmfile ]]...\n"),argv[0]);
       return 1;
     }
   } else if (argc==1) {
@@ -2751,6 +2751,17 @@ int main(int argc, char **argv)
     center_ort(mw,globalmap.startplace);
   else
     center_map(mw,globalmap.startlong,globalmap.startlatt);
+  if (argc > 2) {
+    int i;
+    for(i=2;i<argc;i++) {
+       if ((!strcasecmp(argv[i]+strlen(argv[i])-4,".osm"))||
+           (!strcasecmp(argv[i]+strlen(argv[i])-8,".osm.bz2"))) {
+          load_osm_gfx(mw,argv[i]);   
+       } else {
+          load_gps_line(argv[i],mw->mark_line_list);
+       } 
+    }
+  }
   gtk_main();
   return 0;
 }
