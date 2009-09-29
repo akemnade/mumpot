@@ -91,12 +91,12 @@ if test "x$GCC" = "xyes"; then
   esac
 fi
 echo Summary:
-if  x$use_gtk2 = xyes ; then
+if test x$use_gtk2 = xyes ; then
   echo "Using GTK 2"
 else
   echo "Using GTK 1.2"
 fi
-echo "Support for .bt2 decompression of osm files: $BZ2"
+echo "Support for .bz2 decompression of osm files: $BZ2"
 
 
 changequote([,])dnl
