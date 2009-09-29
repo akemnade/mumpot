@@ -1026,6 +1026,14 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   int x,y;
   struct mapwin *mw=(struct mapwin *)user_data;
+  if (event->button==4) {
+    zoom_in(mw);
+    return TRUE;
+  }
+  if (event->button==5) {
+    zoom_out(mw);
+    return TRUE;
+  } 
   x=(int)event->x;
   y=(int)event->y;
   x+=mw->page_x;
@@ -1033,9 +1041,6 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
   mw->mouse_x=x;
   mw->mouse_y=y;
   mw->mouse_move_str=NULL;
-  if (event->button>3){
-    printf("button %d\n",event->button);
-} 
   if (!GTK_WIDGET_HAS_FOCUS(mw->map)) {
     gtk_widget_grab_focus(widget);
     return TRUE;
