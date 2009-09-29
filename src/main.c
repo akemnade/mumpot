@@ -137,6 +137,8 @@ static void add_path_to_mark_list(GList **l, int krid);
 static void recalc_mark_length(int offset, struct mapwin *mw);
 static int find_nearst_point(GList *l, int x, int y);
 static void add_pkt_to_list(GList **l, int x, int y);
+static void zoom_in(struct mapwin *mw);
+static void zoom_out(struct mapwin *mw);
 static void handle_pan_release(struct mapwin *mw, GdkEventButton *event,
 			       int x, int y);
 static void change_sidebar_cb(gpointer callback_data,
@@ -1004,6 +1006,21 @@ static gboolean map_focus_out(GtkWidget *w, GdkEventFocus *event, gpointer user_
   return FALSE;
 }
 
+#ifdef USE_GTK2
+/* handle scrollwheel events */
+gboolean map_scrollwheel(GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
+{
+  if (event->direction==GDK_SCROLL_UP) {
+    zoom_in((struct mapwin *)user_data);
+    return TRUE;
+  } else if (event->direction==GDK_SCROLL_DOWN) {
+    zoom_out((struct mapwin *)user_data);
+    return TRUE;
+  }
+  return FALSE;
+}
+#endif
+
 /* hanlde map clicks */
 gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
@@ -1016,6 +1033,9 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
   mw->mouse_x=x;
   mw->mouse_y=y;
   mw->mouse_move_str=NULL;
+  if (event->button>3){
+    printf("button %d\n",event->button);
+} 
   if (!GTK_WIDGET_HAS_FOCUS(mw->map)) {
     gtk_widget_grab_focus(widget);
     return TRUE;
@@ -2448,6 +2468,10 @@ struct mapwin * create_mapwin()
 		     GTK_SIGNAL_FUNC(map_click),w);
   gtk_signal_connect(GTK_OBJECT(w->map),"button_release_event",
 		     GTK_SIGNAL_FUNC(map_click_release),w);
+#ifdef USE_GTK2
+  gtk_signal_connect(GTK_OBJECT(w->map),"scroll_event",
+                     GTK_SIGNAL_FUNC(map_scrollwheel),w);
+#endif
   gtk_signal_connect(GTK_OBJECT(w->map),"focus_in_event",
                      GTK_SIGNAL_FUNC(map_focus_in),w);
   gtk_signal_connect(GTK_OBJECT(w->map),"focus_out_event",
