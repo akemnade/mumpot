@@ -96,6 +96,11 @@ if test x$use_gtk2 = xyes ; then
 else
   echo "Using GTK 1.2"
 fi
+if test x$osm_upload = xyes ; then
+  echo "OSM upload using curl is possible"
+else
+  echo "OSM upload disabled"
+fi
 echo "Support for .bz2 decompression of osm files: $BZ2"
 
 
