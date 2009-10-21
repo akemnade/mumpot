@@ -1088,9 +1088,6 @@ expose_event (GtkWidget *widget, GdkEventExpose *event, gpointer data)
   struct mapwin *mw=data;
   if (!mygc)
     return TRUE;
-  gdk_window_clear_area (widget->window,
-                         event->area.x, event->area.y,
-                         event->area.width, event->area.height);
   gdk_gc_set_clip_rectangle (widget->style->fg_gc[widget->state],
                              &event->area);
   if (!globalmap.first) {
