@@ -64,6 +64,7 @@ _\(\"[^\"]*\"\)     tagsellval.str=delbracket(yytext); return T_STRING;
 pos            return T_POS;
 gfx            return T_IMG;
 settag         return T_SETTAG;
+settagedit     return T_SETTAGEDIT;
 nodepreset           return T_NODEPRESET;
 waypreset      return T_WAYPRESET;
 

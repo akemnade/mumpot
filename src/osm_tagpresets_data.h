@@ -19,6 +19,11 @@ struct osm_preset_menu_sect {
 struct osm_presetitem {
   char *name;
   char *img;
+  char *preset;
+  char *tagname;
+  enum {
+    BUTTON,TEXT
+  } type;
   int x;
   int y;
   struct osm_preset_menu_sect *menu;
