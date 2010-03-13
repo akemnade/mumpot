@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mumpot 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-02 07:54+0100\n"
-"PO-Revision-Date: 2008-01-18 08:29+0100\n"
+"POT-Creation-Date: 2010-03-13 17:58+0100\n"
+"PO-Revision-Date: 2010-03-13 18:09+0100\n"
 "Last-Translator: Andreas Kemnade <andreas@kemnade.info>\n"
 "Language-Team: German\n"
 "MIME-Version: 1.0\n"
@@ -257,7 +257,9 @@ msgstr "/Projekt/Verlassen"
 msgid "/View/Mode/%s"
 msgstr "/Ansicht/Modus/%s"
 
-#: src/main.c:2375
+#: src/main.c:2375 config-examples/tagpresets:19 config-examples/tagpresets:43
+#: config-examples/tagpresets:56 config-examples/tagpresets:97
+#: config-examples/tagpresets:101
 msgid "Name"
 msgstr ""
 
@@ -371,7 +373,7 @@ msgstr "/OSM/Linen anzeigen, die keine Straßen sind"
 msgid "/OSM/Display tags"
 msgstr "/OSM/Eigenschaften anzeigen"
 
-#: src/osm_view.c:898
+#: src/osm_view.c:898 config-examples/tagpresets:105
 msgid "set"
 msgstr ""
 
@@ -600,47 +602,48 @@ msgstr "Bäckerei"
 msgid "supermarket"
 msgstr "Supermarkt"
 
-#: config-examples/tagpresets:13
-msgid "no name"
-msgstr "kein Name"
-
-#: config-examples/tagpresets:15
+#: config-examples/tagpresets:9
 msgid "outdoor"
 msgstr "Outdoor"
 
-#: config-examples/tagpresets:18
+#: config-examples/tagpresets:12
 msgid "bicycle"
 msgstr "Fahrrad"
 
-#: config-examples/tagpresets:21
+#: config-examples/tagpresets:15
 msgid "kiosk"
 msgstr "Kiosk"
 
-#: config-examples/tagpresets:25
+#: config-examples/tagpresets:18 config-examples/tagpresets:42
+#: config-examples/tagpresets:55 config-examples/tagpresets:61
+msgid "House number"
+msgstr "Hausnummer"
+
+#: config-examples/tagpresets:23
 msgid "Accommodation"
 msgstr "Beherbergung"
 
-#: config-examples/tagpresets:26
+#: config-examples/tagpresets:24
 msgid "Hotel"
 msgstr "Hotel"
 
-#: config-examples/tagpresets:29
+#: config-examples/tagpresets:27
 msgid "Motel"
 msgstr "Motel"
 
-#: config-examples/tagpresets:32
+#: config-examples/tagpresets:30
 msgid "Guest House"
 msgstr "Gasthaus"
 
-#: config-examples/tagpresets:35
+#: config-examples/tagpresets:33
 msgid "Hostel"
 msgstr "Herberge"
 
-#: config-examples/tagpresets:38
+#: config-examples/tagpresets:36
 msgid "Camping Site"
 msgstr "Campingplatz"
 
-#: config-examples/tagpresets:41
+#: config-examples/tagpresets:39
 msgid "Caravan Site"
 msgstr "Wohnwagenplatz"
 
@@ -656,45 +659,89 @@ msgstr "Fastfood"
 msgid "Cafe"
 msgstr "Cafe"
 
-#: config-examples/tagpresets:56
+#: config-examples/tagpresets:58
+msgid "House with number"
+msgstr "Haus mit Nummer"
+
+#: config-examples/tagpresets:59
+msgid "set house number"
+msgstr "setze Hausnummer"
+
+#: config-examples/tagpresets:64
 msgid "Post box"
 msgstr "Briefkasten"
 
-#: config-examples/tagpresets:59
+#: config-examples/tagpresets:67
 msgid "Park bench"
 msgstr "Parkbank"
 
-#: config-examples/tagpresets:62
+#: config-examples/tagpresets:70
 msgid "Man made"
 msgstr "künstlich"
 
-#: config-examples/tagpresets:63
+#: config-examples/tagpresets:71
 msgid "windmill"
 msgstr "Windmühle"
 
-#: config-examples/tagpresets:66
+#: config-examples/tagpresets:74
 msgid "sewage"
 msgstr "Kläranlage"
 
-#: config-examples/tagpresets:70
+#: config-examples/tagpresets:78
 msgid "Bank"
 msgstr "Bank"
 
-#: config-examples/tagpresets:72
+#: config-examples/tagpresets:80
 msgid "with ATM"
 msgstr "mit Geldautomat"
 
-#: config-examples/tagpresets:73
+#: config-examples/tagpresets:81
 msgid "without ATM"
 msgstr "ohne Geldautomat"
 
-#: config-examples/tagpresets:75
+#: config-examples/tagpresets:83
 msgid "ATM"
 msgstr "Geldautomat"
 
-#: config-examples/tagpresets:78
+#: config-examples/tagpresets:86
 msgid "Playground"
 msgstr "Spielplatz"
+
+#: config-examples/tagpresets:92
+msgid "paved"
+msgstr "befestigt"
+
+# Kopfsteinpflaster
+#: config-examples/tagpresets:93
+msgid "cobblestone"
+msgstr "Kopfsteinpflaster"
+
+#: config-examples/tagpresets:94
+msgid "gravel"
+msgstr "Schotter"
+
+#: config-examples/tagpresets:95
+msgid "sand"
+msgstr "Sand"
+
+#: config-examples/tagpresets:96
+msgid "unpaved"
+msgstr "unbefestigt"
+
+#: config-examples/tagpresets:102
+msgid "max. speed"
+msgstr "Höchstgeschwindigkeit"
+
+#: config-examples/tagpresets:103
+msgid "one way?"
+msgstr "Einbahnstraße"
+
+#: config-examples/tagpresets:104
+msgid "has cycleway?"
+msgstr "hat Radweg?"
+
+#~ msgid "no name"
+#~ msgstr "kein Name"
 
 #~ msgid "file name"
 #~ msgstr "Dateiname"
