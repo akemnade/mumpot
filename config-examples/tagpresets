@@ -5,12 +5,6 @@ pos 0 0 _("Shops") {
     }
     pos 0 1 _("supermarket") gfx "shopping/supermarket.png" {
       settag "shop" "supermarket"
-      pos 0 0 "Edeka" { settag "name" "Edeka" }
-      pos 0 1 "Aldi" { settag "name" "Aldi" }
-      pos 0 2 "REWE" { settag "name" "REWE" }
-      pos 0 3 "extra" { settag "name" "extra" }
-      pos 0 4 "familia" { settag "name" "familia" }
-      pos 1 0 _("no name") { }
     }
     pos 0 2 _("outdoor") gfx "shopping/sports/outdoor.png" {
       settag "shop" "outdoor"
@@ -21,7 +15,11 @@ pos 0 0 _("Shops") {
     pos 1 0 _("kiosk") gfx "shopping/kiosk.png" {
       settag "shop" "kiosk"
     }
+    settagedit _("House number") "house:number" 
+    settagedit _("Name") "name"
+
 }
+
 pos 0 1 _("Accommodation") {
     pos 0 0 _("Hotel") gfx "accommodation/hotel.png" {
       settag "tourism" "hotel"
@@ -41,6 +39,8 @@ pos 0 1 _("Accommodation") {
     pos 1 1 _("Caravan Site") {
       settag "tourism" "caravan_site"
     }
+    settagedit _("House number") "house:number" 
+    settagedit _("Name") "name" 
 }
 pos 0 2 _("Food+Drinks") {
     pos 0 0 "Restaurant" gfx "food/restaurant.png" {
@@ -52,6 +52,14 @@ pos 0 2 _("Food+Drinks") {
     pos 0 2 _("Cafe") gfx "food/cafe.png" {
       settag "amenity" "cafe"
     }
+    settagedit _("House number") "house:number" 
+    settagedit _("Name") "name" 
+}
+pos 0 3 _("House with number") {
+    pos 0 0 _("set house number") {
+    }
+    settagedit _("House number") "house:number" 
+    
 }
 pos 1 0 _("Post box") gfx "public/post_box.png" {
     settag "amenity" "post_box"
@@ -80,26 +88,44 @@ pos 2 2 _("Playground") gfx "recreation/playground.png" {
 }
 }
 
+"smallwaymenu" = {
+   pos 0 0 _("paved") { settag "surface" "paved" }
+   pos 1 0 _("cobblestone") { settag "surface" "cobblestone" }
+   pos 0 1 _("gravel") { settag "surface" "gravel" }
+   pos 1 1 _("sand") { settag "surface" "sand" }
+   pos 2 0 _("unpaved") { settag "surface" "sand" }
+   settagedit _("Name") "name" 
+}
+
+"mediumwaymenu" = {
+   settagedit _("Name") "name"
+   settagedit _("max. speed") "maxspeed"
+   checkbox _("one way?") "oneway" yes "yes"
+   checkbox _("has cycleway?") "cycleway" yes "track"  
+   pos 0 0 _("set") { }
+}
+
 waypreset {
 pos 0 0 "motorway" { settag "highway" "motorway" }
 pos 0 1 "trunk" { settag "highway" "trunk" }
-pos 0 2 "primary" { settag "highway" "primary" }
-pos 0 3 "secondary" { settag "highway" "secondary" }
-pos 0 4 "tertiary" { settag "highway" "tertiary" }
-pos 1 0 "unclassified" { settag "highway" "unclassified" }
+pos 0 2 "primary" append "mediumwaymenu" { settag "highway" "primary" }
+pos 0 3 "secondary" append "mediumwaymenu" { settag "highway" "secondary" }
+pos 0 4 "tertiary" append "mediumwaymenu" { settag "highway" "tertiary" }
+pos 1 0 "unclassified" append "mediumwaymenu" { settag "highway" "unclassified" }
 pos 1 1 "service" { settag "highway" "service" }
-pos 1 2 "residential" { settag "highway" "residential" }
-pos 1 3 "living street" { settag "highway" "living street" }
-pos 1 4 "track" { settag "highway" "track" 
-  pos 0 0 "grade1" { settag "tracktype" "grade1" }
-  pos 0 1 "grade2" { settag "tracktype" "grade2" }
-  pos 0 2 "grade3" { settag "tracktype" "grade3" }
-  pos 0 3 "grade4" { settag "tracktype" "grade4" }
-  pos 0 4 "grade5" { settag "tracktype" "grade5" }
+pos 1 2 "residential" append "mediumwaymenu" { settag "highway" "residential" }
+pos 1 3 "living street" append "mediumwaymenu" { settag "highway" "living street" }
+pos 1 4 "track" { 
+  settag "highway" "track"  
+  pos 0 0 "grade1" append "smallwaymenu" { settag "tracktype" "grade1" }
+  pos 0 1 "grade2" append "smallwaymenu" { settag "tracktype" "grade2" }
+  pos 0 2 "grade3" append "smallwaymenu" { settag "tracktype" "grade3" }
+  pos 0 3 "grade4" append "smallwaymenu" { settag "tracktype" "grade4" }
+  pos 0 4 "grade5" append "smallwaymenu" { settag "tracktype" "grade5" }
 }
-pos 2 0 "path" { settag "highway" "path" } 
-pos 2 1 "cycleway" { settag "highway" "cycleway" } 
-pos 2 2 "footway" { settag "highway" "footway" }
+pos 2 0 "path"     append "smallwaymenu" { settag "highway" "path"  } 
+pos 2 1 "cycleway" append "smallwaymenu" { settag "highway" "cycleway" } 
+pos 2 2 "footway"  append "smallwaymenu" { settag "highway" "footway" }
 pos 2 3 "pedestrian" { settag "highway" "pedestrian" }
 pos 2 4 "steps" { settag "highway" "steps" }
 }
