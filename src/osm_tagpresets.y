@@ -27,6 +27,8 @@
 struct osm_preset_menu_sect *osm_waypresets=NULL;
 struct osm_preset_menu_sect *osm_nodepresets=NULL;
 extern int tagpreset_lineno;
+static GHashTable *preset_menu_hash;
+
 static void tagselerror(const char *str)
 {
   fprintf(stderr,"presetfile %d: error: %s\n",tagpreset_lineno,str);
@@ -49,11 +51,11 @@ int tagselwrap()
   GList *list;
 }
 
-%token T_POS T_PRESET T_WAYPRESET T_NODEPRESET T_SETTAG T_IMG T_SETTAGEDIT
+%token T_POS T_PRESET T_WAYPRESET T_NODEPRESET T_SETTAG T_IMG T_SETTAGEDIT T_APPEND T_YES T_NO T_CHECKBOX
 %token <str> T_STRING
 %token <num> T_NUM
-%type <str> settag title img preset 
-%type <menu> menu
+%type <str> settag title img preset yesstr nostr
+%type <menu> menu menuorvar
 %type <item> item
 %%
 
@@ -65,8 +67,12 @@ presetfile: /* nothing */
 
 presetexp:
 T_WAYPRESET menu { osm_waypresets=$2; } |
-T_NODEPRESET menu { osm_nodepresets=$2; }
-     ;
+T_NODEPRESET menu { osm_nodepresets=$2; } |
+T_STRING '=' menu { 
+  if (!preset_menu_hash)
+    preset_menu_hash=g_hash_table_new(g_str_hash,g_str_equal);
+  g_hash_table_insert(preset_menu_hash,$1,$3);
+} ;
 
 menu: '{' {
   struct osm_preset_menu_sect *m=g_new0(struct osm_preset_menu_sect,1);
@@ -92,8 +98,21 @@ settag: T_SETTAG T_STRING T_STRING {
 }
 ;
 
+menuorvar: menu { $$=$1; } |
+T_APPEND T_STRING menu {
+  struct osm_preset_menu_sect *m=$3;
+  struct osm_preset_menu_sect *mappend=(preset_menu_hash)?
+    g_hash_table_lookup(preset_menu_hash,$2):NULL;
+  if (!mappend) {
+    fprintf(stderr,"no menu found with the name %s\n",$2);
+  } else {
+    m->tags=g_list_concat(m->tags,g_list_copy(mappend->tags));
+    m->items=g_list_concat(m->items,g_list_copy(mappend->items));
+  }
+  $$=m;
+};
 
-item: T_POS T_NUM T_NUM title img menu {
+item: T_POS T_NUM T_NUM title img menuorvar {
   struct osm_presetitem *pitem=g_new0(struct osm_presetitem,1);
   pitem->x=$2;
   pitem->y=$3;
@@ -102,7 +121,7 @@ item: T_POS T_NUM T_NUM title img menu {
   pitem->menu=$6;
   pitem->type=BUTTON;
   $$=pitem;
-} | T_SETTAGEDIT title img T_STRING preset {
+} | T_SETTAGEDIT T_STRING img T_STRING preset {
   struct osm_presetitem *pitem=g_new0(struct osm_presetitem,1);
   pitem->x=-1;
   pitem->y=-1;
@@ -113,8 +132,21 @@ item: T_POS T_NUM T_NUM title img menu {
   pitem->menu=NULL;
   pitem->type=TEXT;
   $$=pitem;
+} | T_CHECKBOX T_STRING T_STRING yesstr nostr {
+  struct osm_presetitem *pitem=g_new0(struct osm_presetitem,1);
+  pitem->x=-1;
+  pitem->y=-1;
+  pitem->tagname=$3;
+  pitem->name=$2;
+  pitem->type=CHECKBOX;
+  pitem->yesstr=$4;
+  pitem->nostr=$5;
+  $$=pitem;
 };
 
-title: { $$=NULL; } | T_STRING { $$=$1; };
+yesstr: { $$=NULL; } | T_YES T_STRING { $$=$2; };
+nostr: { $$=NULL; } | T_NO T_STRING { $$=$2; };
+
 img:   { $$=NULL; } | T_IMG T_STRING { $$=$2; };
 preset:{ $$=NULL; } | T_PRESET T_STRING { $$=$2; };
+title: { $$=NULL; } | T_STRING { $$=$1; };

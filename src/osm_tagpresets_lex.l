@@ -25,7 +25,7 @@
 #include "osm_tagpresets.h"
 
 extern void tagselparse(FILE *f);
-int tagpreset_lineno;
+int tagpreset_lineno=1;
 YYSTYPE tagsellval;
 
 int osm_parse_presetfile(char *fname)
@@ -65,8 +65,12 @@ pos            return T_POS;
 gfx            return T_IMG;
 settag         return T_SETTAG;
 settagedit     return T_SETTAGEDIT;
+append         return T_APPEND;
 nodepreset           return T_NODEPRESET;
 waypreset      return T_WAYPRESET;
+checkbox       return T_CHECKBOX;
+yes            return T_YES;
+no             return T_NO;
 
 [ \t]+ /* ignore */
 #.* /* ignore*/

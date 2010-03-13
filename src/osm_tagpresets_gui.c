@@ -49,8 +49,24 @@ static void preset_clicked(GtkWidget *w, gpointer user_data)
   for(l=g_list_first(pr->textwidgets);l;l=g_list_next(l)) {
     struct osm_presetitem *pi=gtk_object_get_data(GTK_OBJECT(l->data),
 						  "item");
-    char *v;
-    v=gtk_editable_get_chars(GTK_EDITABLE(l->data),0,-1);
+    char *v=NULL;
+    switch(pi->type) {
+    case TEXT:
+      v=gtk_editable_get_chars(GTK_EDITABLE(l->data),0,-1);
+     
+      break;
+    case CHECKBOX:
+      if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(l->data))) {
+	if (pi->yesstr) {
+	  v=g_strdup(pi->yesstr);
+	}
+      } else {
+	if (pi->nostr) {
+	  v=g_strdup(pi->nostr);
+	}
+      }
+      break;
+    }
     if (pr&&v&&strlen(v)) {
       if (pr->set_tag) {
 	pr->set_tag(pi->tagname,v,pr->set_tag_list,pr->set_tag_list_data);
@@ -65,6 +81,7 @@ static void preset_clicked(GtkWidget *w, gpointer user_data)
       }
     }
     g_free(v);
+    
   }
   if (!sect)
     return;
@@ -152,8 +169,8 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
   }
   if (sect->items) {
     struct osm_preset_menu_running *pr=g_new0(struct osm_preset_menu_running,1);
-    int x=0;
-    int y=0;
+    int x=-1;
+    int y=-1;
     GList *l=sect->items;
     GtkWidget *win;
     GtkWidget *box;
@@ -173,9 +190,9 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
     gtk_widget_realize(win);
     box=gtk_vbox_new(FALSE,0);
     table=NULL;
-    if ((x>0)||(y>0)) {
-      table=gtk_table_new(y,x,TRUE);
-      gtk_box_pack_end(GTK_BOX(box),table,FALSE,FALSE,0);
+    if ((x>=0)&&(y>=0)) {
+      table=gtk_table_new(y+1,x+1,TRUE);
+      gtk_box_pack_end(GTK_BOX(box),table,TRUE,TRUE,0);
     }
     for(l=g_list_first(sect->items);l;l=g_list_next(l)) {
       struct osm_presetitem *pi = (struct osm_presetitem *)l->data;
@@ -207,6 +224,11 @@ void osm_choose_tagpreset(struct osm_preset_menu_sect *sect,
 	gtk_box_pack_start(GTK_BOX(box),hbox,FALSE,FALSE,0);
 	if (pi->preset)
 	  gtk_entry_set_text(GTK_ENTRY(but),pi->preset);
+	pr->textwidgets=g_list_append(pr->textwidgets,but);
+	break;
+      case CHECKBOX:
+	but=gtk_check_button_new_with_label(pi->name);
+	gtk_box_pack_start(GTK_BOX(box),but,FALSE,FALSE,0);
 	pr->textwidgets=g_list_append(pr->textwidgets,but);
 	break;
       }
