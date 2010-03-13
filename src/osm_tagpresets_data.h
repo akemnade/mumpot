@@ -21,8 +21,10 @@ struct osm_presetitem {
   char *img;
   char *preset;
   char *tagname;
+  char *yesstr;
+  char *nostr;
   enum {
-    BUTTON,TEXT
+    BUTTON,TEXT,CHECKBOX
   } type;
   int x;
   int y;
