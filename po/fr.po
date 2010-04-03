@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mumpot 0.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-04-28 21:19+0200\n"
+"POT-Creation-Date: 2010-04-03 21:35+0200\n"
 "PO-Revision-Date: 2009-01-15 08:29+0100\n"
 "Last-Translator: Georgy Baudart <georgyatbaweticdotbe>\n"
 "Language-Team: French\n"
@@ -17,84 +17,89 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/main.c:146
+#: src/main.c:148
 msgid "/View/Show place searchbox"
 msgstr "/Affichage/Montrer recherche "
 
-#: src/main.c:147
+#: src/main.c:149
 msgid "/View/Show crosshairs"
 msgstr "/Affichage/Montrer viseur"
 
-#: src/main.c:148
+#: src/main.c:150
+#, fuzzy
+msgid "/View/Show heading arrow"
+msgstr "/Affichage/Montrer viseur"
+
+#: src/main.c:151
 msgid "/View/Follow GPS"
 msgstr "/Affichage/Selon GPS"
 
-#: src/main.c:149
+#: src/main.c:152
 msgid "/View/Zoom out"
 msgstr "/Affichage/Zoom avant"
 
-#: src/main.c:150
+#: src/main.c:153
 msgid "/View/Zoom in"
 msgstr "/Affichage/Zoom arrière"
 
-#: src/main.c:151
+#: src/main.c:154
 msgid "/View/Color tracks by velocity"
 msgstr ""
 
-#: src/main.c:331 src/main.c:1769 src/printdlg.c:255
+#: src/main.c:335 src/main.c:1829 src/printdlg.c:255
 #: src/create_connection.c:421
 msgid "OK"
 msgstr "OK"
 
-#: src/main.c:1452
+#: src/main.c:1504
 msgid "select a name for the new nmea file"
 msgstr "Choisir un nom pour les nouvelles données NMEA"
 
-#: src/main.c:1552
+#: src/main.c:1612
 msgid "select a gps file"
 msgstr "Choisir un fichier GPS"
 
-#: src/main.c:1600
+#: src/main.c:1660
 msgid "select an osm file"
 msgstr "Choisir un fichier OSM"
 
-#: src/main.c:1630
+#: src/main.c:1690
 msgid "save OSM changes as OSC file"
 msgstr ""
 
-#: src/main.c:1708
+#: src/main.c:1768
 msgid "Please enter your OSM username and password!"
 msgstr ""
 
-#: src/main.c:1738
+#: src/main.c:1798
 msgid "Username"
 msgstr ""
 
-#: src/main.c:1747
+#: src/main.c:1807
 msgid "Password"
 msgstr ""
 
-#: src/main.c:1757
+#: src/main.c:1817
 msgid "Save osm account data"
 msgstr ""
 
-#: src/main.c:1760
+#: src/main.c:1820
 msgid "Upload comment"
 msgstr ""
 
-#: src/main.c:1775 src/printdlg.c:259 src/create_connection.c:425
+#: src/main.c:1835 src/printdlg.c:259 src/create_connection.c:425
 msgid "Cancel"
 msgstr "Annuler"
 
-#: src/main.c:1790
+#: src/main.c:1850
 msgid "save OSM data"
 msgstr "Enregistrer les données OSM"
 
-#: src/main.c:1856
+#: src/main.c:1921
 msgid "Lost GPS connection"
 msgstr "Connection avec le GPS perdue"
 
-#: src/main.c:2064
+#: src/main.c:2143
 #, c-format
 msgid ""
 "%s %s\n"
@@ -106,15 +111,15 @@ msgid ""
 "There is NO WARRANTY, to the extent permitted by law."
 msgstr ""
 
-#: src/main.c:2087
+#: src/main.c:2166
 msgid "downloading OSM data failed"
 msgstr "Téléchargement des données OSM echoué"
 
-#: src/main.c:2095
+#: src/main.c:2174
 msgid "downloading OSM data finished"
 msgstr "Téléchargement des données OSM terminé"
 
-#: src/main.c:2130
+#: src/main.c:2209
 msgid ""
 "No area selected,\n"
 " draw some lines around the area \n"
@@ -127,181 +132,188 @@ msgstr ""
 "quelques lignes autour de la région\n"
 "désirée"
 
-#: src/main.c:2192
+#: src/main.c:2271
 msgid "/Help/About"
 msgstr "/Aide/A propos"
 
-#: src/main.c:2194
+#: src/main.c:2273
 msgid "/Project/Printing/mark page in scale 1:50000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:50000"
 
-#: src/main.c:2195
+#: src/main.c:2274
 msgid "/Project/Printing/mark page in scale 1:25000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:25000"
 
-#: src/main.c:2196
+#: src/main.c:2275
 #, fuzzy
 msgid "/Project/Printing/mark page in scale 1:10000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:100000"
 
-#: src/main.c:2197
+#: src/main.c:2276
 msgid "/Project/Printing/mark page in scale 1:100000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:100000"
 
-#: src/main.c:2198
+#: src/main.c:2277
 msgid "/Project/Printing/mark page in scale 1:200000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:200000"
 
-#: src/main.c:2199
+#: src/main.c:2278
 msgid "/Project/Printing/mark page in scale 1:1000000"
 msgstr "/Projet/Imprimer/Marquer la page à l'échelle 1:1000000"
 
-#: src/main.c:2200
+#: src/main.c:2279
 msgid "/Project/Printing/delete marked areas"
 msgstr "/Projet/Imprimer/Effacer la région sélectionnée"
 
-#: src/main.c:2201
+#: src/main.c:2280
 msgid "/Project/Printing/print marked areas"
 msgstr "/Projet/Imprimer/Imprimer la région sélectionnée"
 
-#: src/main.c:2202
+#: src/main.c:2281
 msgid "/Project/Printing/delete marked area"
 msgstr "/Projet/Imprimer/Effacer la région sélectionnée"
 
-#: src/main.c:2203
+#: src/main.c:2282
 msgid "/Project/save route (current layer)"
 msgstr "/Projet/Enregistrer le tracé (calque présent)"
 
-#: src/main.c:2204
+#: src/main.c:2283
 msgid "/Project/load GPS data"
 msgstr "/Projet/Charger données GPS"
 
-#: src/main.c:2205
+#: src/main.c:2284
 msgid "/Project/load OSM data"
 msgstr "/Projet/Charger données OSM"
 
-#: src/main.c:2206
+#: src/main.c:2285
 msgid "/Project/download OSM data for selected region"
 msgstr "/Projet/Télécharger les données OSM pour la région sélectionnée"
 
-#: src/main.c:2207
+#: src/main.c:2286
 msgid "/Project/save OSM data"
 msgstr "/Projet/Enregistrer les données OSM"
 
-#: src/main.c:2208
+#: src/main.c:2287
 #, fuzzy
 msgid "/Project/save OSM changes (OSC file)"
 msgstr "/Projet/Enregistrer les données OSM"
 
-#: src/main.c:2209
+#: src/main.c:2288
 #, fuzzy
 msgid "/Project/clear OSM data"
 msgstr "/Projet/Charger données OSM"
 
-#: src/main.c:2211
+#: src/main.c:2290
 #, fuzzy
 msgid "/Project/upload OSM data"
 msgstr "/Projet/Charger données OSM"
 
-#: src/main.c:2215
+#: src/main.c:2294
 msgid "/Project/Connect to GPS receiver"
 msgstr "/Projet/Connection au GPS"
 
-#: src/main.c:2220
+#: src/main.c:2300
 msgid "/View/Trip stats"
 msgstr ""
 
-#: src/main.c:2221 src/main.c:2222 src/main.c:2223 src/main.c:2224
-#: src/main.c:2225
+#: src/main.c:2301 src/main.c:2302 src/main.c:2303 src/main.c:2304
+#: src/main.c:2305
 msgid "/View/Select line layer/0"
 msgstr "/Affichage/Choisir niveau de ligne/0"
 
-#: src/main.c:2222
+#: src/main.c:2302
 msgid "/View/Select line layer/1"
 msgstr "/Affichage/Choisir niveau de ligne/1"
 
-#: src/main.c:2223
+#: src/main.c:2303
 msgid "/View/Select line layer/2"
 msgstr "/Affichage/Choisir niveau de ligne/2"
 
-#: src/main.c:2224
+#: src/main.c:2304
 msgid "/View/Select line layer/3"
 msgstr "/Affichage/Choisir niveau de ligne/3"
 
-#: src/main.c:2225
+#: src/main.c:2305
 msgid "/View/Select line layer/4 (live gps)"
 msgstr "/Affichage/Choisir niveau de ligne/4 (d'après GPS)"
 
-#: src/main.c:2227 src/main.c:2228 src/main.c:2229
+#: src/main.c:2307 src/main.c:2308 src/main.c:2309
 msgid "/View/Request tiles/request missing"
 msgstr "/Affichage/Charger tuiles/manquantes"
 
-#: src/main.c:2228
+#: src/main.c:2308
 msgid "/View/Request tiles/request never"
 msgstr "/Affichage/Charger tuiles/jamais"
 
-#: src/main.c:2229
+#: src/main.c:2309
 msgid "/View/Request tiles/older than one day"
 msgstr "/Affichage/Charger tuiles/plus d'un jour"
 
-#: src/main.c:2230
+#: src/main.c:2310
 msgid "/View/Disconnect GPS"
 msgstr "/Affichage/Se déconnecter du GPS"
 
-#: src/main.c:2233
+#: src/main.c:2313
 msgid "/Project/quit"
 msgstr "/Projet/Quitter"
 
-#: src/main.c:2263 src/main.c:2268
+#: src/main.c:2343 src/main.c:2348
 #, c-format
 msgid "/View/Mode/%s"
 msgstr "/Affichage/Mode/%s"
 
-#: src/main.c:2309
+#: src/main.c:2389 config-examples/tagpresets:19 config-examples/tagpresets:43
+#: config-examples/tagpresets:56 config-examples/tagpresets:97
+#: config-examples/tagpresets:101
 msgid "Name"
 msgstr "Nom"
 
-#: src/main.c:2309
+#: src/main.c:2389
 msgid "is in"
 msgstr "est dans"
 
-#: src/main.c:2373
+#: src/main.c:2453
 msgid "place name:"
 msgstr "Nom de l'endroit:"
 
-#: src/main.c:2377
+#: src/main.c:2457
 msgid "search"
 msgstr "Chercher"
 
-#: src/main.c:2459
+#: src/main.c:2543
 msgid "Move mode"
 msgstr "Mode déplacement"
 
-#: src/main.c:2465
+#: src/main.c:2549
 msgid "pan mode"
 msgstr "Mode pan"
 
-#: src/main.c:2471
+#: src/main.c:2555
 msgid "route drawing mode"
 msgstr "Editeur de tracé"
 
-#: src/main.c:2554
+#: src/main.c:2638
 msgid "Choose a map"
 msgstr "Choisir une carte"
 
-#: src/main.c:2558
+#: src/main.c:2642
 msgid "OSM Tiles@home"
 msgstr "OSM Tiles@home"
 
-#: src/main.c:2562
+#: src/main.c:2646
 msgid "OSM Mapnik"
 msgstr "OSM Mapnik"
 
-#: src/main.c:2566
+#: src/main.c:2650
 msgid "OSM Cyclemap"
 msgstr "OSM Cyclemap"
 
-#: src/main.c:2607 src/main.c:2614 src/main.c:2621
+#: src/main.c:2691
+#, fuzzy, c-format
+msgid "Usage: %s [configfile [gpsfile | osmfile ]]...\n"
+msgstr "Utilisation: %s Fichier de configuration\n"
+
+#: src/main.c:2698 src/main.c:2705
 #, c-format
 msgid "Usage: %s configfile\n"
 msgstr "Utilisation: %s Fichier de configuration\n"
@@ -366,7 +378,7 @@ msgstr "/OSM/Montrer les routes non-carrossables"
 msgid "/OSM/Display tags"
 msgstr "/OSM/Montrer propriétés"
 
-#: src/osm_view.c:898
+#: src/osm_view.c:898 config-examples/tagpresets:105
 msgid "set"
 msgstr "Fixer"
 
@@ -424,15 +436,15 @@ msgstr ""
 msgid "split the ways going through the selected node"
 msgstr ""
 
-#: src/osm_view.c:1822
+#: src/osm_view.c:1824
 msgid "routing"
 msgstr "Calcul de la navigation"
 
-#: src/osm_view.c:1826
+#: src/osm_view.c:1828
 msgid "live edit"
 msgstr "Mode édition directe"
 
-#: src/osm_view.c:1830
+#: src/osm_view.c:1832
 msgid "editing"
 msgstr "Editer"
 
@@ -494,14 +506,36 @@ msgstr ""
 msgid "Creating GPS connection failed"
 msgstr "Connection au GPS échouée"
 
-#: src/trip_stats.c:70
+#: src/trip_stats.c:77
 msgid "Speed:"
 msgstr ""
 
-#: src/trip_stats.c:83
+#: src/trip_stats.c:90
 #, fuzzy
 msgid "Distance:"
 msgstr "Périphérique:"
+
+#: src/trip_stats.c:107
+msgid "average:"
+msgstr ""
+
+#: src/trip_stats.c:109
+msgid "time traveled:\n"
+msgstr ""
+
+#: src/trip_stats.c:169
+#, c-format
+msgid ""
+"average:\n"
+"%.1f km/h"
+msgstr ""
+
+#: src/trip_stats.c:171
+#, c-format
+msgid ""
+"travel time:\n"
+"%02d:%02d:%02d"
+msgstr ""
 
 #: src/osm_upload.c:93
 #, c-format
@@ -567,47 +601,48 @@ msgstr "Boulangerie"
 msgid "supermarket"
 msgstr "Grande Surface"
 
-#: config-examples/tagpresets:13
-msgid "no name"
-msgstr "Pas de nom"
-
-#: config-examples/tagpresets:15
+#: config-examples/tagpresets:9
 msgid "outdoor"
 msgstr "Extérieur"
 
-#: config-examples/tagpresets:18
+#: config-examples/tagpresets:12
 msgid "bicycle"
 msgstr "Vélo"
 
-#: config-examples/tagpresets:21
+#: config-examples/tagpresets:15
 msgid "kiosk"
 msgstr "Kiosque"
 
-#: config-examples/tagpresets:25
+#: config-examples/tagpresets:18 config-examples/tagpresets:42
+#: config-examples/tagpresets:55 config-examples/tagpresets:61
+msgid "House number"
+msgstr ""
+
+#: config-examples/tagpresets:23
 msgid "Accommodation"
 msgstr "Hébergement"
 
-#: config-examples/tagpresets:26
+#: config-examples/tagpresets:24
 msgid "Hotel"
 msgstr "Hôtel"
 
-#: config-examples/tagpresets:29
+#: config-examples/tagpresets:27
 msgid "Motel"
 msgstr "Motel"
 
-#: config-examples/tagpresets:32
+#: config-examples/tagpresets:30
 msgid "Guest House"
 msgstr "Gîtes"
 
-#: config-examples/tagpresets:35
+#: config-examples/tagpresets:33
 msgid "Hostel"
 msgstr "Foyer"
 
-#: config-examples/tagpresets:38
+#: config-examples/tagpresets:36
 msgid "Camping Site"
 msgstr "Camping"
 
-#: config-examples/tagpresets:41
+#: config-examples/tagpresets:39
 msgid "Caravan Site"
 msgstr "Caravaning"
 
@@ -623,45 +658,88 @@ msgstr "Restauration rapide"
 msgid "Cafe"
 msgstr "Café"
 
-#: config-examples/tagpresets:56
+#: config-examples/tagpresets:58
+msgid "House with number"
+msgstr ""
+
+#: config-examples/tagpresets:59
+msgid "set house number"
+msgstr ""
+
+#: config-examples/tagpresets:64
 msgid "Post box"
 msgstr "Boîte postal"
 
-#: config-examples/tagpresets:59
+#: config-examples/tagpresets:67
 msgid "Park bench"
 msgstr "Banc public"
 
-#: config-examples/tagpresets:62
+#: config-examples/tagpresets:70
 msgid "Man made"
 msgstr "Monument"
 
-#: config-examples/tagpresets:63
+#: config-examples/tagpresets:71
 msgid "windmill"
 msgstr "Moulin à vent"
 
-#: config-examples/tagpresets:66
+#: config-examples/tagpresets:74
 msgid "sewage"
 msgstr "Station d'épuration"
 
-#: config-examples/tagpresets:70
+#: config-examples/tagpresets:78
 msgid "Bank"
 msgstr "Banque"
 
-#: config-examples/tagpresets:72
+#: config-examples/tagpresets:80
 msgid "with ATM"
 msgstr "Avec GAB"
 
-#: config-examples/tagpresets:73
+#: config-examples/tagpresets:81
 msgid "without ATM"
 msgstr "Sans GAB"
 
-#: config-examples/tagpresets:75
+#: config-examples/tagpresets:83
 msgid "ATM"
 msgstr "GAB"
 
-#: config-examples/tagpresets:78
+#: config-examples/tagpresets:86
 msgid "Playground"
 msgstr "Plaine de jeu"
+
+#: config-examples/tagpresets:92
+msgid "paved"
+msgstr ""
+
+#: config-examples/tagpresets:93
+msgid "cobblestone"
+msgstr ""
+
+#: config-examples/tagpresets:94
+msgid "gravel"
+msgstr ""
+
+#: config-examples/tagpresets:95
+msgid "sand"
+msgstr ""
+
+#: config-examples/tagpresets:96
+msgid "unpaved"
+msgstr ""
+
+#: config-examples/tagpresets:102
+msgid "max. speed"
+msgstr ""
+
+#: config-examples/tagpresets:103
+msgid "one way?"
+msgstr ""
+
+#: config-examples/tagpresets:104
+msgid "has cycleway?"
+msgstr ""
+
+#~ msgid "no name"
+#~ msgstr "Pas de nom"
 
 #~ msgid "file name"
 #~ msgstr "Nom du fichier"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mumpot 0.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-14 10:41+0100\n"
+"POT-Creation-Date: 2010-04-03 21:35+0200\n"
 "PO-Revision-Date: 2010-02-27 15:26+0100\n"
 "Last-Translator: György Balló <ballogy@freestart.hu>\n"
 "Language-Team: Hungarian <hu@li.org>\n"
@@ -43,87 +43,86 @@ msgstr "/Nézet/Nagyítás"
 msgid "/View/Color tracks by velocity"
 msgstr "/Nézet/Nyomvonalak színezése sebesség szerint"
 
-#: src/main.c:335
-#: src/main.c:1824
-#: src/printdlg.c:255
+#: src/main.c:335 src/main.c:1829 src/printdlg.c:255
 #: src/create_connection.c:421
 msgid "OK"
 msgstr "OK"
 
-#: src/main.c:1507
+#: src/main.c:1504
 msgid "select a name for the new nmea file"
 msgstr "Név választása az új NMEA fájlhoz"
 
-#: src/main.c:1607
+#: src/main.c:1612
 msgid "select a gps file"
 msgstr "GPS fájl választása"
 
-#: src/main.c:1655
+#: src/main.c:1660
 msgid "select an osm file"
 msgstr "OSM fájl választása"
 
-#: src/main.c:1685
+#: src/main.c:1690
 msgid "save OSM changes as OSC file"
 msgstr "OSM módosítások mentése OSC fájlként"
 
-#: src/main.c:1763
+#: src/main.c:1768
 msgid "Please enter your OSM username and password!"
 msgstr "Kérlek, add meg az OSM felhasználónevedet és jelszadat!"
 
-#: src/main.c:1793
+#: src/main.c:1798
 msgid "Username"
 msgstr "Felhasználónév"
 
-#: src/main.c:1802
+#: src/main.c:1807
 msgid "Password"
 msgstr "Jelszó"
 
-#: src/main.c:1812
+#: src/main.c:1817
 msgid "Save osm account data"
 msgstr "OSM fiókadatok mentése"
 
-#: src/main.c:1815
+#: src/main.c:1820
 msgid "Upload comment"
 msgstr "Megjegyzés feltöltése"
 
-#: src/main.c:1830
-#: src/printdlg.c:259
-#: src/create_connection.c:425
+#: src/main.c:1835 src/printdlg.c:259 src/create_connection.c:425
 msgid "Cancel"
 msgstr "Mégse"
 
-#: src/main.c:1845
+#: src/main.c:1850
 msgid "save OSM data"
 msgstr "OSM adatok mentése"
 
-#: src/main.c:1916
+#: src/main.c:1921
 msgid "Lost GPS connection"
 msgstr "A GPS kapcsolat megszakadt"
 
-#: src/main.c:2132
+#: src/main.c:2143
 #, c-format
 msgid ""
 "%s %s\n"
 "Copyright (C) 2008 Andreas Kemnade\n"
-"This is free software.  You may redistribute copies of it under the terms of\n"
-"the GNU General Public License version 3 or any later version <http://www.gnu.org/licenses/gpl.html>\n"
+"This is free software.  You may redistribute copies of it under the terms "
+"of\n"
+"the GNU General Public License version 3 or any later version <http://www."
+"gnu.org/licenses/gpl.html>\n"
 "There is NO WARRANTY, to the extent permitted by law."
 msgstr ""
 "%s %s\n"
 "Copyright (C) 2008 Andreas Kemnade\n"
 "Ez egy szabad szoftver. Újraterjesztheted másolatait a GNU General\n"
-"Public License 3-as vagy újabb változatának feltételei szerint <http://www.gnu.org/licenses/gpl.html>\n"
+"Public License 3-as vagy újabb változatának feltételei szerint <http://www."
+"gnu.org/licenses/gpl.html>\n"
 "NINCS GARANCIA a törvény által megengedett mértékig."
 
-#: src/main.c:2155
+#: src/main.c:2166
 msgid "downloading OSM data failed"
 msgstr "OSM adatok letöltése sikertelen"
 
-#: src/main.c:2163
+#: src/main.c:2174
 msgid "downloading OSM data finished"
 msgstr "OSM adatok letöltése kész"
 
-#: src/main.c:2198
+#: src/main.c:2209
 msgid ""
 "No area selected,\n"
 " draw some lines around the area \n"
@@ -135,189 +134,184 @@ msgstr ""
 "körül, aminek az OSM adatait szeretnéd\n"
 " vagy válaszd ki a megfelelő vonalréteget"
 
-#: src/main.c:2260
+#: src/main.c:2271
 msgid "/Help/About"
 msgstr "/Súgó/Névjegy"
 
-#: src/main.c:2262
+#: src/main.c:2273
 msgid "/Project/Printing/mark page in scale 1:50000"
 msgstr "/Projekt/Nyomtatás/Oldal jelölése 1:50000 méretarányban"
 
-#: src/main.c:2263
+#: src/main.c:2274
 msgid "/Project/Printing/mark page in scale 1:25000"
 msgstr "/Projekt/Nyomtatás/Oldal jelölése 1:25000 méretarányban"
 
-#: src/main.c:2264
+#: src/main.c:2275
 msgid "/Project/Printing/mark page in scale 1:10000"
 msgstr "/Projekt/Nyomtatás/Oldal jelölése 1:10000 méretarányban"
 
-#: src/main.c:2265
+#: src/main.c:2276
 msgid "/Project/Printing/mark page in scale 1:100000"
 msgstr "/Projekt/Nyomtatás/Oldal jelölése 1:100000 méretarányban"
 
-#: src/main.c:2266
+#: src/main.c:2277
 msgid "/Project/Printing/mark page in scale 1:200000"
 msgstr "/Projekt/Nyomtatás/Oldal jelölése 1:200000 méretarányban"
 
-#: src/main.c:2267
+#: src/main.c:2278
 msgid "/Project/Printing/mark page in scale 1:1000000"
 msgstr "/Projekt/Nyomtatás/Oldal jelölése 1:1000000 méretarányban"
 
-#: src/main.c:2268
+#: src/main.c:2279
 msgid "/Project/Printing/delete marked areas"
 msgstr "/Projekt/Nyomtatás/Jelölt területek törlése"
 
-#: src/main.c:2269
+#: src/main.c:2280
 msgid "/Project/Printing/print marked areas"
 msgstr "/Projekt/Nyomtatás/Jelölt területek nyomtatása"
 
-#: src/main.c:2270
+#: src/main.c:2281
 msgid "/Project/Printing/delete marked area"
 msgstr "/Projekt/Nyomtatás/Jelölt terület törlése"
 
-#: src/main.c:2271
+#: src/main.c:2282
 msgid "/Project/save route (current layer)"
 msgstr "/Projekt/Útvonal mentése (jelenlegi réteg)"
 
-#: src/main.c:2272
+#: src/main.c:2283
 msgid "/Project/load GPS data"
 msgstr "/Projekt/GPS adatok betöltése"
 
-#: src/main.c:2273
+#: src/main.c:2284
 msgid "/Project/load OSM data"
 msgstr "/Projekt/OSM adatok betöltése"
 
-#: src/main.c:2274
+#: src/main.c:2285
 msgid "/Project/download OSM data for selected region"
 msgstr "/Projekt/OSM adatok letöltése a kijelölt területhez"
 
-#: src/main.c:2275
+#: src/main.c:2286
 msgid "/Project/save OSM data"
 msgstr "/Projekt/OSM adatok mentése"
 
-#: src/main.c:2276
+#: src/main.c:2287
 msgid "/Project/save OSM changes (OSC file)"
 msgstr "/Projekt/OSM módosítások mentése (OSC fájl)"
 
-#: src/main.c:2277
+#: src/main.c:2288
 msgid "/Project/clear OSM data"
 msgstr "/Projekt/OSM adatok törlése"
 
-#: src/main.c:2279
+#: src/main.c:2290
 msgid "/Project/upload OSM data"
 msgstr "/Projekt/OSM adatok feltöltése"
 
-#: src/main.c:2283
+#: src/main.c:2294
 msgid "/Project/Connect to GPS receiver"
 msgstr "/Projekt/Kapcsolódás GPS-vevőhöz"
 
-#: src/main.c:2289
+#: src/main.c:2300
 msgid "/View/Trip stats"
 msgstr "/Nézet/Túra statisztikája"
 
-#: src/main.c:2290
-#: src/main.c:2291
-#: src/main.c:2292
-#: src/main.c:2293
-#: src/main.c:2294
+#: src/main.c:2301 src/main.c:2302 src/main.c:2303 src/main.c:2304
+#: src/main.c:2305
 msgid "/View/Select line layer/0"
 msgstr "/Nézet/Vonalréteg kiválasztása/0"
 
-#: src/main.c:2291
+#: src/main.c:2302
 msgid "/View/Select line layer/1"
 msgstr "/Nézet/Vonalréteg kiválasztása/1"
 
-#: src/main.c:2292
+#: src/main.c:2303
 msgid "/View/Select line layer/2"
 msgstr "/Nézet/Vonalréteg kiválasztása/2"
 
-#: src/main.c:2293
+#: src/main.c:2304
 msgid "/View/Select line layer/3"
 msgstr "/Nézet/Vonalréteg kiválasztása/3"
 
-#: src/main.c:2294
+#: src/main.c:2305
 msgid "/View/Select line layer/4 (live gps)"
 msgstr "/Nézet/Vonalréteg kiválasztása/4 (élő GPS)"
 
-#: src/main.c:2296
-#: src/main.c:2297
-#: src/main.c:2298
+#: src/main.c:2307 src/main.c:2308 src/main.c:2309
 msgid "/View/Request tiles/request missing"
 msgstr "/Nézet/Csempék lekérése/Hiányzóak lekérése"
 
-#: src/main.c:2297
+#: src/main.c:2308
 msgid "/View/Request tiles/request never"
 msgstr "/Nézet/Csempék lekérése/Lekérés soha"
 
-#: src/main.c:2298
+#: src/main.c:2309
 msgid "/View/Request tiles/older than one day"
 msgstr "/Nézet/Csempék lekérése/Egy napnál régebbi"
 
-#: src/main.c:2299
+#: src/main.c:2310
 msgid "/View/Disconnect GPS"
 msgstr "/Nézet/GPS kapcsolat bontása"
 
-#: src/main.c:2302
+#: src/main.c:2313
 msgid "/Project/quit"
 msgstr "/Projekt/Kilépés"
 
-#: src/main.c:2332
-#: src/main.c:2337
+#: src/main.c:2343 src/main.c:2348
 #, c-format
 msgid "/View/Mode/%s"
 msgstr "/Nézet/Mód/%s"
 
-#: src/main.c:2378
+#: src/main.c:2389 config-examples/tagpresets:19 config-examples/tagpresets:43
+#: config-examples/tagpresets:56 config-examples/tagpresets:97
+#: config-examples/tagpresets:101
 msgid "Name"
 msgstr "Név"
 
-#: src/main.c:2378
+#: src/main.c:2389
 msgid "is in"
 msgstr "Itt:"
 
-#: src/main.c:2442
+#: src/main.c:2453
 msgid "place name:"
 msgstr "Hely neve:"
 
-#: src/main.c:2446
+#: src/main.c:2457
 msgid "search"
 msgstr "Keresés"
 
-#: src/main.c:2532
+#: src/main.c:2543
 msgid "Move mode"
 msgstr "Mozgatás mód"
 
-#: src/main.c:2538
+#: src/main.c:2549
 msgid "pan mode"
 msgstr "Eltolás mód"
 
-#: src/main.c:2544
+#: src/main.c:2555
 msgid "route drawing mode"
 msgstr "Útvonalrajzoló mód"
 
-#: src/main.c:2627
+#: src/main.c:2638
 msgid "Choose a map"
 msgstr "Térkép választása"
 
-#: src/main.c:2631
+#: src/main.c:2642
 msgid "OSM Tiles@home"
 msgstr "OSM Tiles@home"
 
-#: src/main.c:2635
+#: src/main.c:2646
 msgid "OSM Mapnik"
 msgstr "OSM Mapnik"
 
-#: src/main.c:2639
+#: src/main.c:2650
 msgid "OSM Cyclemap"
 msgstr "OSM Cyclemap"
 
-#: src/main.c:2680
+#: src/main.c:2691
 #, c-format
 msgid "Usage: %s [configfile [gpsfile | osmfile ]]...\n"
 msgstr "Használat: %s [configfile [gpsfile | osmfile ]]...\n"
 
-#: src/main.c:2687
-#: src/main.c:2694
+#: src/main.c:2698 src/main.c:2705
 #, c-format
 msgid "Usage: %s configfile\n"
 msgstr "Használat: %s beállításfájl\n"
@@ -382,7 +376,7 @@ msgstr "/OSM/Nem-utca vonalak megjelenítése"
 msgid "/OSM/Display tags"
 msgstr "/OSM/Címkék megjelenítése"
 
-#: src/osm_view.c:898
+#: src/osm_view.c:898 config-examples/tagpresets:105
 msgid "set"
 msgstr "Állítás"
 
@@ -442,15 +436,15 @@ msgstr "A kijelölt pont csatlakoztatása a legközelebbi úthoz"
 msgid "split the ways going through the selected node"
 msgstr "A kijelölt ponton keresztülhaladó vonalak kettévágása"
 
-#: src/osm_view.c:1822
+#: src/osm_view.c:1824
 msgid "routing"
 msgstr "Útvonaltervezés"
 
-#: src/osm_view.c:1826
+#: src/osm_view.c:1828
 msgid "live edit"
 msgstr "Élő szerkesztés"
 
-#: src/osm_view.c:1830
+#: src/osm_view.c:1832
 msgid "editing"
 msgstr "Szerkesztés"
 
@@ -464,8 +458,7 @@ msgstr "Eszközök keresése sikertelen\n"
 msgid "found %d devices\n"
 msgstr "%d eszköz található\n"
 
-#: src/create_connection.c:298
-#: src/create_connection.c:329
+#: src/create_connection.c:298 src/create_connection.c:329
 msgid "TCP/IP"
 msgstr "TCP/IP"
 
@@ -552,9 +545,7 @@ msgstr ""
 msgid "closing changeset %d"
 msgstr "Módosításcsomag lezárása: %d"
 
-#: src/osm_upload.c:100
-#: src/osm_upload.c:221
-#: src/osm_upload.c:306
+#: src/osm_upload.c:100 src/osm_upload.c:221 src/osm_upload.c:306
 #: src/osm_upload.c:471
 msgid "uploading changes failed"
 msgstr "Módosítások feltöltése sikertelen"
@@ -614,47 +605,48 @@ msgstr "pékség"
 msgid "supermarket"
 msgstr "élelmiszer"
 
-#: config-examples/tagpresets:13
-msgid "no name"
-msgstr "nincs név"
-
-#: config-examples/tagpresets:15
+#: config-examples/tagpresets:9
 msgid "outdoor"
 msgstr "túrabolt"
 
-#: config-examples/tagpresets:18
+#: config-examples/tagpresets:12
 msgid "bicycle"
 msgstr "kerékpár"
 
-#: config-examples/tagpresets:21
+#: config-examples/tagpresets:15
 msgid "kiosk"
 msgstr "újságosbódé"
 
-#: config-examples/tagpresets:25
+#: config-examples/tagpresets:18 config-examples/tagpresets:42
+#: config-examples/tagpresets:55 config-examples/tagpresets:61
+msgid "House number"
+msgstr ""
+
+#: config-examples/tagpresets:23
 msgid "Accommodation"
 msgstr "Szállás"
 
-#: config-examples/tagpresets:26
+#: config-examples/tagpresets:24
 msgid "Hotel"
 msgstr "Szálloda"
 
-#: config-examples/tagpresets:29
+#: config-examples/tagpresets:27
 msgid "Motel"
 msgstr "Panzió"
 
-#: config-examples/tagpresets:32
+#: config-examples/tagpresets:30
 msgid "Guest House"
 msgstr "Vendégház"
 
-#: config-examples/tagpresets:35
+#: config-examples/tagpresets:33
 msgid "Hostel"
 msgstr "Diákszálló"
 
-#: config-examples/tagpresets:38
+#: config-examples/tagpresets:36
 msgid "Camping Site"
 msgstr "Kemping"
 
-#: config-examples/tagpresets:41
+#: config-examples/tagpresets:39
 msgid "Caravan Site"
 msgstr "Lakókocsitábor"
 
@@ -670,43 +662,85 @@ msgstr "Gyorsétterem"
 msgid "Cafe"
 msgstr "Kávézó"
 
-#: config-examples/tagpresets:56
+#: config-examples/tagpresets:58
+msgid "House with number"
+msgstr ""
+
+#: config-examples/tagpresets:59
+msgid "set house number"
+msgstr ""
+
+#: config-examples/tagpresets:64
 msgid "Post box"
 msgstr "Postaláda"
 
-#: config-examples/tagpresets:59
+#: config-examples/tagpresets:67
 msgid "Park bench"
 msgstr "Pad parkban"
 
-#: config-examples/tagpresets:62
+#: config-examples/tagpresets:70
 msgid "Man made"
 msgstr "Építmény"
 
-#: config-examples/tagpresets:63
+#: config-examples/tagpresets:71
 msgid "windmill"
 msgstr "szélmalom"
 
-#: config-examples/tagpresets:66
+#: config-examples/tagpresets:74
 msgid "sewage"
 msgstr "szennyvíztelep"
 
-#: config-examples/tagpresets:70
+#: config-examples/tagpresets:78
 msgid "Bank"
 msgstr "Bank"
 
-#: config-examples/tagpresets:72
+#: config-examples/tagpresets:80
 msgid "with ATM"
 msgstr "Bankautomatával"
 
-#: config-examples/tagpresets:73
+#: config-examples/tagpresets:81
 msgid "without ATM"
 msgstr "Bankautomata nélkül"
 
-#: config-examples/tagpresets:75
+#: config-examples/tagpresets:83
 msgid "ATM"
 msgstr "Bankautomata"
 
-#: config-examples/tagpresets:78
+#: config-examples/tagpresets:86
 msgid "Playground"
 msgstr "Játszótér"
 
+#: config-examples/tagpresets:92
+msgid "paved"
+msgstr ""
+
+#: config-examples/tagpresets:93
+msgid "cobblestone"
+msgstr ""
+
+#: config-examples/tagpresets:94
+msgid "gravel"
+msgstr ""
+
+#: config-examples/tagpresets:95
+msgid "sand"
+msgstr ""
+
+#: config-examples/tagpresets:96
+msgid "unpaved"
+msgstr ""
+
+#: config-examples/tagpresets:102
+msgid "max. speed"
+msgstr ""
+
+#: config-examples/tagpresets:103
+msgid "one way?"
+msgstr ""
+
+#: config-examples/tagpresets:104
+msgid "has cycleway?"
+msgstr ""
+
+#~ msgid "no name"
+#~ msgstr "nincs név"

@@ -102,14 +102,29 @@ The file can contain
 nodepreset { <menudef> }
 waypreset { <menudef> }
 
+"menuname" = { <menudef> }
+
+The latter can be used to define menus to be
+used in multiple places.
+
 <menudef> can contain the following lines
 settag "<name>" "<value>"
 for setting tags and/or
-pos <x> <y> ["<name>"] [gfx "<pngfile>"] { <menudef> }
+pos <x> <y> ["<name>"] [gfx "<pngfile>"] [append "<menuname>" ] { <menudef> }
 
 <x> and <y> start counting at zero and can be used to group the entries
 in one menu. <name> can also be enclosed with _("") to mark
-it for translation.
+it for translation. append "<menuname>" appends menuitems from a previously
+defined menu.
+
+
+settagedit "<name>" "<tagname>"
+gives a text input
+checkbox "<name>" "<tagname>" [yes "<yesvalue>"] [no "<novalue>"]
+gives a checkbox input, <yesvalue> is the value for the tag when the box
+is checked, <novalue> is the value for the tag when the box is not
+checked.
+
 
 
 Printing

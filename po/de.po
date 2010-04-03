@@ -4,12 +4,13 @@
 # This file is distributed under the same license as the mumpot package.
 # Andreas Kemnade <andreas@kemnade.info>, 2008.
 #
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: mumpot 0.1\n"
+"Project-Id-Version: mumpot 0.6\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-13 17:58+0100\n"
-"PO-Revision-Date: 2010-03-13 18:09+0100\n"
+"POT-Creation-Date: 2010-04-03 21:35+0200\n"
+"PO-Revision-Date: 2010-04-03 21:36+0200\n"
 "Last-Translator: Andreas Kemnade <andreas@kemnade.info>\n"
 "Language-Team: German\n"
 "MIME-Version: 1.0\n"
@@ -45,7 +46,7 @@ msgstr "/Ansicht/vergrößern"
 msgid "/View/Color tracks by velocity"
 msgstr "/Ansicht/nach Geschwindigkeit einfärben"
 
-#: src/main.c:335 src/main.c:1821 src/printdlg.c:255
+#: src/main.c:335 src/main.c:1829 src/printdlg.c:255
 #: src/create_connection.c:421
 msgid "OK"
 msgstr "OK"
@@ -54,51 +55,51 @@ msgstr "OK"
 msgid "select a name for the new nmea file"
 msgstr "Name für die zu erzeugende NMEA-Datei eingeben"
 
-#: src/main.c:1604
+#: src/main.c:1612
 msgid "select a gps file"
 msgstr "GPS-Datei auswählen"
 
-#: src/main.c:1652
+#: src/main.c:1660
 msgid "select an osm file"
 msgstr "OSM-Datei auswählen"
 
-#: src/main.c:1682
+#: src/main.c:1690
 msgid "save OSM changes as OSC file"
 msgstr "OSM-Änderungen als OSC-Datei speichern"
 
-#: src/main.c:1760
+#: src/main.c:1768
 msgid "Please enter your OSM username and password!"
 msgstr "Bitte OSM Benutzernamen und Passwort eingeben!"
 
-#: src/main.c:1790
+#: src/main.c:1798
 msgid "Username"
 msgstr "Benutzername"
 
-#: src/main.c:1799
+#: src/main.c:1807
 msgid "Password"
 msgstr "Passwort"
 
-#: src/main.c:1809
+#: src/main.c:1817
 msgid "Save osm account data"
 msgstr "OSM-Zugangsdaten speichern"
 
-#: src/main.c:1812
+#: src/main.c:1820
 msgid "Upload comment"
 msgstr "Kommentar zum Upload"
 
-#: src/main.c:1827 src/printdlg.c:259 src/create_connection.c:425
+#: src/main.c:1835 src/printdlg.c:259 src/create_connection.c:425
 msgid "Cancel"
 msgstr "Abbruch"
 
-#: src/main.c:1842
+#: src/main.c:1850
 msgid "save OSM data"
 msgstr "OSM Daten speichern"
 
-#: src/main.c:1913
+#: src/main.c:1921
 msgid "Lost GPS connection"
 msgstr "GPS-Verbindung verloren"
 
-#: src/main.c:2129
+#: src/main.c:2143
 #, c-format
 msgid ""
 "%s %s\n"
@@ -110,15 +111,15 @@ msgid ""
 "There is NO WARRANTY, to the extent permitted by law."
 msgstr ""
 
-#: src/main.c:2152
+#: src/main.c:2166
 msgid "downloading OSM data failed"
 msgstr "Herunterladen der OSM-Daten fehlgeschlagen"
 
-#: src/main.c:2160
+#: src/main.c:2174
 msgid "downloading OSM data finished"
 msgstr "Herunterladen der OSM-Daten beendet"
 
-#: src/main.c:2195
+#: src/main.c:2209
 msgid ""
 "No area selected,\n"
 " draw some lines around the area \n"
@@ -131,184 +132,184 @@ msgstr ""
 "einiger Linien um ihn herum\n"
 " ausgewählt werden"
 
-#: src/main.c:2257
+#: src/main.c:2271
 msgid "/Help/About"
 msgstr "/Hilfe/Über"
 
-#: src/main.c:2259
+#: src/main.c:2273
 msgid "/Project/Printing/mark page in scale 1:50000"
 msgstr "/Projekt/Drucken/Seite im Maßstab 1:50000 markieren"
 
-#: src/main.c:2260
+#: src/main.c:2274
 msgid "/Project/Printing/mark page in scale 1:25000"
 msgstr "/Projekt/Drucken/Seite im Maßstab 1:25000 markieren"
 
-#: src/main.c:2261
+#: src/main.c:2275
 msgid "/Project/Printing/mark page in scale 1:10000"
 msgstr "/Projekt/Drucken/Seite im Maßstab 1:10000 markieren"
 
-#: src/main.c:2262
+#: src/main.c:2276
 msgid "/Project/Printing/mark page in scale 1:100000"
 msgstr "/Projekt/Drucken/Seite im Maßstab 1:100000 markieren"
 
-#: src/main.c:2263
+#: src/main.c:2277
 msgid "/Project/Printing/mark page in scale 1:200000"
 msgstr "/Projekt/Drucken/Seite im Maßstab 1:200000 markieren"
 
-#: src/main.c:2264
+#: src/main.c:2278
 msgid "/Project/Printing/mark page in scale 1:1000000"
 msgstr "/Projekt/Drucken/Seite im Maßstab 1:1000000 markieren"
 
-#: src/main.c:2265
+#: src/main.c:2279
 msgid "/Project/Printing/delete marked areas"
 msgstr "/Projekt/Drucken/markierte Bereiche löschen"
 
-#: src/main.c:2266
+#: src/main.c:2280
 msgid "/Project/Printing/print marked areas"
 msgstr "/Projekt/Drucken/markierte Bereiche drucken"
 
-#: src/main.c:2267
+#: src/main.c:2281
 msgid "/Project/Printing/delete marked area"
 msgstr "/Projekt/Drucken/markierten Bereich löschen"
 
-#: src/main.c:2268
+#: src/main.c:2282
 msgid "/Project/save route (current layer)"
 msgstr "/Projekt/Weg speichern (auswählte Ebene)"
 
-#: src/main.c:2269
+#: src/main.c:2283
 msgid "/Project/load GPS data"
 msgstr "/Projekt/GPS-Daten laden"
 
-#: src/main.c:2270
+#: src/main.c:2284
 msgid "/Project/load OSM data"
 msgstr "/Projekt/OSM-Daten laden"
 
-#: src/main.c:2271
+#: src/main.c:2285
 msgid "/Project/download OSM data for selected region"
 msgstr "/Projekt/OSM-Daten für ausgewählte Region herunterladen"
 
-#: src/main.c:2272
+#: src/main.c:2286
 msgid "/Project/save OSM data"
 msgstr "/Projekt/OSM-Daten speichern"
 
-#: src/main.c:2273
+#: src/main.c:2287
 msgid "/Project/save OSM changes (OSC file)"
 msgstr "/Projekt/OSM-Änderungen (OSC-Datei) speichern"
 
-#: src/main.c:2274
+#: src/main.c:2288
 msgid "/Project/clear OSM data"
 msgstr "/Projekt/OSM-Daten räumen"
 
-#: src/main.c:2276
+#: src/main.c:2290
 msgid "/Project/upload OSM data"
 msgstr "/Projekt/OSM-Daten hochladen"
 
-#: src/main.c:2280
+#: src/main.c:2294
 msgid "/Project/Connect to GPS receiver"
 msgstr "/Projekt/Verbinden mit GPS-Empfänger"
 
-#: src/main.c:2286
+#: src/main.c:2300
 msgid "/View/Trip stats"
 msgstr "/Ansicht/Fahrtstatistik"
 
-#: src/main.c:2287 src/main.c:2288 src/main.c:2289 src/main.c:2290
-#: src/main.c:2291
+#: src/main.c:2301 src/main.c:2302 src/main.c:2303 src/main.c:2304
+#: src/main.c:2305
 msgid "/View/Select line layer/0"
 msgstr "/Ansicht/Linienebene wählen/0"
 
-#: src/main.c:2288
+#: src/main.c:2302
 msgid "/View/Select line layer/1"
 msgstr "/Ansicht/Linienebene wählen/1"
 
-#: src/main.c:2289
+#: src/main.c:2303
 msgid "/View/Select line layer/2"
 msgstr "/Ansicht/Linienebene wählen/2"
 
-#: src/main.c:2290
+#: src/main.c:2304
 msgid "/View/Select line layer/3"
 msgstr "/Ansicht/Linienebene wählen/3"
 
-#: src/main.c:2291
+#: src/main.c:2305
 msgid "/View/Select line layer/4 (live gps)"
 msgstr "/Ansicht/Linienebene wählen/4 (aktives GPS)"
 
-#: src/main.c:2293 src/main.c:2294 src/main.c:2295
+#: src/main.c:2307 src/main.c:2308 src/main.c:2309
 msgid "/View/Request tiles/request missing"
 msgstr "/Ansicht/Kacheln anfordern/fehlende"
 
-#: src/main.c:2294
+#: src/main.c:2308
 msgid "/View/Request tiles/request never"
 msgstr "/Ansicht/Kacheln anfordern/niemals"
 
-#: src/main.c:2295
+#: src/main.c:2309
 msgid "/View/Request tiles/older than one day"
 msgstr "/Ansicht/Kacheln anfordern/älter als ein Tag"
 
-#: src/main.c:2296
+#: src/main.c:2310
 msgid "/View/Disconnect GPS"
 msgstr "/Ansicht/GPS-Verbindung trennen"
 
-#: src/main.c:2299
+#: src/main.c:2313
 msgid "/Project/quit"
 msgstr "/Projekt/Verlassen"
 
-#: src/main.c:2329 src/main.c:2334
+#: src/main.c:2343 src/main.c:2348
 #, c-format
 msgid "/View/Mode/%s"
 msgstr "/Ansicht/Modus/%s"
 
-#: src/main.c:2375 config-examples/tagpresets:19 config-examples/tagpresets:43
+#: src/main.c:2389 config-examples/tagpresets:19 config-examples/tagpresets:43
 #: config-examples/tagpresets:56 config-examples/tagpresets:97
 #: config-examples/tagpresets:101
 msgid "Name"
 msgstr ""
 
-#: src/main.c:2375
+#: src/main.c:2389
 msgid "is in"
 msgstr ""
 
-#: src/main.c:2439
+#: src/main.c:2453
 msgid "place name:"
 msgstr "Ortsname:"
 
-#: src/main.c:2443
+#: src/main.c:2457
 msgid "search"
 msgstr "suchen"
 
-#: src/main.c:2529
+#: src/main.c:2543
 msgid "Move mode"
 msgstr "Positioniermodus"
 
-#: src/main.c:2535
+#: src/main.c:2549
 msgid "pan mode"
 msgstr "Verschiebemodus"
 
-#: src/main.c:2541
+#: src/main.c:2555
 msgid "route drawing mode"
 msgstr "Routenzeichnemodus"
 
-#: src/main.c:2624
+#: src/main.c:2638
 msgid "Choose a map"
 msgstr "Auswahl der Karte"
 
-#: src/main.c:2628
+#: src/main.c:2642
 msgid "OSM Tiles@home"
 msgstr ""
 
-#: src/main.c:2632
+#: src/main.c:2646
 msgid "OSM Mapnik"
 msgstr ""
 
-#: src/main.c:2636
+#: src/main.c:2650
 msgid "OSM Cyclemap"
 msgstr "OSM Fahrradkarte"
 
-#: src/main.c:2677
+#: src/main.c:2691
 #, c-format
 msgid "Usage: %s [configfile [gpsfile | osmfile ]]...\n"
 msgstr "Benutzung: %s [configfile [gpsfile | osmfile]]...\n"
 
-#: src/main.c:2684 src/main.c:2691
+#: src/main.c:2698 src/main.c:2705
 #, c-format
 msgid "Usage: %s configfile\n"
 msgstr "Benutzung: %s Konfigurationsdatei\n"
@@ -433,15 +434,15 @@ msgstr "Ausgewählte Node mit dem nächsten Weg verschmelzen"
 msgid "split the ways going through the selected node"
 msgstr "Wege an der ausgewählten Node aufspalten"
 
-#: src/osm_view.c:1822
+#: src/osm_view.c:1824
 msgid "routing"
 msgstr "Routenberechnung"
 
-#: src/osm_view.c:1826
+#: src/osm_view.c:1828
 msgid "live edit"
 msgstr "Live-Editiermmodus"
 
-#: src/osm_view.c:1830
+#: src/osm_view.c:1832
 msgid "editing"
 msgstr "Editiermodus"
 
