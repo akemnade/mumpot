@@ -66,6 +66,8 @@ static void preset_clicked(GtkWidget *w, gpointer user_data)
 	}
       }
       break;
+    case BUTTON:
+      break;
     }
     if (pr&&v&&strlen(v)) {
       if (pr->set_tag) {
@@ -96,7 +98,6 @@ static GtkWidget *load_pixmap(GtkWidget *win,char *fname)
   char fbuf[512];
   GdkBitmap *bm=NULL;
   GdkPixmap *gdkpm=NULL;;
-  GtkWidget *gtkpm;
   struct pixmap_ht_entry *hte;
   if (!pixmap_ht) {
     pixmap_ht=g_hash_table_new(g_str_hash,g_str_equal);

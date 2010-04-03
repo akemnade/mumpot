@@ -1588,7 +1588,7 @@ static gboolean map_key_press(GtkWidget *w, GdkEventKey *ev, gpointer data)
     check_item_set_state(mw,PATH_FOLLOW_GPS,mw->follow_gps);
   }
 #ifndef USE_GTK2
-  gtk_signal_emit_stop_by_name(w,"key_press_event");
+  gtk_signal_emit_stop_by_name(GTK_OBJECT(w),"key_press_event");
 #endif
   return TRUE;
   }

@@ -98,7 +98,7 @@ void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data)
 			yesfunc,data);
   gtk_signal_connect_object_after(GTK_OBJECT(but),"clicked",
 				  GTK_SIGNAL_FUNC(gtk_widget_destroy),
-				  dialog);
+				  GTK_OBJECT(dialog));
 
   but=gtk_button_new_with_label(_("No"));
   gtk_box_pack_end(GTK_BOX(GTK_DIALOG(dialog)->action_area),but,
@@ -108,7 +108,7 @@ void yes_no_dlg(char *txt,GtkSignalFunc yesfunc,GtkSignalFunc nofunc,void *data)
 		       nofunc,data);
   gtk_signal_connect_object_after(GTK_OBJECT(but),"clicked",
 				  GTK_SIGNAL_FUNC(gtk_widget_destroy),
-				  dialog);
+				  GTK_OBJECT(dialog));
   
 
   label=gtk_label_new(txt);

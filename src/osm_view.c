@@ -1805,14 +1805,16 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 		     GTK_SIGNAL_FUNC(osmedit_selbut_cb),mw->osm_inf);
   
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.selbut),"clicked",			    
-			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),
+                            GTK_OBJECT(mw->map));
 
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.splitbut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_splitbut_cb),mw);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_addwaybut_cb),mw->osm_inf);
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->editb.addwaybut),"clicked",			    
-			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),
+                            GTK_OBJECT(mw->map));
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.delobjbut),"clicked",
 		     GTK_SIGNAL_FUNC(osmedit_delobjbut_cb),mw);
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->editb.joinbut),"clicked",
@@ -1835,18 +1837,21 @@ void append_osm_edit_line(struct mapwin *mw,GtkWidget *box)
 		     GTK_SIGNAL_FUNC(start_route_cb),mw->osm_inf);
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.start_route),"clicked",
 			    
-			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),
+                            GTK_OBJECT(mw->map));
 
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.end_route),"clicked",
 		     GTK_SIGNAL_FUNC(end_route_cb),mw->osm_inf);
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.end_route),"clicked",
 			    
-			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),
+                            GTK_OBJECT(mw->map));
   gtk_signal_connect(GTK_OBJECT(mw->osm_inf->routeb.set_destination),"clicked",
 		     GTK_SIGNAL_FUNC(set_destination_cb),mw->osm_inf);
   gtk_signal_connect_object(GTK_OBJECT(mw->osm_inf->routeb.set_destination),"clicked",
 			    
-			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),mw->map);
+			    GTK_SIGNAL_FUNC(gtk_widget_grab_focus),
+                            GTK_OBJECT(mw->map));
 }
 
 
