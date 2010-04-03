@@ -1534,6 +1534,7 @@ static void gps_filesel(GtkWidget *w, gpointer data)
 {
   struct mapwin *mw;
   const char *f;
+  GList *l;
   mw=(struct mapwin *)gtk_object_get_user_data(GTK_OBJECT(data));
   f=gtk_file_selection_get_filename(GTK_FILE_SELECTION(data));
   if (!f)
@@ -1543,6 +1544,13 @@ static void gps_filesel(GtkWidget *w, gpointer data)
   mw->line_drawing=1;
   change_sidebar_cb(mw,0,NULL);
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->linemode_but),1);
+  l=g_list_last(*mw->mark_line_list);
+  if (l) {
+    struct t_punkt32 *p;
+    p=(struct t_punkt32 *)l->data; 
+    if (!p->single_point)
+      center_map(mw,p->longg,p->latt);
+  } 
 }
 
 static void osm_filesel(GtkWidget *w, gpointer data)
@@ -2049,6 +2057,10 @@ static void zoom_in(struct mapwin *mw)
     recalc_node_coordinates(mw,mw->osm_main_file);
   geosec2point(&x,&y,lon,lat);
   center_map(mw,lon,lat);
+  mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+              mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
+  gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
+
 }
 
 static void zoom_in_cb(gpointer callback_data,
@@ -2096,7 +2108,9 @@ static void zoom_out(struct mapwin *mw)
     recalc_node_coordinates(mw,mw->osm_main_file);
   geosec2point(&x,&y,lon,lat);
   center_map(mw,lon,lat);
-
+  mapwin_draw(mw,mw->map->style->fg_gc[mw->map->state],globalmap.first,
+              mw->page_x,mw->page_y,0,0,mw->page_width,mw->page_height);
+  gtk_widget_queue_draw_area(mw->map,0,0,mw->page_width,mw->page_height);
 }
 
 static void zoom_out_cb(gpointer callback_data,
