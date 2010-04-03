@@ -1,3 +1,16 @@
+Changes between 0.6 and 0.5
+- improved statistics
+  - average speed
+  - traveltime
+- optionally show a blinking heading arrow
+  so you see where you go
+- allow data files to be loaded from the commandline
+- split tracks if timestamps are too far away
+- extended tag preset support
+  - checkboxes
+  - textfields
+  - menus can be reused in multiple places
+
 Changes between 0.5 and 0.4:
 - optionally color lines by speed
 - support for gzipped gps streams
