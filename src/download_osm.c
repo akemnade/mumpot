@@ -84,7 +84,7 @@ int main(int argc, char **argv)
   close_gps_file(gpsf,1);
   apibase=getenv("OSMAPIBASE");
   if (!apibase)
-      apibase="http://www.openstreetmap.org/api/0.5";
+      apibase="http://www.openstreetmap.org/api/0.6";
   snprintf(url,sizeof(url),"wget -O - '%s/map?bbox=%f,%f,%f,%f'",apibase,
 	   minlongsec/3600,minlattsec/3600,maxlongsec/3600,maxlattsec/3600);
   fprintf(stderr,"executing %s\n",url);
