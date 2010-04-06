@@ -62,8 +62,8 @@ struct osm_file {
   int merged;
 };
 
-struct osm_object *get_obj_id(int id);
-void put_obj_id(struct osm_object *obj,int id);
+/* struct osm_object *get_obj_id(int id);
+void put_obj_id(struct osm_object *obj,int id); */
 struct osm_way *new_osm_way(int id);
 struct osm_way *get_osm_way(int id);
 struct osm_node *new_osm_node(int id);

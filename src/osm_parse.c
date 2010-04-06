@@ -36,7 +36,8 @@
 
 static GMemChunk *node_chunk;
 static GMemChunk *way_chunk;
-static struct osm_object ***all_objects[65536];
+static struct osm_object ***all_ways[65536];
+static struct osm_object ***all_nodes[65536];
 int max_free_num=-1;
 static int total_way_count;
 static int total_node_count;
@@ -48,7 +49,8 @@ enum format_type {
   FORMAT_JOSMDEL
 };
 
-struct osm_object *get_obj_id(int id)
+struct osm_object *get_obj_id(struct osm_object ****all_objects,
+                              int id)
 {
   struct osm_object ***ind;
     if (!all_objects[(id>>16)&0xffff])
@@ -159,7 +161,8 @@ void osm_split_ways_at_node(struct osm_file *osmf,
   }
 }
 
-void put_obj_id(struct osm_object *obj,int id)
+void put_obj_id(struct osm_object ****all_objects,
+                struct osm_object *obj,int id)
 {
   struct osm_object ***ind;
     if (!all_objects[(id>>16)&0xffff]) {
@@ -185,7 +188,7 @@ struct osm_way *new_osm_way(int id)
   total_way_count++;
   way->head.id=id;
   way->head.type=WAY;
-  put_obj_id(&way->head,id);
+  put_obj_id(all_ways,&way->head,id);
   return way;
 }
 
@@ -215,8 +218,8 @@ void osm_way_update_id(struct osm_file *osmf,
   way->head.id=tonum;
   way->head.version=version;
   way->head.modified=0;
-  put_obj_id(NULL,fromnum);
-  put_obj_id(&way->head,tonum);
+  put_obj_id(all_ways,NULL,fromnum);
+  put_obj_id(all_ways,&way->head,tonum);
 }
 
 void osm_node_update_id(struct osm_file *osmf,
@@ -229,8 +232,8 @@ void osm_node_update_id(struct osm_file *osmf,
   nd->head.id=tonum;
   nd->head.version=version;
   nd->head.modified=0;
-  put_obj_id(NULL,fromnum);
-  put_obj_id(&nd->head,tonum);
+  put_obj_id(all_nodes,NULL,fromnum);
+  put_obj_id(all_nodes,&nd->head,tonum);
 
   for(l=g_list_first(nd->way_list);l;l=g_list_next(l)) {
     int i;
@@ -281,7 +284,7 @@ void osm_delete_way(struct osm_file *osmf,
   osmf->deleted_ways[osmf->deleted_way_count]=way;
   osmf->deleted_way_count++;
   way->head.modified=1;
-  put_obj_id(NULL,way->head.id);
+  put_obj_id(all_ways,NULL,way->head.id);
   osmf->ways=g_list_remove(osmf->ways,way);
   osmf->changed=1;
 }
@@ -305,7 +308,7 @@ void osm_delete_node(struct osm_file *osmf,
   osmf->deleted_node_count++;
   node->head.modified=1;
   osmf->nodes=g_list_remove(osmf->nodes,node);
-  put_obj_id(NULL,node->head.id);
+  put_obj_id(all_nodes,NULL,node->head.id);
   osmf->changed=1;
 }
 
@@ -326,7 +329,7 @@ void add_nodes_to_way(struct osm_way *way, GList *l)
 
 struct osm_way *get_osm_way(int id) 
 {
-    struct osm_object *oobj = get_obj_id(id);
+    struct osm_object *oobj = get_obj_id(all_ways,id);
     if ((oobj) && (oobj->type == WAY)) {
       return (struct osm_way *)oobj;
     }
@@ -344,7 +347,7 @@ struct osm_node *new_osm_node(int id)
   node->head.id=id;
   node->head.type=NODE;
   total_node_count++;
-  put_obj_id(&node->head,id);
+  put_obj_id(all_nodes,&node->head,id);
   return node;
 }
 
@@ -359,7 +362,7 @@ void free_osm_way(int id)
       free_tag_list(obj->head.tag_list);
     g_mem_chunk_free(way_chunk,obj);
   }
-  put_obj_id(NULL,id);
+  put_obj_id(all_ways,NULL,id);
 }
 
 void free_tag_list(GList *tl)
@@ -382,7 +385,7 @@ void free_osm_node(int id)
     free_tag_list(obj->head.tag_list);
     g_mem_chunk_free(node_chunk,obj);
   }
-  put_obj_id(NULL,id);
+  put_obj_id(all_nodes,NULL,id);
 }
 
 void free_osm_file(struct osm_file *f)
@@ -403,7 +406,7 @@ void free_osm_file(struct osm_file *f)
 
 struct osm_node *get_osm_node(int id)
 {
-    struct osm_object *oobj = get_obj_id(id);
+    struct osm_object *oobj = get_obj_id(all_nodes,id);
     if ((oobj) && (oobj->type == NODE)) {
       return (struct osm_node *)oobj;
     }
@@ -472,12 +475,12 @@ static void osmway_initialize_flags(struct osm_way *way)
   } 
 }
 
-static int build_references(struct osm_file *osmf)
+static int build_references(GList *ways)
 {
   GList *l;
   int ret=1;
   
-  for(l=g_list_first(osmf->ways);l;l=g_list_next(l)) {
+  for(l=g_list_first(ways);l;l=g_list_next(l)) {
     int i;
     struct osm_way *way=(struct osm_way*)l->data;
     for(i=0;i<way->nr_nodes;i++)  {
@@ -801,6 +804,7 @@ struct osm_parser_ctxt {
   struct osm_file *osmf;
   struct osm_node *node;
   struct osm_way *way;
+  GList *revisit_ways;
   int have_osm;
   int error;
   int way_nodes[65536];
@@ -922,7 +926,7 @@ static void osmparse_starthandler(void *ctx,
 	  osmf->deleted_nodes[osmf->deleted_node_count]=octxt->node;
 	  octxt->node->head.modified=1;
 	  osmf->deleted_node_count++;
-	  put_obj_id(NULL,id);
+	  put_obj_id(all_nodes,NULL,id);
 	} 
       }
     } else if (!strcmp("way",(char *)name)) {
@@ -959,10 +963,14 @@ static void osmparse_starthandler(void *ctx,
 	    octxt->osmf->ways=g_list_prepend(octxt->osmf->ways,octxt->way); 
 	} else if ((!way->head.modified)||(version>way->head.version)) {
 	  octxt->way = way;
+	  /* remove references to this way in the corresponding
+	     nodes */
 	  remove_way_from_nodes(octxt->way);
 	  free(way->nodes);
 	  way->nodes = NULL;
 	  way->nr_nodes = 0;
+	  /* rebuild the reference list later on */
+	  octxt->revisit_ways=g_list_append(octxt->revisit_ways,way);
 	  free_tag_list(octxt->way->head. tag_list);
 	  octxt->way->head.tag_list = NULL;
 	} else
@@ -973,7 +981,7 @@ static void osmparse_starthandler(void *ctx,
 	    osmf->deleted_ways=(struct osm_way  **)realloc(osmf->deleted_ways,
 							   (osmf->deleted_way_count+16)*sizeof(struct osm_way *));
 	  }
-	  put_obj_id(NULL,octxt->way->head.id);
+	  put_obj_id(all_ways,NULL,octxt->way->head.id);
 	  osmf->deleted_ways[osmf->deleted_way_count]=octxt->way;
 	  octxt->way->head.modified=1;
 	  osmf->deleted_way_count++;
@@ -1160,7 +1168,7 @@ struct osm_file * parse_osm_file(struct osm_file *mergeto,
   gettimeofday(&tv2,NULL);
   printtimediff("SAX parsing xml: %d ms\n",&tv1,&tv2);
 #endif
-  if (!build_references(osmf)) {
+  if (!build_references(osmf->ways)) {
     fprintf(stderr,"warning,: inconsistencies detected\n");
   }
 #ifndef _WIN32
@@ -1168,6 +1176,8 @@ struct osm_file * parse_osm_file(struct osm_file *mergeto,
   printtimediff("build references: %d ms\n",&tv2,&tv3);
 #endif
   if (octxt) {
+    if (octxt->revisit_ways)
+      build_references(octxt->revisit_ways);
     if (mergeto) {
       mergeto->ways=g_list_concat(mergeto->ways,osmf->ways);
       mergeto->nodes=g_list_concat(mergeto->nodes,osmf->nodes);
