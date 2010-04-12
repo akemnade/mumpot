@@ -55,7 +55,7 @@ double to_seconds(char *str)
   mins = atof(str+pointindex-2);
   str[pointindex-2]=0;
   degs = atof(str);
-  return degs * 3600.0+mins*60.0;
+  return degs+mins/60.0;
   
 }
 
@@ -86,9 +86,9 @@ int save_gpx(const char *fname,GList *save_list)
     struct t_punkt32 *p=(struct t_punkt32 *)l->data;
     xmlTextWriterStartElement(writer,(xmlChar *)"trkpt");
     xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"lat","%f",
-				      p->latt/3600.0);
+				      p->latt);
     xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"lon","%f",
-				      p->longg/3600.0);
+				      p->longg);
     if (p->time) {
       t=p->time;
       tm=*gmtime(&t);
@@ -121,14 +121,14 @@ void save_nmea(FILE *f,GList *save_list)
   struct t_punkt32 *p=(struct t_punkt32 *)l->data;
   int lattdeg, longdeg;
   double lattmin, longmin;
-  lattdeg = p->latt/3600;
-  longdeg = p->longg/3600;
-  longmin = ((double)longdeg)*3600.0;
+  lattdeg = p->latt;
+  longdeg = p->longg;
+  longmin = ((double)longdeg);
   longmin = p->longg - longmin;
-  longmin /= 60.0;
-  lattmin = ((double)lattdeg)*3600.0;
+  longmin *= 60.0;
+  lattmin = ((double)lattdeg);
   lattmin = p->latt - lattmin;
-  lattmin /= 60.0;
+  lattmin *= 60.0;
   t=p->time;
   tm=gmtime(&t);
   if (tm->tm_year > 100)
@@ -186,8 +186,8 @@ static void gps_to_line(struct nmea_pointinfo *nmea,void  *data)
   {
     struct t_punkt32 *p_new;
     p_new=calloc(1,sizeof(struct t_punkt32));
-    p_new->longg=nmea->longsec;
-    p_new->latt=nmea->lattsec;
+    p_new->longg=nmea->lon;
+    p_new->latt=nmea->lat;
     p_new->time=nmea->time;
     p_new->speed=nmea->speed;
     p_new->single_point=nmea->single_point;
@@ -278,11 +278,11 @@ static void mystarthandler(void *ctx,
     for(i=0;atts[i];i+=2) {
       if (!strcmp((char *)atts[i],"lon")) {
         if (atts[i+1]) {
-	  gpsf->curpoint.longsec=3600.0*atof((char *)atts[i+1]);
+	  gpsf->curpoint.lon=atof((char *)atts[i+1]);
         }
       } else if (!strcmp((char *)atts[i],"lat")) {
         if (atts[i+1]) {
-          gpsf->curpoint.lattsec=3600.0*atof((char *)atts[i+1]);
+          gpsf->curpoint.lat=atof((char *)atts[i+1]);
         }
       }
     }
@@ -403,12 +403,12 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
       if (((numfields == 13)||(numfields == 12))&&(strlen(fields[3])>3)) {
 	struct tm tm;
         time_t t;
-	gpsf->curpoint.lattsec=to_seconds(fields[3]);
-        gpsf->curpoint.longsec=to_seconds(fields[5]);
+	gpsf->curpoint.lat=to_seconds(fields[3]);
+        gpsf->curpoint.lon=to_seconds(fields[5]);
         if ((fields[4])[0] == 'S')
-          gpsf->curpoint.lattsec=-gpsf->curpoint.lattsec;
+          gpsf->curpoint.lat=-gpsf->curpoint.lat;
         if ((fields[6])[0] == 'W')
-          gpsf->curpoint.longsec=-gpsf->curpoint.longsec;
+          gpsf->curpoint.lon=-gpsf->curpoint.lon;
 	memset(&tm,0,sizeof(tm));
 	sscanf(fields[1],"%02d%02d%02d",&tm.tm_hour,&tm.tm_min,&tm.tm_sec);
 	sscanf(fields[9],"%02d%02d%02d",&tm.tm_mday,&tm.tm_mon,&tm.tm_year);

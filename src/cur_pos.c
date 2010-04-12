@@ -36,29 +36,29 @@ int open_tcp(char *host, int port)
 static void got_position(struct nmea_pointinfo *nmea,
                              void *data)
 {
-  int longi=nmea->longsec;
-  int latti=nmea->lattsec;
+  int longi=3600*nmea->lon;
+  int latti=3600*nmea->lat;
   int *readable=(int *)data;
   if (*readable) {
   printf("%0d\260%02d'%02d.%d''N %0d\260%02d'%02d.%d''E",
            latti/3600,
            (latti/60)%60,
            latti%60,
-           ((int)(nmea->lattsec*10.0))%10,
+           ((int)(nmea->lat*36000.0))%10,
            longi/3600,
            (longi/60)%60,
            longi%60,
-           ((int)(nmea->longsec*10.0))%10);
+           ((int)(nmea->lon*36000.0))%10);
  } else {
   printf("%0da%02db%02d.%dbbN %0da%02db%02d.%dbbE",
            latti/3600,
            (latti/60)%60,
            latti%60,
-           ((int)(nmea->lattsec*10.0))%10,
+           ((int)(nmea->lat*36000.0))%10,
            longi/3600,
            (longi/60)%60,
            longi%60,
-           ((int)(nmea->longsec*10.0))%10);
+           ((int)(nmea->lon*36000.0))%10);
  } 
  exit(0);
    

@@ -59,7 +59,7 @@ static void write_osm_xml(FILE *f, GList *lines, int *start_nodenum)
   for(l=g_list_first(lines);l;l=g_list_next(l),nodenum--) {
     struct t_punkt32 *p = (struct t_punkt32 *)l->data;
     fprintf(f,"<node id='%d' visible='true' lat='%f' lon='%f' />\n",
-            nodenum,p->latt/3600.0, p->longg/3600.0);
+            nodenum,p->latt, p->longg);
   }
   fprintf(f,"<way id='%d' visible='true'>\n",nodenum);
   for(i=0;i<pointcount;i++) {
@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     load_gps_line_noproj(argv[optind],&lines);
     if (!lines)
         return 1;
-    simp_lines = simplify_lines(g_list_first(lines),g_list_last(lines),atof(argv[2]));
+    simp_lines = simplify_lines(g_list_first(lines),g_list_last(lines),precision/3600.0);
     simp_lines = g_list_append(simp_lines,g_list_last(lines)->data);
     save_nmea(stdout,simp_lines);
   } else {
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
       load_gps_line_noproj(argv[i],&lines);
       if (!lines)
           continue;
-      simp_lines = simplify_lines(g_list_first(lines),g_list_last(lines),atof(argv[2]));
+      simp_lines = simplify_lines(g_list_first(lines),g_list_last(lines),precision/3600.0);
       simp_lines = g_list_append(simp_lines,g_list_last(lines)->data);
       write_osm_xml(stdout,simp_lines,&nodenum);
     }

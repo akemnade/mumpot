@@ -31,22 +31,22 @@
 #include <math.h>
 #include "gps.h"
 
-double minlattsec=90*3600;
-double maxlattsec=-90*3600;
-double minlongsec=180*3600;
-double maxlongsec=-180*3600;
+double minlat=90;
+double maxlat=-90;
+double minlon=180;
+double maxlon=-180;
 
 
 static void gps_minmax(struct nmea_pointinfo *nmea, void  *data)
 {
-  if (nmea->lattsec>maxlattsec)
-    maxlattsec=nmea->lattsec;
-  if (nmea->lattsec<minlattsec)
-    minlattsec=nmea->lattsec;
-  if (nmea->longsec>maxlongsec)
-    maxlongsec=nmea->longsec;
-  if (nmea->longsec<minlongsec)
-    minlongsec=nmea->longsec;
+  if (nmea->lat>maxlat)
+    maxlat=nmea->lat;
+  if (nmea->lat<minlat)
+    minlat=nmea->lat;
+  if (nmea->lon>maxlon)
+    maxlon=nmea->lon;
+  if (nmea->lon<minlon)
+    minlon=nmea->lon;
 }
 
 int main(int argc, char **argv)
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
   if (!apibase)
       apibase="http://www.openstreetmap.org/api/0.6";
   snprintf(url,sizeof(url),"wget -O - '%s/map?bbox=%f,%f,%f,%f'",apibase,
-	   minlongsec/3600,minlattsec/3600,maxlongsec/3600,maxlattsec/3600);
+	   minlon,minlat,maxlon,maxlat);
   fprintf(stderr,"executing %s\n",url);
   system(url);
   return 0;   

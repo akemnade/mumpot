@@ -12,8 +12,8 @@
 ***********************************************************************/
 #define INVALID_HEADING 1000.0
 struct nmea_pointinfo {
-  double longsec;
-  double lattsec;
+  double lon;
+  double lat;
   double speed;
   double heading;
   int time;

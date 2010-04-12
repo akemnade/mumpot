@@ -36,8 +36,8 @@ struct t_globalmap {
   double zerolong;
   double xoffset;      /* utm offsets in radians (calculated during init */
   double yoffset;
-  int startlatt;       /* start point */
-  int startlong;
+  double startlatt;       /* start point */
+  double startlong;
   int is_utm;
   double xfactor;  
   double yfactor;

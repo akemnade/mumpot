@@ -204,7 +204,7 @@ static void init_node_render_data(struct  osm_node *node)
     nrd = (struct node_render_data*)node->user_data;
   }
   double x,y;
-  geosec2point(&x,&y,3600.0*node->lon,3600.0*node->lat);
+  geosec2point(&x,&y,node->lon,node->lat);
   nrd->x = (int)x;
   nrd->y = (int)y;
 }
@@ -1199,7 +1199,7 @@ static void make_new_way(struct mapwin *mw)
       for(l=g_list_first(newwaypoints);l;l=g_list_next(l)) {
 	struct t_punkt32 *pt=(struct t_punkt32 *)l->data;
 	nd=new_osm_node_from_point(mw->osm_main_file,
-				   pt->longg/3600.0,pt->latt/3600.0);
+				   pt->longg,pt->latt);
 	nds=g_list_append(nds,nd);
       }       
       add_nodes_to_way(osmw,nds);
@@ -1486,11 +1486,11 @@ static void handle_edit_addway_click(struct mapwin *mw,
     l=g_list_append(l,nearest_obj);
   } else {
     point2geosec(&lon, &lat,x,y);
-    lon=lon/3600.0;
-    lat=lat/3600.0;
+    lon=lon;
+    lat=lat;
     nd=new_osm_node_from_point(mw->osm_main_file,
 			       lon,lat);
-    center_map(mw,lon*3600.0,lat*3600.0);
+    center_map(mw,lon,lat);
     l=g_list_append(l,nd);
     if (nodeafter) {
       struct osm_way *mergeway=(struct osm_way *)nearest_obj;
@@ -1523,12 +1523,10 @@ static void handle_node_move(struct mapwin *mw, int x, int y)
     return;
   node=(struct osm_node *)
     mw->osm_inf->selected_object;
-  geosec2point(&nx,&ny,node->lon*3600.0,node->lat*3600.0);
+  geosec2point(&nx,&ny,node->lon,node->lat);
   nx=x-mw->mouse_x+nx;
   ny=y-mw->mouse_y+ny;
   point2geosec(&lon,&lat,nx,ny);
-  lon/=3600.0;
-  lat/=3600.0;
   mw->osm_main_file->changed=1;
   osm_set_node_coords(node,lon,lat);
   init_node_render_data(node);
@@ -1593,8 +1591,6 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
 	double lon=0;
 	double lat=0;
 	point2geosec(&lon,&lat,x,y);
-	lon/=3600.0;
-	lat/=3600.0;
 	nd=new_osm_node_from_point(mw->osm_main_file,lon,lat);
 	osm_choose_tagpreset(osm_nodepresets,NULL,&nd->head.tag_list,NULL);
 	mw->osm_inf->clicktime=millitime;
@@ -1651,7 +1647,7 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
   if (mw->osm_inf->selected_object->type != NODE)
     return;
   node=(struct osm_node *)mw->osm_inf->selected_object;
-  geosec2point(&x,&y,node->lon*3600.0,node->lat*3600.0);
+  geosec2point(&x,&y,node->lon,node->lat);
   nearest_obj=find_nearest_object(mw->osm_main_file,
 				  x,y,mw->osm_inf->selected_object,
 				  &nodeafter);

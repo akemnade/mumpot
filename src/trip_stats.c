@@ -134,14 +134,14 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   }
   ts->old_time=nmea->time;
   if (!nmea->start_new) {
-    ts->dist+=point_dist(nmea->longsec/3600.0,nmea->lattsec/3600.0,
+    ts->dist+=point_dist(nmea->lon,nmea->lat,
 			 ts->old_lon,ts->old_lat);
   }
   ts->speed = nmea->speed;
-  ts->old_lon = nmea->longsec/3600.0;
-  ts->old_lat = nmea->lattsec/3600.0;
-  longi=(int)nmea->longsec;
-  latti=(int)nmea->lattsec;
+  ts->old_lon = nmea->lon;
+  ts->old_lat = nmea->lat;
+  longi=(int)(3600.0*nmea->lon);
+  latti=(int)(3600.0*nmea->lat);
   if (latti<0) {
     ns='S';
     latti=-latti;

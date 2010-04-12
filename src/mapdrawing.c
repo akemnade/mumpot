@@ -623,7 +623,7 @@ void path_to_lines(double lon, double lat, void *data)
 { 
   struct t_punkt32 *p_new;
   GList **l=data;
-  p_new=geosec2pointstruct(lon*3600.0,lat*3600.0);
+  p_new=geosec2pointstruct(lon,lat);
   *l=g_list_prepend(*l,p_new);
 }
 
@@ -651,8 +651,8 @@ void geosec2point(double *xr, double *yr,double long_sec, double latt_sec)
   x=long_sec;
   y=latt_sec;
   //printf("latt_sec:%.3f long_sec: %.3f\n",latt_sec,long_sec);
-  x=x/(3600.0*180.0)*M_PI;
-  y=y/(3600.0*180.0)*M_PI;
+  x=x/(180.0)*M_PI;
+  y=y/(180.0)*M_PI;
   if (globalmap.is_utm) {
     x=x-(9.0*M_PI/180.0);
     //printf("latt sec rad:%.6f long rad: %.6f\n",y,x);
@@ -668,8 +668,8 @@ void geosec2point(double *xr, double *yr,double long_sec, double latt_sec)
   utmh-=globalmap.yoffset;
   x=utmr/M_PI;
   y=utmh/M_PI;
-  x=x*180.0*3600.0;
-  y=y*180.0*3600.0;
+  x=x*180.0;
+  y=y*180.0;
   y=-y*globalmap.yfactor;
   x=x*globalmap.xfactor;
   *xr=x;
@@ -685,9 +685,9 @@ void point2geosec(double *longr, double *lattr, double x, double y)
   x=x/globalmap.xfactor;
   /* y=y-1228259; */
   y=-y/globalmap.yfactor;
-  y=y/(180*3600);
+  y=y/(180);
   /* x=x-9331.3392; */
-  x=x/(180*3600);
+  x=x/(180);
   utmr=x*M_PI;
   utmh=y*M_PI;
   utmr+=globalmap.xoffset;
@@ -718,10 +718,10 @@ void point2geosec(double *longr, double *lattr, double x, double y)
   //printf("back: latt rad: %.6f utmr: %.6f\n",latt, longg);
   longg/=M_PI;
   latt/=M_PI;
-  longg*=(3600*180);
-  latt*=(3600*180);
+  longg*=(180);
+  latt*=(180);
   if (globalmap.is_utm)
-    longg+=3600*9;
+    longg+=9;
   *longr=longg;
   *lattr=latt;
 }
@@ -963,7 +963,7 @@ static void gps_to_line(struct nmea_pointinfo *nmea,void  *data)
 {
   GList **mll=data;
   struct t_punkt32 *p_new;
-  p_new=geosec2pointstruct(nmea->longsec,nmea->lattsec);
+  p_new=geosec2pointstruct(nmea->lon,nmea->lat);
   p_new->time=nmea->time;
   p_new->speed=nmea->speed;
   p_new->hdop=nmea->hdop;
@@ -1291,23 +1291,21 @@ void calc_mapoffsets()
   struct t_map *map;
   /*printf("zero latt_sec: %.3f zero long_sec: %.3f\n",globalmap.zerolatt,
 	 globalmap.zerolong); */
-  x=(globalmap.zerolong-3600.0*9.0)/(3600*180)*M_PI;
-  y=globalmap.zerolatt/(3600*180)*M_PI;
 /*  printf("zero latt_sec rad: %.6f zero long_sec rad: %.6f\n",y,x); */
   if (globalmap.is_utm) {
-    x=(globalmap.zerolong-3600.0*9.0)/(3600*180)*M_PI;
-    y=globalmap.zerolatt/(3600*180)*M_PI;
+    x=(globalmap.zerolong-9.0)/(180)*M_PI;
+    y=globalmap.zerolatt/(180)*M_PI;
     globalmap.xoffset=asin(sin(x)*cos(y));
     globalmap.yoffset=M_PI_2-atan(cos(x)/tan(y));
     /*  printf("xoffset: %.6f, yoffset: %.6f\n",globalmap.xoffset, globalmap.yoffset); */
   } else {
-    x=globalmap.zerolong/(3600*180)*M_PI;
-    y=globalmap.zerolatt/(3600*180)*M_PI;
+    x=globalmap.zerolong/(180)*M_PI;
+    y=globalmap.zerolatt/(180)*M_PI;
     globalmap.xoffset=x;
     globalmap.yoffset=log(tan(y)+1/cos(y));
   }
-  globalmap.xfactor=globalmap.orig_xfactor*(1<<(globalmap.zoomfactor-1));
-  globalmap.yfactor=globalmap.orig_yfactor*(1<<(globalmap.zoomfactor-1));
+  globalmap.xfactor=globalmap.orig_xfactor*(1<<(globalmap.zoomfactor-1))*3600;
+  globalmap.yfactor=globalmap.orig_yfactor*(1<<(globalmap.zoomfactor-1))*3600;
   globalmap.zoomshift=0;
   /* globalmap.zoomfactor=1; */
   globalmap.zoomable=1;

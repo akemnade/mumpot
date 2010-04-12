@@ -278,7 +278,7 @@ void center_ort(struct mapwin *mw,char *name)
   struct t_ort *ort=g_hash_table_lookup(orts_hash,name);
   if (!ort)
     return;
-  center_map(mw,(double)ort->laenge,(double)ort->breite);
+  center_map(mw,((double)ort->laenge)/3600.0,((double)ort->breite)/3600.0);
 }
 
 
@@ -398,9 +398,9 @@ static void get_mark_xywh(struct t_mark_rect *rc,
   *x=xd;
   *y=yd;
   if (!globalmap.is_utm) {
-    dd=cos(rc->latt/3600.0/180.0*M_PI)*M_PI*6371221.0*1000.0;
+    dd=cos(rc->latt*180.0*M_PI)*M_PI*6371221.0*1000.0;
     /* pixels per mm */
-    dd=globalmap.xfactor*3600.0*180.0/dd;
+    dd=globalmap.xfactor*180.0/dd;
     dd*=1000.0*rc->dim;
   } else {
     dd=MAP_LINE_PRO_MM*rc->dim;
@@ -484,14 +484,15 @@ static gboolean map_move_cb(gpointer user_data)
     ew='W';
     longg=-longg;
   }
-  longi=(int)longg;
-  latti=(int)latt;
-  mw->mouse_moved=0;
 #ifdef USE_GTK2
 #define DEG_CHR "\xc2\xb0"
 #else
 #define DEG_CHR "°"
 #endif
+  longi=(int)3600*longg;
+  latti=(int)3600*latt;
+  mw->mouse_moved=0;
+
   snprintf(last_coord_buf,sizeof(last_coord_buf),"%0d" DEG_CHR "%02d'%02d.%d''%c %0d"DEG_CHR"%02d'%02d.%d''%c",
 	   latti/3600,
 	   (latti/60)%60,
@@ -689,9 +690,9 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
   entf/=(1<<globalmap.zoomshift);
   if ((p1)&&(!globalmap.is_utm)) {
     double dd;
-    dd=cos(p1->latt/3600.0/180.0*M_PI)*M_PI*6371221.0*1000.0;
+    dd=cos(p1->latt/180.0*M_PI)*M_PI*6371221.0*1000.0;
     /* pixels per mm */
-    dd=globalmap.xfactor*3600.0*180.0/dd;
+    dd=globalmap.xfactor*180.0/dd;
     entf=entf/dd/1000000.0;
   } else {
     entf=entf/200.0/globalmap.xfactor*6.198382541;
@@ -1866,7 +1867,7 @@ static gboolean set_gps_position(gpointer data)
   struct mapwin *mw = (struct mapwin *)data;
   struct nmea_pointinfo *nmea=&mw->last_nmea;
   if (mw->follow_gps) {
-    center_map(mw,nmea->longsec,nmea->lattsec);
+    center_map(mw,nmea->lon,nmea->lat);
   }
   if (mw->draw_heading_arrow) {
     gtk_widget_queue_draw_area(mw->map,0,0,
@@ -1888,7 +1889,7 @@ static void got_gps_position(struct nmea_pointinfo *nmea,
  
   struct t_punkt32 *p_new;
   mw->have_gpspos|=1;
-  p_new=geosec2pointstruct(nmea->longsec,nmea->lattsec);
+  p_new=geosec2pointstruct(nmea->lon,nmea->lat);
   p_new->time=nmea->time;
   p_new->speed=nmea->speed;
   p_new->hdop=nmea->hdop;
@@ -2194,8 +2195,8 @@ static void download_osm_data_cb(gpointer callback_data,
   GList *l=*mw->mark_line_list;
   for(l=g_list_first(l);l;l=g_list_next(l)) {
     struct t_punkt32 *p=(struct t_punkt32 *)l->data;
-    double lon=p->longg/3600.0;
-    double lat=p->latt/3600.0;
+    double lon=p->longg;
+    double lat=p->latt;
     if (lon>maxlon)
       maxlon=lon;
     if (lon<minlon)
