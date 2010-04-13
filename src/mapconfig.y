@@ -243,7 +243,8 @@ lattitude:  degree 'N' { $$=$1; }
 	 
 /*§ a degree can contain the degree with 
   § minutes separated by the ° character*/
-degree:  realnum '°' degmin { $$=$1+$3; } 
+degree: realnum { $$=$1; }  
+        | realnum '°' degmin { $$=$1+$3; } 
 /*§ or  minutes only */
         | degmin { $$=$1; }
 /*§ or  seconds only */
