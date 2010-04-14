@@ -165,7 +165,7 @@ struct node_render_data {
 
 static int find_nearest_node(struct mapwin *mw,
 			     struct osm_file *osmf,
-			     int x, int y, int only_with_way);
+			     int x, int y, int only_with_way, int only_with_route);
 
 static void start_way_menu_cb(GtkWidget *w, gpointer data);
 static double get_distance_r(double x1, double y1, double x2, double y2,
@@ -545,7 +545,7 @@ static void reset_distance_info(struct osm_file *osmf)
 void osmroute_add_path(struct mapwin *mw,
 		       struct osm_file *osmf, void (*path_to_lines)(double lon, double lat, void *data), int x, int y, void *data)
 {
-  int nnum=find_nearest_node(mw,osmf,x,y,1);
+  int nnum=find_nearest_node(mw,osmf,x,y,1,1);
   if (nnum) {
     struct osm_node *node=get_osm_node(nnum);
     int nextnode=0;
@@ -602,7 +602,7 @@ int osmroute_start_calculate(struct mapwin *mw,
 #endif
   int nnumdest=0;
   if ((destx)&&(desty)) {
-    nnumdest=find_nearest_node(mw,osmf,destx,desty,1);
+    nnumdest=find_nearest_node(mw,osmf,destx,desty,1,0);
   }
   if ((nnum)&&(nnum!=nnumdest)) {
     double l;
@@ -661,7 +661,8 @@ int osmroute_start_calculate(struct mapwin *mw,
 
 static int find_nearest_node(struct mapwin *mw,
 			     struct osm_file *osmf,
-			     int x, int y, int only_with_way)
+			     int x, int y, int only_with_way,
+                             int only_with_route)
 {
   int mindist=INT_MAX;
   int nnum=0;
@@ -681,10 +682,13 @@ static int find_nearest_node(struct mapwin *mw,
       }
       if (!l)
 	continue;
+       
     }
     if (!node->user_data)
       init_node_render_data(node);
     nrd =(struct node_render_data *)node->user_data;
+    if ((only_with_route)&&(!nrd->prevnode))
+      continue; 
     
     if ((mw->page_x < nrd->x) && (mw->page_x+mw->page_width > nrd->x) &&
 	(mw->page_y < nrd->y) && (mw->page_y+mw->page_height > nrd->y)) {
@@ -1276,7 +1280,7 @@ static void set_destination_cb(GtkWidget *w, gpointer user_data)
 static int set_route_start(struct mapwin *mw, int x, int y)
 {
   if (mw->osm_main_file) {
-    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1,0);
     if (n) {
       mw->osm_inf->route_start_node=n;
       
@@ -1307,14 +1311,14 @@ int osmroute_start_calculate_nodest(struct mapwin *mw,
 				    struct osm_file *osmf,
 				    int x, int y)
 {
-  int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+  int n = find_nearest_node(mw,mw->osm_main_file,x,y,1,0);
   return n?osmroute_start_calculate(mw,mw->osm_main_file,n,0,0):0;
 }
 
 static int set_destination(struct mapwin *mw, int x, int y)
 {
   if (mw->osm_main_file) {
-    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1);
+    int n = find_nearest_node(mw,mw->osm_main_file,x,y,1,0);
     if (n) {
       osmroute_start_calculate(mw,mw->osm_main_file,n,0,0);
       
