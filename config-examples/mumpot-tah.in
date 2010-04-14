@@ -1,14 +1,14 @@
 #!@prefix@/bin/mumpot
 
 placefile "~/.mumpot/places.txt"
-startplace 53°02'N 9°00'E
+startplace 50°00'N 9°00'E
 origin 85°3'4.063607''N 180°0'0''W
 xfactor 0.000395061728394
 yfactor 0.000395061728394
 projection mercator
 fullwidth 512
 fullheight 512
-initialzoom 13
+initialzoom 4
 map "OSM" {
   origin 85°3'4.063607''N 180°00'00''W 0 0
   tilewidth 256
