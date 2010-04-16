@@ -3,7 +3,7 @@
 SUBDIRS = intl po src config-examples doc
 
 EXTRA_DIST = config.rpath m4/ChangeLog  config.rpath m4/ChangeLog  \
-	autogen.sh CONFIGFORMAT mumpot.desktop
+	autogen.sh CONFIGFORMAT mumpot.desktop mumpot.png mumpot.svg
 
 dist-hook:
 	if test -d pixmaps; then \
