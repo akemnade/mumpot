@@ -51,6 +51,7 @@
 #include "osm_view.h"
 #include "osm_upload.h"
 #include "trip_stats.h"
+#include "startposition.h"
 
 #include "zoomin.xpm"
 #include "zoomout.xpm"
@@ -1308,7 +1309,7 @@ void ort_select(GtkCList *clist,
   struct mapwin *mw=user_data;
   struct t_ort *ort=gtk_clist_get_row_data(clist,row);
   if (ort)
-    center_map(mw,ort->laenge,ort->breite);
+    center_map(mw,ort->laenge/3600.0,ort->breite/3600.0);
 }
 
 /* prepare to mark a rectangle for printing */
@@ -2127,6 +2128,12 @@ static void zoom_out_cbbut(GtkWidget *w, gpointer data)
   gtk_widget_grab_focus(((struct mapwin *)data)->map);
 }
 
+static void set_start_pos_cb(gpointer callback_data,
+			     guint callback_action,
+			     GtkWidget *w)
+{
+  create_startposition_dialog();
+}
 
 
 static void switch_requesttile(gpointer callback_data,
@@ -2309,6 +2316,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/View/Request tiles/request never"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),0,N_("/View/Request tiles/request missing")},
     {N_("/View/Request tiles/older than one day"),NULL,GTK_SIGNAL_FUNC(switch_requesttile),86400,N_("/View/Request tiles/request missing")},
     {N_("/View/Disconnect GPS"),NULL,GTK_SIGNAL_FUNC(close_gps_cb),0,NULL},
+    {N_("/View/Set start position..."),NULL,GTK_SIGNAL_FUNC(set_start_pos_cb),0,NULL},
     {PATH_ZOOM_OUT_N,NULL,GTK_SIGNAL_FUNC(zoom_out_cb),0,NULL},
     {PATH_ZOOM_IN_N,NULL,GTK_SIGNAL_FUNC(zoom_in_cb),0,NULL},
     {N_("/Project/quit"),NULL,GTK_SIGNAL_FUNC(gtk_main_quit),0,NULL}};
