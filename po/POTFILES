@@ -1,0 +1,10 @@
+     ../src/main.c \
+     ../src/printdlg.c \
+     ../src/osm_parse.c \
+     ../src/osm_view.c \
+     ../src/create_connection.c \
+     ../src/trip_stats.c \
+     ../src/osm_upload.c \
+     ../src/gui_common.c \
+     ../src/startposition.c \
+     ../config-examples/tagpresets
