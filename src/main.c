@@ -2796,8 +2796,12 @@ int main(int argc, char **argv)
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(mw->linemode_but),TRUE);
   if (globalmap.startplace)
     center_ort(mw,globalmap.startplace);
-  else
-    center_map(mw,globalmap.startlong,globalmap.startlatt);
+  else {
+    double lon=globalmap.startlong;
+    double lat=globalmap.startlatt;
+    get_startposition(&lat,&lon);
+    center_map(mw,lon,lat);
+  }
   if (argc > 2) {
     int i;
     for(i=2;i<argc;i++) {

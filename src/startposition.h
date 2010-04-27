@@ -14,5 +14,6 @@
 #define K_STARTPOSITION_H
 
 void create_startposition_dialog();
+void get_startposition(double *lat, double *lon);
 
 #endif
