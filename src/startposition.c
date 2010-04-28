@@ -137,8 +137,26 @@ void get_startposition(double *lat, double *lon)
 {
   if (get_startpos_cfg()!=MAPDEFAULT) {
     char *spstr=cfg_get_string("startpos");
-    if (spstr)
+    if (spstr) 
       parse_coords(spstr,lat,lon);
+  }
+}
+
+static void set_position_entry(struct startposition_dialog *spd,
+			       double lat, double lon)
+{
+  char buf[80];
+  int lpos;
+  make_nice_coord_string(buf,sizeof(buf),lat,lon);
+  lpos=strcspn(buf,"SN");
+  if (buf[lpos]!=0) {
+    lpos++;
+    if (buf[lpos]) {
+      buf[lpos]=0;
+      lpos++;
+      gtk_entry_set_text(GTK_ENTRY(spd->latentry),buf);
+      gtk_entry_set_text(GTK_ENTRY(spd->lonentry),buf+lpos);
+    }
   }
 }
 
@@ -163,7 +181,8 @@ static void load_startposcfg(struct startposition_dialog *spd)
   if (spos==FIXEDPOS) {
     double lon,lat;
     lon=lat=0;
-    get_startposition(&lat,&lon);    
+    get_startposition(&lat,&lon);
+    set_position_entry(spd,lat,lon);
   }
   radiobutton_updater_cb(NULL,spd);
 }
