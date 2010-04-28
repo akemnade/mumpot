@@ -22,11 +22,6 @@
 #include "geometry.h"
 #include "gps.h"
 #include "trip_stats.h"
-#ifdef USE_GTK2
-#define DEG_CHR "\xc2\xb0"
-#else
-#define DEG_CHR "°"
-#endif
 
 #define MAX_FIX_INTERVAL 5
 #define MIN_ACTIVE_SPEED (3.0/1.852) /* 2km/h */
@@ -118,10 +113,7 @@ struct trip_stats * trip_stats_new()
 void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
 {
   char buf[80];
-  int latti,longi;
-  char ns='N';
-  char ew='E';
-  
+ 
   if (nmea->speed > ts->maxspeed)
     ts->maxspeed = nmea->speed;
   if (ts->speed > MIN_ACTIVE_SPEED) {
@@ -140,25 +132,8 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   ts->speed = nmea->speed;
   ts->old_lon = nmea->lon;
   ts->old_lat = nmea->lat;
-  longi=(int)(3600.0*nmea->lon);
-  latti=(int)(3600.0*nmea->lat);
-  if (latti<0) {
-    ns='S';
-    latti=-latti;
-  }
-  if (longi<0) {
-    ew='W';
-    longi=-longi;
-  }
-  snprintf(buf,sizeof(buf),"%0d" DEG_CHR "%02d'%02d''%c %0d"DEG_CHR"%02d'%02d''%c",
-	   latti/3600,
-	   (latti/60)%60,
-	   latti%60,
-	   ns,
-	   longi/3600,
-	   (longi/60)%60,
-	   longi%60,
-	   ew);
+  make_nice_coord_string(buf,sizeof(buf),nmea->lon,nmea->lat);
+ 
   gtk_label_set_text(GTK_LABEL(ts->coordlabel),buf);
   snprintf(buf,sizeof(buf),"%.1f km/h",ts->speed*1.852);
   gtk_label_set_text(GTK_LABEL(ts->spdlabel),buf);

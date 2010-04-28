@@ -469,42 +469,16 @@ static gboolean map_move_cb(gpointer user_data)
   int y1;
   double longg;
   double latt;
-  int latti,longi;
   int last_point_available=0;
   char buf[80];
-  char ns='N';
-  char ew='E';
   mx=mw->page_x+(int)event->x;
   my=mw->page_y+(int)event->y;
   point2geosec(&longg,&latt,(double)mx,(double)my);
-  if (latt<0) {
-    ns='S';
-    latt=-latt;
-  }
-  if (longg<0) {
-    ew='W';
-    longg=-longg;
-  }
-#ifdef USE_GTK2
-#define DEG_CHR "\xc2\xb0"
-#else
-#define DEG_CHR "°"
-#endif
-  longi=(int)3600*longg;
-  latti=(int)3600*latt;
+  make_nice_coord_string(last_coord_buf,sizeof(last_coord_buf),
+			 latt,longg);
+
   mw->mouse_moved=0;
 
-  snprintf(last_coord_buf,sizeof(last_coord_buf),"%0d" DEG_CHR "%02d'%02d.%d''%c %0d"DEG_CHR"%02d'%02d.%d''%c",
-	   latti/3600,
-	   (latti/60)%60,
-	   latti%60,
-	   ((int)(latt*10.0))%10,
-	   ns,
-	   longi/3600,
-	   (longi/60)%60,
-	   longi%60,
-	   ((int)(longg*10.0))%10,
-	   ew);
   snprintf(buf,sizeof(buf),"x:%d y:%d\n %s",mx,my,last_coord_buf);
   if (mw->disp_search)
   gtk_label_set_text(GTK_LABEL(mw->koords_label),buf);

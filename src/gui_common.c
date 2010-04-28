@@ -25,6 +25,11 @@
 #include "mapconfig_data.h"
 #include "mapdrawing.h"
 #include "gui_common.h"
+#ifdef USE_GTK2
+#define DEG_CHR "\xc2\xb0"
+#else
+#define DEG_CHR "°"
+#endif
 
 static GHashTable *confight=NULL;
 
@@ -38,6 +43,33 @@ void menu_item_set_state(struct mapwin *mw,char *path,int state)
 {
   GtkWidget *w=gtk_item_factory_get_item(GTK_ITEM_FACTORY(mw->fac),path);
   gtk_widget_set_sensitive(w,state);
+}
+
+void make_nice_coord_string(char *buf,int bufsize,
+			    double lat, double lon)
+{
+  int latti,longi;
+  char ns='N';
+  char ew='E';
+  longi=(int)(3600.0*lon);
+  latti=(int)(3600.0*lat);
+  if (latti<0) {
+    ns='S';
+    latti=-latti;
+  }
+  if (longi<0) {
+    ew='W';
+    longi=-longi;
+  }
+  snprintf(buf,bufsize,"%0d" DEG_CHR "%02d'%02d''%c %0d"DEG_CHR"%02d'%02d''%c",
+	   latti/3600,
+	   (latti/60)%60,
+	   latti%60,
+	   ns,
+	   longi/3600,
+	   (longi/60)%60,
+	   longi%60,
+	   ew);
 }
 
 void create_path(const char *path)
