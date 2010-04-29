@@ -29,6 +29,7 @@ extern double parsed_lattitude;
 extern double parsed_longitude;
 int parse_init_state;
 int parsing_started;
+int coords_error=0;
 extern int kconfyparse();
 int parse_mapconfig(char *fname) 
 {
@@ -58,13 +59,14 @@ int parse_coords(char *coordstr, double *lattitude, double *longitude)
   setlocale(LC_ALL,"C");
   parse_init_state = PARSE_COORDS;
   parsing_started=0;
+  coords_error=0;
   bs=yy_scan_string(coordstr);
   kconfyparse();
   yy_delete_buffer(bs);
   *lattitude=parsed_lattitude;
   *longitude=parsed_longitude;
   setlocale(LC_ALL,"");
-  return 1;
+  return !coords_error;
 }
 
 

@@ -21,6 +21,7 @@
 #include "gui_common.h"
 #include "mapconfig_data.h"
 #include "startposition.h"
+
 struct startposition_dialog {
   GtkWidget *win;
   GtkWidget *lonentry;
@@ -75,10 +76,11 @@ static void set_startpos_cfg(startpos_t st)
   cfg_set_string("startposmode",st_str);
 }
 
-static void save_startposition_cfg(struct startposition_dialog *spd)
+static int save_startposition_cfg(struct startposition_dialog *spd)
 {
   startpos_t st;
   char *stposstr;
+  int ret=1;
   char *lontext,*lattext;
   st=MAPDEFAULT;
   if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(spd->entrycheck)))
@@ -87,7 +89,7 @@ static void save_startposition_cfg(struct startposition_dialog *spd)
     st=LAST_POS;
   else if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(spd->restart_last_gpsfixcheck)))
     st=LAST_GPS;
-  set_startpos_cfg(st);
+
   if (st==FIXEDPOS) {
     double lon,lat;
     char buf[10];
@@ -99,29 +101,43 @@ static void save_startposition_cfg(struct startposition_dialog *spd)
       cfg_set_string("startpos",stposstr);
       snprintf(buf,sizeof(buf),"%d",(int)GTK_ADJUSTMENT(spd->zoomlvladj)->value);
       cfg_set_string("zoomlvl",buf);
-    }
+    } else
+      ret=0;
     free(stposstr);
     free(lontext);
     free(lattext);
 
   }
-  cfg_write_out();
+  if (ret) {
+    set_startpos_cfg(st);
+    cfg_write_out();
+  }
+  return ret;
 }
 
 static void ok_cb(GtkWidget *w, gpointer data)
 {
-  save_startposition_cfg((struct startposition_dialog *)data);
-  close_startposition_dialog((struct startposition_dialog *)data);
+  struct startposition_dialog *spd=
+    (struct startposition_dialog *)data;
+  if (save_startposition_cfg(spd)) {
+    close_startposition_dialog(spd);
+  } else {
+    gtk_label_set_text(GTK_LABEL(spd->errorlabel),
+		       _("invalid coordinates!"));
+  }
 }
 
 static void radiobutton_updater_cb(GtkWidget *w, gpointer data)
 {
   struct startposition_dialog *spd=(struct startposition_dialog *)
     data;
-  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(spd->entrycheck)))
+  if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(spd->entrycheck))) {
     gtk_widget_set_sensitive(spd->possettable,1);
-  else
+    gtk_widget_show(spd->errorlabel);
+  } else {
     gtk_widget_set_sensitive(spd->possettable,0);
+    gtk_widget_hide(spd->errorlabel);
+  }
 }
 
 startpos_t get_startpos_cfg()
@@ -213,7 +229,7 @@ void startposition_update_lastpos(int is_gps, double lat, double lon,
     make_nice_coord_string(buf,sizeof(buf),lat,lon);
     cfg_set_string("startpos",buf);
     snprintf(buf,sizeof(buf),"%d",zoomlvl);
-    cfg_set_string("zoomlvl",zoomlvl);
+    cfg_set_string("zoomlvl",buf);
   }
   cfg_write_out();
 }
@@ -224,13 +240,30 @@ static void set_to_current(GtkWidget *w, gpointer data)
   set_position_entry(spd,spd->lat_now,spd->lon_now,spd->zoomlvlval);
 }
 
+static void check_coords(GtkWidget *w, gpointer data)
+{
+  double lon,lat;
+  struct startposition_dialog *spd=(struct startposition_dialog *)
+    data;
+  char *lontext=gtk_editable_get_chars(GTK_EDITABLE(spd->lonentry),0,-1);
+  char *lattext=gtk_editable_get_chars(GTK_EDITABLE(spd->latentry),0,-1);
+  char *ll=g_strdup_printf("%s %s",lattext,lontext);
+  if (parse_coords(ll,&lat,&lon)) {
+    gtk_label_set_text(GTK_LABEL(spd->errorlabel),"");
+  } else {
+    gtk_label_set_text(GTK_LABEL(spd->errorlabel),_("invalid coordinates!"));
+  }
+}
+
 void create_startposition_dialog(double lat, double lon,int zoomlvl)
 {
   struct startposition_dialog *spd=g_new0(struct startposition_dialog,1);
   GtkWidget *table;
   GtkWidget *lab;
   GtkWidget *but;
-  
+  static GtkRcStyle *st;
+  static GdkColor red;
+  static int red_initialized=0;
   spd->win=gtk_dialog_new();
   gtk_window_set_title(GTK_WINDOW(spd->win),_("Set the startposition"));
   spd->mapdefaultcheck=gtk_radio_button_new_with_label(NULL,_("use map default"));
@@ -258,6 +291,10 @@ void create_startposition_dialog(double lat, double lon,int zoomlvl)
 		   GTK_EXPAND|GTK_FILL,0,0);
   gtk_table_attach(GTK_TABLE(table),spd->lonentry,1,2,1,2,GTK_EXPAND|GTK_FILL,
 		   GTK_EXPAND|GTK_FILL,0,0);
+  gtk_signal_connect(GTK_OBJECT(spd->lonentry),"changed",
+		     GTK_SIGNAL_FUNC(check_coords),spd);
+  gtk_signal_connect(GTK_OBJECT(spd->latentry),"changed",
+		     GTK_SIGNAL_FUNC(check_coords),spd);
   lab=gtk_label_new(_("zoomlevel"));
   gtk_table_attach(GTK_TABLE(table),lab,0,1,2,3,GTK_FILL,
 		   GTK_EXPAND|GTK_FILL,0,0);
@@ -274,6 +311,7 @@ void create_startposition_dialog(double lat, double lon,int zoomlvl)
 		   GTK_FILL|GTK_EXPAND,GTK_FILL|GTK_EXPAND,0,0);
   
   spd->errorlabel=gtk_label_new("");
+
   gtk_box_pack_start(GTK_BOX(GTK_DIALOG(spd->win)->vbox),
 		     spd->errorlabel,FALSE,TRUE,0);
   spd->restart_where_closedcheck=gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(spd->mapdefaultcheck),_("start where program was closed"));
@@ -299,10 +337,19 @@ void create_startposition_dialog(double lat, double lon,int zoomlvl)
   gtk_signal_connect(GTK_OBJECT(spd->win),"delete-event",
 		     GTK_SIGNAL_FUNC(delete_cb),spd);
   gtk_widget_show_all(spd->win);
+  if (!red_initialized) {
+    gdk_color_parse("red",&red);
+    gdk_color_alloc(gdk_window_get_colormap(spd->win->window),
+		    &red);
+    red_initialized=1;
+    st=gtk_rc_style_new();
+    st->color_flags[spd->errorlabel->state]=GTK_RC_TEXT;
+    st->text[spd->errorlabel->state]=red;
+  }
+  gtk_widget_modify_style(spd->errorlabel,st);
   spd->possettable=table;
   spd->zoomlvlval=zoomlvl;
   spd->lat_now=lat;
   spd->lon_now=lon;
   load_startposcfg(spd);
-  gtk_widget_set_sensitive(table,0);
 }

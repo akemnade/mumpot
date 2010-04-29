@@ -34,11 +34,14 @@ double parsed_lattitude;
 double parsed_longitude;
 extern int parse_init_state;
 extern int parsing_started;
+extern int coords_error;
 struct t_globalmap globalmap;
 void yyerror(const char *str)
 { 
   fprintf(stderr,"%s: %d: error: %s\n",current_file,current_lineno,str);
-  exit(1);
+  if (parse_init_state!=PARSE_COORDS)
+    exit(1);
+  coords_error=1;
 }
 
 int kconfwrap()
