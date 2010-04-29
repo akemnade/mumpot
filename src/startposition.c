@@ -343,8 +343,9 @@ void create_startposition_dialog(double lat, double lon,int zoomlvl)
 		    &red);
     red_initialized=1;
     st=gtk_rc_style_new();
-    st->color_flags[spd->errorlabel->state]=GTK_RC_TEXT;
+    st->color_flags[spd->errorlabel->state]=GTK_RC_TEXT|GTK_RC_FG;
     st->text[spd->errorlabel->state]=red;
+    st->fg[spd->errorlabel->state]=red;
   }
   gtk_widget_modify_style(spd->errorlabel,st);
   spd->possettable=table;
