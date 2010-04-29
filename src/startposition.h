@@ -13,7 +13,8 @@
 #ifndef K_STARTPOSITION_H
 #define K_STARTPOSITION_H
 
-void create_startposition_dialog();
-void get_startposition(double *lat, double *lon);
-
+void create_startposition_dialog(double lat, double lon,int zoomlvl);
+void get_startposition(double *lat, double *lon,int *zoom);
+void startposition_update_lastpos(int is_gps, double lat, double lon,
+				  int zoomlvl);
 #endif

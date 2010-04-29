@@ -2004,7 +2004,6 @@ static void close_gps_cb(gpointer callback_data,
   close_gps(mw);
 }
 
-
 static void zoom_in(struct mapwin *mw)
 {
   if (globalmap.first && (!globalmap.zoomable))
@@ -2106,7 +2105,11 @@ static void set_start_pos_cb(gpointer callback_data,
 			     guint callback_action,
 			     GtkWidget *w)
 {
-  create_startposition_dialog();
+  struct mapwin *mw=(struct mapwin *)callback_data;
+  double lat,lon;
+  point2geosec(&lon,&lat,mw->page_x+mw->page_width/2,
+	       mw->page_y+mw->page_height/2);
+  create_startposition_dialog(lat,lon,globalmap.zoomfactor);
 }
 
 
@@ -2636,12 +2639,31 @@ static void config_chooser()
 		     GTK_SIGNAL_FUNC(restart_prog),"mumpot-cyclemap");
   gtk_widget_show_all(win);
   gtk_main();
+
   exit(1);
+}
+
+static void upd_startposition(struct mapwin *mw)
+{
+  double lon;
+  double lat;
+  point2geosec(&lon,&lat,(double)(mw->page_x+mw->page_width/2),
+		(double)(mw->page_y+mw->page_height/2));
+  startposition_update_lastpos(0,lat,lon,globalmap.zoomfactor);
+  if (mw->gps_line_list) {
+    GList *l=*mw->gps_line_list;
+    if (l) {
+      startposition_update_lastpos(1,mw->last_nmea.lat,
+				   mw->last_nmea.lon,
+				   globalmap.zoomfactor);
+    }
+  }
 }
 
 int main(int argc, char **argv)
 {
   char buf[512];
+  double startlon,startlat;
   GList *l;
   int i;
 #ifdef USE_IMLIB
@@ -2694,6 +2716,16 @@ int main(int argc, char **argv)
     WSAStartup(MAKEWORD(1,1),&wsadata);
   }
 #endif
+  {
+    int zoom;
+    startlon=globalmap.startlong;
+    startlat=globalmap.startlatt;
+    zoom=globalmap.zoomfactor;
+    get_startposition(&startlat,&startlon,&zoom);
+    if (zoom!=0) {
+      globalmap.zoomfactor=zoom;
+    }
+  }
   calc_mapoffsets();
   {
     GList *lcopy=NULL;
@@ -2771,11 +2803,9 @@ int main(int argc, char **argv)
   if (globalmap.startplace)
     center_ort(mw,globalmap.startplace);
   else {
-    double lon=globalmap.startlong;
-    double lat=globalmap.startlatt;
-    get_startposition(&lat,&lon);
-    center_map(mw,lon,lat);
+    center_map(mw,startlon,startlat);
   }
+  
   if (argc > 2) {
     int i;
     for(i=2;i<argc;i++) {
@@ -2788,5 +2818,6 @@ int main(int argc, char **argv)
     }
   }
   gtk_main();
+  upd_startposition(mw);
   return 0;
 }
