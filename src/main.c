@@ -399,7 +399,7 @@ static void get_mark_xywh(struct t_mark_rect *rc,
   *x=xd;
   *y=yd;
   if (!globalmap.is_utm) {
-    dd=cos(rc->latt*180.0*M_PI)*M_PI*6371221.0*1000.0;
+    dd=cos(rc->latt/180.0*M_PI)*M_PI*6371221.0*1000.0;
     /* pixels per mm */
     dd=globalmap.xfactor*180.0/dd;
     dd*=1000.0*rc->dim;
@@ -535,12 +535,6 @@ static gboolean map_move_cb(gpointer user_data)
 
 
 
-      snprintf(buf,sizeof(buf),"x:%d:%d y:%d:%d",
-	       x2/1518,
-	       x2%1518,
-	       y2/1032,
-	       y2%1032);
-      gtk_label_set_text(GTK_LABEL(mw->koords_label),buf);
       if ((!mw->mark_str)&&(!mw->has_path)) {
 	gdk_draw_line(w->window,mygc,x1,y1,
 		      x2-mw->page_x,y2-mw->page_y);
