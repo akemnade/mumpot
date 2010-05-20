@@ -64,8 +64,8 @@
 //#define TILES_VERT 100
 
 #define MAP_LINE_PRO_MM 10
-#define PAPER_WIDTH (210-30)
-#define PAPER_HEIGHT (297-40)
+#define PAPER_WIDTH (get_paper_width()-30)
+#define PAPER_HEIGHT (get_paper_height()-40)
 #define MY_ABS(x) ((x)>0?(x):(-(x)))
 
 
@@ -1404,7 +1404,7 @@ static void print_dlg_ok(void *data, struct print_job *pj)
   int i;
   GList *l;
   char buf[512];
-  snprintf(buf,sizeof(buf),"%%!PS-Adobe-2.0\n%%%%Pages %d\n%%%%PageOrder: Ascend\n%%%%EndComments\n",pj->end_page-pj->start_page+1);
+  snprintf(buf,sizeof(buf),"%%!PS-Adobe-2.0\n%%%%Pages %d\n%%%%PageOrder: Ascend\n%%%%DocumentPaperSizes: %s\n%%%%EndComments\n",pj->end_page-pj->start_page+1,get_paper_name());
   write(pj->fd,buf,strlen(buf));
   for(i=1,l=g_list_first(mw->rect_list);l&&(i<pj->start_page);i++,l=g_list_next(l));
   for(l=g_list_first(mw->rect_list);l&&(i<=pj->end_page);l=g_list_next(l)) {
@@ -2224,6 +2224,13 @@ static void tripstats_cb(gpointer callback_data,
   trip_stats_show(mw->stats);
 }
 
+static void pagesize_cb(gpointer callback_data,
+			guint callback_action,
+			GtkWidget *w)
+{
+  select_pagesize();
+}
+
 static void change_sidebar_cb(gpointer callback_data,
 			      guint callback_action,
 			      GtkWidget *w)
@@ -2258,6 +2265,7 @@ GtkWidget *create_menu(struct mapwin *mw)
     {N_("/Project/Printing/delete marked areas"),NULL,GTK_SIGNAL_FUNC(mark_del),0,NULL},
     {N_("/Project/Printing/print marked areas"),NULL,GTK_SIGNAL_FUNC(mark_print),0,NULL},
     {N_("/Project/Printing/delete marked area"),NULL,GTK_SIGNAL_FUNC(mark_del_one),0,NULL},
+    {N_("/Project/Printing/select page size..."),NULL,GTK_SIGNAL_FUNC(pagesize_cb),0,NULL},
     {N_("/Project/save route (current layer)"),NULL,GTK_SIGNAL_FUNC(save_mark_line_menucb),0,NULL},
     {N_("/Project/load GPS data"),NULL,GTK_SIGNAL_FUNC(load_gps_menucb),0,NULL},
     {N_("/Project/load OSM data"),NULL,GTK_SIGNAL_FUNC(load_osm_menucb),0,NULL},

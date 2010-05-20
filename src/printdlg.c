@@ -24,10 +24,14 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#ifdef HAVE_PAPER_H
+#include <paper.h>
+#endif
 #include "myintl.h"
 #include "printdlg.h"
 #define DEFAULTPRINTER _("Default printer")
-
+static GtkWidget *psizewin;
+static GtkWidget *psizeselect;
 struct printdlg_t {
   GtkWidget *win;
   GtkWidget *startnum;
@@ -47,6 +51,132 @@ struct printdlg_t {
   
   /*  GtkWidget *singlepage; */
 };
+
+struct t_mypapersizes {
+  int width;
+  int height;
+  char *name;
+  int idx;
+};
+
+#ifndef HAVE_PAPER_H
+static struct t_mypapersizes mypp[]= {
+  {841,1189,"a0",0},
+  {594,841,"a1",0},
+  {420,594,"a2",0},
+  {297,420,"a3",0},
+  {210,297,"a4",0},
+  {148,210,"a5",0},
+  {105,148,"a6",0},
+  {74,105,"a7",0},
+};
+
+static struct t_mypapersizes *mypapersizes[]={mypp,mypp+1,
+					      mypp+2,mypp+3,
+					      mypp+4,mypp+5,
+					      mypp+6,mypp+7,
+					      NULL};
+
+static struct t_mypapersizes *selected_papersize=mypp+4;
+static void init_papersizes()
+{
+}
+#else
+static struct t_mypapersizes **mypapersizes;
+static struct t_mypapersizes *selected_papersize;
+
+static void init_papersizes()
+{
+  int n,i;
+  const struct paper *p;
+  const char *syspaper;
+  paperinit();
+  for(p=paperfirst(),n=0;p;p=papernext(p)) {
+    n++;
+  }
+  syspaper=systempapername(); 
+  selected_papersize=NULL;
+  mypapersizes=(struct t_mypapersizes **)
+    calloc(sizeof(void *),n+1);
+  for(i=0,p=paperfirst();(i<n)&&p;p=papernext(p),i++) {
+    mypapersizes[i]=g_new0(struct t_mypapersizes,1);
+    mypapersizes[i]->width=paperpswidth(p)/72.0*25.4;
+    mypapersizes[i]->height=paperpsheight(p)/72.0*25.4;
+    mypapersizes[i]->name=strdup(papername(p));
+    if (strcmp(papername(p),syspaper)==0)  {
+      selected_papersize=mypapersizes[i];
+    }
+  }
+  paperdone();
+}
+#endif
+char *get_paper_name()
+{
+  return selected_papersize->name;
+}
+
+int get_paper_width()
+{
+  return selected_papersize->width;
+}
+
+int get_paper_height()
+{
+  return selected_papersize->height;
+}
+
+static void psize_ok_cb(GtkWidget *w, gpointer data)
+{
+  GList *l=GTK_CLIST(psizeselect)->selection;
+  if (l) {
+    int item=(int)l->data;
+    selected_papersize=(struct t_mypapersizes *)
+      gtk_clist_get_row_data(GTK_CLIST(psizeselect),item);
+    gtk_widget_hide(psizewin);
+  }
+}
+
+void select_pagesize()
+{
+  if (!psizewin) {
+    GtkWidget *but;
+    GtkWidget *scr;
+    int i;
+    init_papersizes();
+    psizewin=gtk_dialog_new();
+    gtk_window_set_title(GTK_WINDOW(psizewin),
+			 _("Select page size"));
+    but=gtk_button_new_with_label(_("OK"));
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(psizewin)->action_area),
+		       but,TRUE,TRUE,0);
+    gtk_signal_connect(GTK_OBJECT(but),"clicked",
+		       GTK_SIGNAL_FUNC(psize_ok_cb),psizewin);
+    but=gtk_button_new_with_label(_("Cancel"));
+    gtk_signal_connect_object(GTK_OBJECT(but),"clicked",
+			      GTK_SIGNAL_FUNC(gtk_widget_hide),GTK_OBJECT(psizewin));
+    gtk_signal_connect_object(GTK_OBJECT(psizewin),"delete-event",
+			      GTK_SIGNAL_FUNC(gtk_widget_hide),GTK_OBJECT(psizewin));
+    gtk_box_pack_end(GTK_BOX(GTK_DIALOG(psizewin)->action_area),
+		     but,TRUE,TRUE,0);
+    psizeselect=gtk_clist_new(1);
+    scr=gtk_scrolled_window_new(NULL,NULL);
+    gtk_container_add(GTK_CONTAINER(scr),psizeselect);
+    gtk_box_pack_start(GTK_BOX(GTK_DIALOG(psizewin)->vbox),
+		       scr,TRUE,TRUE,0);
+    
+    for(i=0;mypapersizes[i];i++) {
+      mypapersizes[i]->idx=gtk_clist_append(GTK_CLIST(psizeselect),
+					    &mypapersizes[i]->name);
+      gtk_clist_set_row_data(GTK_CLIST(psizeselect),mypapersizes[i]->idx,
+			     mypapersizes[i]);
+    }
+    gtk_clist_set_selection_mode(GTK_CLIST(psizeselect),
+				 GTK_SELECTION_SINGLE);
+    if (selected_papersize)
+      gtk_clist_select_row(GTK_CLIST(psizeselect),selected_papersize->idx,0);
+  }
+  gtk_widget_show_all(psizewin);
+}
 
 static GList *get_printer_list()
 {

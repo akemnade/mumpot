@@ -26,6 +26,12 @@ struct print_job {
 
 struct printdlg_t;
 
+int get_paper_width();
+int get_paper_height();
+char *get_paper_name();
+/* open a pagesize dialog */
+void select_pagesize();
+
 struct printdlg_t *create_printdlg(int numpages, void (*cancel_cb)(void *), 
 				   void (*ok_cb)(void *,struct print_job *), void *data);
 void delete_print_job(struct print_job *pj);

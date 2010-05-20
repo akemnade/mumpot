@@ -51,6 +51,10 @@ fi
 BZ2=no
 AC_CHECK_HEADERS(bzlib.h)
 AC_CHECK_LIB(bz2, BZ2_bzRead, LIBS="-lbz2 $LIBS" ; BZ2=yes)
+
+LIBPAPER=no
+AC_CHECK_HEADERS(paper.h)
+AC_CHECK_LIB(paper, paperfirst, LIBS="-lpaper $LIBS" ; LIBPAPER=yes)
 GETTEXT_PACKAGE=mumpot
 AC_SUBST(GETTEXT_PACKAGE)
 BTLIBS="-lbluetooth"
@@ -100,6 +104,11 @@ if test x$osm_upload = xyes ; then
   echo "OSM upload using curl is possible"
 else
   echo "OSM upload disabled"
+fi
+if test x$LIBPAPER = xyes ; then
+  echo "Using paper sizes from libpaper"
+else
+  echo "Using own papersize table"
 fi
 echo "Support for .bz2 decompression of osm files: $BZ2"
 
