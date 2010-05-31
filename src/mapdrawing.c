@@ -1413,21 +1413,35 @@ static void draw_line_ps(int fd, int mx, int my, int w, int h,
 void draw_marks_to_ps(GList *mark_line_list, int mx, int my,
 		      int w, int h, int fd)
 {
+  int n,i;
+  int x1,y1,x2,y2;
+  int is_single=0;
   GList *l;
-  int i,len;
-  int x1,x2,y1,y2;
-  len=g_list_length(mark_line_list);
+  struct t_punkt32 *p;
   write(fd,"1 0 1 setrgbcolor 3 setlinewidth\n",strlen("1 0 1 setrgbcolor 3 setlinewidth\n"));
   l=g_list_first(mark_line_list);
-  x1=((struct t_punkt32 *)(l->data))->x>>globalmap.zoomshift;
-  y1=((struct t_punkt32 *)(l->data))->y>>globalmap.zoomshift;
-  for(i=0;i<len;i++){
-    x2=((struct t_punkt32 *)(l->data))->x>>globalmap.zoomshift;
-    y2=((struct t_punkt32 *)(l->data))->y>>globalmap.zoomshift;
-    draw_line_ps(fd,mx,my,w,h,x1,y1,x2,y2);
+  n=g_list_length(l);
+  if (n<2)
+    return;
+  l=g_list_first(l);
+  p=(struct t_punkt32 *)l->data;
+  l=g_list_next(l);
+  x1=(p->x>>globalmap.zoomshift);
+  y1=(p->y>>globalmap.zoomshift);
+  for(i=1;i<n;i++) {
+    p=(struct t_punkt32 *)l->data;
+    x2=(p->x>>globalmap.zoomshift);
+    y2=(p->y>>globalmap.zoomshift);
+    if ((!p->single_point)&&(!p->start_new)&&(!is_single)) {  
+      draw_line_ps(fd,mx,my,w,h,x1,y1,x2,y2);
+    } else if (p->single_point) {
+      draw_line_ps(fd,mx,my,w,h,x2-10,y2,x2+10,y2);
+      draw_line_ps(fd,mx,my,w,h,x2,y2-10,x2,y2+10);
+    }
     x1=x2;
     y1=y2;
+    is_single=p->single_point;
     l=g_list_next(l);
   }
- 
+
 }
