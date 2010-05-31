@@ -112,16 +112,22 @@ static void init_papersizes()
 #endif
 char *get_paper_name()
 {
+  if (!selected_papersize)
+    init_papersizes();
   return selected_papersize->name;
 }
 
 int get_paper_width()
 {
+  if (!selected_papersize)
+    init_papersizes();
   return selected_papersize->width;
 }
 
 int get_paper_height()
 {
+  if (!selected_papersize)
+    init_papersizes();
   return selected_papersize->height;
 }
 
