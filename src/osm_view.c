@@ -1181,7 +1181,7 @@ static void make_new_way(struct mapwin *mw)
   l=g_list_last(*mw->gps_line_list);
   if ((l)&&(mw->osm_main_file)&&(l!=mw->osm_inf->newwaypoints_start)) {
     int n;
-    newwaypoints=simplify_lines(mw->osm_inf->newwaypoints_start,l,0.3);
+    newwaypoints=simplify_lines(mw->osm_inf->newwaypoints_start,l,0.3/3600.0);
     newwaypoints=g_list_append(newwaypoints,l->data);
     n=g_list_length(newwaypoints);
     if (g_list_length(newwaypoints)==2) {
@@ -1189,7 +1189,7 @@ static void make_new_way(struct mapwin *mw)
       GList *ltest;
       l2=g_list_copy(newwaypoints);
       l2=g_list_append(l2,g_list_first(newwaypoints)->data);
-      ltest=simplify_lines(l2,g_list_last(l2),0.3);
+      ltest=simplify_lines(l2,g_list_last(l2),0.3/3600.0);
       g_list_free(l2);
       n=g_list_length(ltest);
       g_list_free(ltest);
