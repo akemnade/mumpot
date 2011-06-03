@@ -79,6 +79,7 @@ static void close_cset(struct osm_upload_data *oud)
   snprintf(oud->url,sizeof(oud->url),"%s/changeset/%d/close",oud->apibase,
 	   oud->changeset);
   curl_multi_remove_handle(oud->curlm,oud->curl);
+  curl_easy_setopt(oud->curl,CURLOPT_NOSIGNAL,1);
   curl_easy_setopt(oud->curl, CURLOPT_URL,
 		   oud->url);
   curl_easy_setopt(oud->curl, CURLOPT_INFILESIZE,
@@ -205,6 +206,7 @@ static void start_upload(struct osm_upload_data *oud)
   oud->buflen=strlen(oud->buf);
   snprintf(oud->url,sizeof(oud->url),"%s/changeset/%d/upload",
 	   oud->apibase,oud->changeset);
+  curl_easy_setopt(oud->curl,CURLOPT_NOSIGNAL,1);
   curl_easy_setopt(oud->curl, CURLOPT_URL,
 		   oud->url);
   curl_easy_setopt(oud->curl,CURLOPT_PUT,0L);
@@ -448,6 +450,7 @@ void start_osm_upload(char *csetmsg, char *user, char *pw,
   if (!oud->apibase)
     oud->apibase="http://www.openstreetmap.org/api/0.6";
   snprintf(oud->url,sizeof(oud->url),"%s/changeset/create",oud->apibase);
+  curl_easy_setopt(oud->curl,CURLOPT_NOSIGNAL,1);
   curl_easy_setopt(oud->curl, CURLOPT_URL,
 		   oud->url);
   curl_easy_setopt(oud->curl, CURLOPT_READFUNCTION, mycurl_readbuf);
