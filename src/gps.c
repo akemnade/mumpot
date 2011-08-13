@@ -24,6 +24,7 @@
 #include <locale.h>
 #include <zlib.h>
 #include <time.h>
+#include "common.h"
 #include "gps.h"
 
 struct gpsfile {
@@ -167,19 +168,6 @@ static int my_split(char *bigstr, char **needle, char *delim, int maxsplit)
   return i;
 }
 
-
-static time_t gmmktime(struct tm *tm)
-{
-  time_t t,tref;
-  struct tm *tmref;
-  t=mktime(tm);  /* t=tm-tz */
-  tmref=gmtime(&t); /* tmref=t=tm-tz */
-  tref=mktime(tmref); /* tref=tmref-tz=tm-2*tz=t-tz */
-  /* tz=t-tref , tm=t+tz=t+(t-tref)*/
-  t=t*2-tref;
-  return t;
-}
-
 static void gps_to_line(struct nmea_pointinfo *nmea,void  *data)
 {
   GList **mll=data;
@@ -317,16 +305,8 @@ static void myendhandler(void *ctx,
     gpsf->contreading=0;
     gpsf->xmlbufpos=0;
   } else if (!strcmp((char *)name,"time")) {
-    struct tm tm;
-    memset(&tm,0,sizeof(tm));
     gpsf->xmlbuf[gpsf->xmlbufpos]=0;
-    sscanf(gpsf->xmlbuf,
-	   "%04d-%02d-%02dT%02d:%02d:%02d",
-	   &tm.tm_year,&tm.tm_mon,&tm.tm_mday,
-	   &tm.tm_hour,&tm.tm_min,&tm.tm_sec);
-    tm.tm_year-=1900;
-    tm.tm_mon--;
-    gpsf->curpoint.time=gmmktime(&tm);
+    gpsf->curpoint.time=parse_xml_time(gpsf->xmlbuf);
     gpsf->contreading=0;
     gpsf->xmlbufpos=0;
   } else if (!strcmp((char *)name,"course")) {
@@ -387,6 +367,11 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
 			  void *data)
 {
   char *endp;
+  if (!strncmp(gpsf->buf,"<?xml",5)) {
+    gpsf->handling_procedure=proc_gps_gpx;
+    proc_gps_gpx(gpsf,gpsproc,data);
+    return;
+  }
   while ((endp=memchr(gpsf->buf,'\n',gpsf->bufpos))) {
     int readlen;
     *endp=0;
