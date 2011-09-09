@@ -14,7 +14,7 @@
 #define K_OSM_PARSE_H
 struct osm_object {
   GList *tag_list;
-  char *timestamp;
+  time_t timestamp;
   char *user;
   int id;
   int version;

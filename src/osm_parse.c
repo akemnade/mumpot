@@ -29,6 +29,7 @@
 #ifdef HAVE_BZLIB_H
 #include <bzlib.h>
 #endif
+#include "common.h"
 #include "osm_parse.h"
 #ifndef OSMAPI_VERSION
 #define OSMAPI_VERSION "0.6"
@@ -36,19 +37,68 @@
 
 static GMemChunk *node_chunk;
 static GMemChunk *way_chunk;
-static struct osm_object ***all_ways[65536];
-static struct osm_object ***all_nodes[65536];
+#ifdef USE_GTREE
+static GTree *all_nodes[1];
+static GTree *all_ways[1];
+#else
+static struct osm_object ***all_ways[65536*4];
+static struct osm_object ***all_nodes[65536*4];
+#endif
 int max_free_num=-1;
 static int total_way_count;
 static int total_node_count;
-
+static int index_total1,index_total2;
 static void osmway_initialize_flags(struct osm_way *way);
 enum format_type {
   FORMAT_OSC,
   FORMAT_JOSM,
   FORMAT_JOSMDEL
 };
+#ifdef USE_GTREE
 
+gint osmhead_cmp(gconstpointer a, gconstpointer b)
+{
+  if ((*(int *)a)==(*(int *)b))
+    return 0;
+  return ((*(int *)a)<(*(int *)b))?1:-1;
+}
+
+struct osm_object *get_obj_id(GTree **tree, int id)
+{
+  if (!*tree)
+    *tree=g_tree_new(osmhead_cmp);
+  return (struct osm_object *)g_tree_lookup(*tree,
+					    &id);
+}
+
+void put_obj_id(GTree **tree, struct osm_object *obj,int id)
+{
+  if (!*tree)
+    *tree=g_tree_new(osmhead_cmp);
+  if (!obj)
+    g_tree_remove(*tree,&id);
+  g_tree_insert(*tree,&obj->id,obj);
+}
+#else
+
+void put_obj_id(struct osm_object ****all_objects,
+                struct osm_object *obj,int id)
+{
+  struct osm_object ***ind;
+    if (!all_objects[(id>>16)&0xffff]) {
+      all_objects[(id>>16)&0xffff]=calloc(sizeof(struct osm_object ***),256);
+      index_total1+=256*(sizeof(void *));
+    }
+    ind=all_objects[(id>>16)&0xffff];
+    if (!ind[(id>>8)&0xff]) {
+      ind[(id>>8)&0xff]=calloc(sizeof(struct osm_object **),256);
+      index_total2+=256*(sizeof(void *));
+    }
+    (ind[(id>>8)&0xff])[id&0xff]=obj;
+    if (id<=max_free_num) {
+      max_free_num=id-1;
+    }
+}
 struct osm_object *get_obj_id(struct osm_object ****all_objects,
                               int id)
 {
@@ -61,6 +111,7 @@ struct osm_object *get_obj_id(struct osm_object ****all_objects,
     return (ind[(id>>8)&0xff])[id&0xff];
 }
 
+#endif
 #if 0
 static void add_created_tag(struct osm_object *obj)
 {
@@ -161,22 +212,6 @@ void osm_split_ways_at_node(struct osm_file *osmf,
   }
 }
 
-void put_obj_id(struct osm_object ****all_objects,
-                struct osm_object *obj,int id)
-{
-  struct osm_object ***ind;
-    if (!all_objects[(id>>16)&0xffff]) {
-      all_objects[(id>>16)&0xffff]=calloc(sizeof(struct osm_object ***),256);
-    }
-    ind=all_objects[(id>>16)&0xffff];
-    if (!ind[(id>>8)&0xff]) {
-      ind[(id>>8)&0xff]=calloc(sizeof(struct osm_object **),256);
-    }
-    (ind[(id>>8)&0xff])[id&0xff]=obj;
-    if (id<=max_free_num) {
-      max_free_num=id-1;
-    }
-}
 
 
 struct osm_way *new_osm_way(int id)
@@ -293,8 +328,8 @@ void osm_delete_node(struct osm_file *osmf,
 		     struct osm_node *node)
 {
   GList *l;
-  for(l=g_list_first(node->way_list);l;l=g_list_next(l)) {
-    struct osm_way *way=(struct osm_way *)l->data;
+  while(node->way_list) {
+    struct osm_way *way=(struct osm_way *)node->way_list->data;
     remove_node_from_way(way,node);
     if (way->nr_nodes<2) {
       osm_delete_way(osmf,way);
@@ -622,8 +657,13 @@ static int osm_write_node_xml(xmlTextWriterPtr writer,
   }
   if (node->head.user)
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"user",(xmlChar *)node->head.user);
-  if (node->head.timestamp)
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"timestamp",(xmlChar *)node->head.timestamp);
+  if (node->head.timestamp) {
+    struct tm tm;
+    tm=*gmtime(&node->head.timestamp);
+    xmlTextWriterWriteFormatElement(writer,(xmlChar *)"timestamp","%04d-%02d-%02dT%02d:%02d:%02d",
+				    tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,
+				    tm.tm_hour,tm.tm_min,tm.tm_sec);
+  }
   osm_write_tags(writer,&node->head);
   xmlTextWriterEndElement(writer);
   return 1;
@@ -639,8 +679,13 @@ static int osm_write_way_xml(xmlTextWriterPtr writer,
   xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"id","%d",way->head.id);
   if (way->head.user)
     xmlTextWriterWriteAttribute(writer,(xmlChar *)"user",(xmlChar *)way->head.user);
-  if (way->head.timestamp)
-    xmlTextWriterWriteAttribute(writer,(xmlChar *)"timestamp",(xmlChar *)way->head.timestamp);
+  if (way->head.timestamp) {
+    struct tm tm;
+    tm=*gmtime(&way->head.timestamp);
+    xmlTextWriterWriteFormatElement(writer,(xmlChar *)"timestamp","%04d-%02d-%02dT%02d:%02d:%02d",
+				    tm.tm_year+1900,tm.tm_mon+1,tm.tm_mday,
+				    tm.tm_hour,tm.tm_min,tm.tm_sec);
+  }
   if (way->head.version) {
     xmlTextWriterWriteFormatAttribute(writer,(xmlChar *)"version",
 				      "%d",way->head.version);
@@ -851,6 +896,8 @@ static void remove_way_from_nodes(struct osm_way *w)
   }
 }
 
+
+
 static void osmparse_starthandler(void *ctx,
         const xmlChar *name,
         const xmlChar ** atts)
@@ -916,7 +963,7 @@ static void osmparse_starthandler(void *ctx,
 	if (user)
 	  octxt->node->head.user=strdup(user);
 	if (timestamp)
-	  octxt->node->head.timestamp=strdup(timestamp);
+	  octxt->node->head.timestamp=parse_xml_time(timestamp);
 	if (deleted) {
 	  struct osm_file *osmf=octxt->osmf;
 	  if ((osmf->deleted_node_count&0xf)==0) {
@@ -991,7 +1038,7 @@ static void osmparse_starthandler(void *ctx,
 	if (user)
 	  octxt->way->head.user=strdup(user);
 	if (timestamp)
-	  octxt->way->head.timestamp=strdup(timestamp);
+	  octxt->way->head.timestamp=parse_xml_time(timestamp);
 	if (modified)
 	  octxt->way->head.modified=modified;
 	octxt->way->head.version=version;
@@ -1036,8 +1083,6 @@ static void  head_stats(struct osm_object *obj, int *tssize,int *usersize, int *
   GList *l;
   if (obj->user)
     (*usersize)+=strlen(obj->user)+1;
-  if (obj->timestamp)
-    (*tssize)+=strlen(obj->timestamp)+1;
   (*taglistsize)+=(sizeof(GList)*g_list_length(obj->tag_list));
   for(l=g_list_first(obj->tag_list);l;l=g_list_next(l)) {
     char *t=l->data;
@@ -1068,7 +1113,6 @@ static void mem_stats(struct osm_file *osmf)
     nwaylistsize+=nd->nr_ways*sizeof(GList);
   }
   printf("%-50s: %7d\n","node way list size",nwaylistsize);
-  printf("%-50s: %7d\n","time stamp size",tssize);
   printf("%-50s: %7d\n","username size",usersize);
   printf("%-50s: %7d\n","taglist size",taglistsize);
   printf("%-50s: %7d\n","tags size",tagsize);
@@ -1084,11 +1128,12 @@ static void mem_stats(struct osm_file *osmf)
     nwaylistsize+=way->nr_nodes*sizeof(int);
   }
   printf("%-50s: %7d\n","way node arrays size",nwaylistsize);
-  printf("%-50s: %7d\n","time stamp size",tssize);
   printf("%-50s: %7d\n","username size",usersize);
   printf("%-50s: %7d\n","taglist size",taglistsize);
   printf("%-50s: %7d\n","tags size",tagsize);
-  total+=nwaylistsize+tssize+usersize+taglistsize+tagsize;
+  printf("%-50s: %7d\n","id->pointer index1",index_total1);
+  printf("%-50s: %7d\n","id->pointer index1",index_total2);
+  total+=nwaylistsize+tssize+usersize+taglistsize+tagsize+index_total1+index_total2;
   printf("\n%-50s: %7d\n","TOTAL",total);  
 }
 
