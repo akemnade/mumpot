@@ -89,7 +89,7 @@ struct osm_info {
   int display_all_ways;
   int has_dest;
   double min_distance;
-  struct osm_object *selected_object;
+  GList *selected_objects;
   struct osm_node *selected_node;
   GList *newwaypoints_start;
   GList *newway_tags;
@@ -246,13 +246,15 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
   int x1,x2,y1,y2;
   int i;
   int firstrun=set_color;
+  /* are we in editing mode? */
   int editing=mw->osm_inf->display_tags&&((GTK_WIDGET_HAS_FOCUS(mw->osm_inf->tag_value))||(GTK_WIDGET_HAS_FOCUS(mw->osm_inf->tag_combo)));
+  /* do we autoselect stuff in the center? */
   int autosel=(mw->osm_inf->autoselect_center)&&(!editing);
     
   if (wrd->processed)
     return;
   if (!way->street) {
-    if (mw->osm_inf->selected_object != &way->head) {
+    /*  if (mw->osm_inf->selected_object != &way->head) */ {
       if (!set_color)
 	return;
       if (!mw->osm_inf->display_all_ways) 
@@ -296,7 +298,8 @@ static void draw_way(struct mapwin *mw, struct osm_way *way,GdkGC *osmgc,
 			    mw->page_height/2);
       if (dist < mw->osm_inf->min_distance) {
 	mw->osm_inf->min_distance = dist;
-	mw->osm_inf->selected_object = &way->head;
+	g_list_free(mw->osm_inf->selected_objects);
+	mw->osm_inf->selected_objects = g_list_append(NULL,&way->head);
       }
     }
     gdk_draw_line(mw->map->window,osmgc,
@@ -712,7 +715,7 @@ static void draw_ways(struct mapwin *mw, struct osm_file *osmf,
 {
   GList *lnodes;
   GList *lway;
-  struct osm_object *old_sel_obj = mw->osm_inf->selected_object;
+
   reset_processed(osmf); 
   lnodes = g_list_first(osmf->nodes);
   mw->osm_inf->min_distance=10;
@@ -746,29 +749,37 @@ static void draw_ways(struct mapwin *mw, struct osm_file *osmf,
       }
     }
   }
-  if ((set_color)&&(mw->osm_inf->selected_object)) {
-    gdk_gc_set_foreground(osmgc,&black_color);
-    gdk_gc_set_line_attributes(osmgc,5,
-			       GDK_LINE_SOLID,
-			       GDK_CAP_BUTT,
-			       GDK_JOIN_BEVEL);
-    if (mw->osm_inf->selected_object->type == WAY) {
-      struct way_render_data *wrd=get_way_render_data((struct osm_way *)mw->osm_inf->selected_object);
-      wrd->processed=0;
-      draw_way(mw,(struct osm_way *)mw->osm_inf->selected_object,osmgc,0);
-    } else {
-      struct node_render_data *nrd = (struct node_render_data *)((struct osm_node *)mw->osm_inf->selected_object)->user_data;
-      gdk_draw_line(mw->map->window,osmgc,nrd->x-mw->page_x-4,nrd->y-4-mw->page_y,nrd->x+4-mw->page_x,nrd->y+4-mw->page_y);
-      gdk_draw_line(mw->map->window,osmgc,nrd->x+4-mw->page_x,nrd->y-4-mw->page_y,nrd->x-4-mw->page_x,
-		    nrd->y+4-mw->page_y);
-    }
-    if (old_sel_obj != mw->osm_inf->selected_object) {
-      old_sel_obj = mw->osm_inf->selected_object;
-      if (old_sel_obj) {
-	display_tags(mw->osm_inf,old_sel_obj);
-      } 
+  if ((set_color)&&(mw->osm_inf->selected_objects)) {
+    GList *l;
+    for(l=g_list_first(mw->osm_inf->selected_objects);
+	l;l=g_list_next(l)) {
+      struct osm_way *way = (struct osm_way *)l->data;
+      gdk_gc_set_foreground(osmgc,&black_color);
+      gdk_gc_set_line_attributes(osmgc,5,
+				 GDK_LINE_SOLID,
+				 GDK_CAP_BUTT,
+				 GDK_JOIN_BEVEL);
+      if (way->head.type == WAY) {
+	struct way_render_data *wrd=get_way_render_data(way);
+	wrd->processed=0;
+	draw_way(mw,way,osmgc,0);
+      } else {
+	struct node_render_data *nrd = (struct node_render_data *)((struct osm_node *)l->data)->user_data;
+	gdk_draw_line(mw->map->window,osmgc,nrd->x-mw->page_x-4,nrd->y-4-mw->page_y,nrd->x+4-mw->page_x,nrd->y+4-mw->page_y);
+	gdk_draw_line(mw->map->window,osmgc,nrd->x+4-mw->page_x,nrd->y-4-mw->page_y,nrd->x-4-mw->page_x,
+		      nrd->y+4-mw->page_y);
+      }
     }
   }
+#warning display tags for selected object
+#if 0
+  if (old_sel_obj != mw->osm_inf->selected_object) {
+    old_sel_obj = mw->osm_inf->selected_object;
+    if (old_sel_obj) {
+      display_tags(mw->osm_inf,old_sel_obj);
+    } 
+  }
+#endif
 }
 
 void draw_osm(struct mapwin *mw, struct osm_file *osmf,GdkGC *osmgc)
@@ -810,8 +821,11 @@ static void set_tag_cb(char *k, char *v,
     free(((struct osm_way *)obj)->user_data);
     ((struct osm_way *)obj)->user_data=NULL;
   }
-  if (mw->osm_inf->selected_object)
-    display_tags(mw->osm_inf,mw->osm_inf->selected_object);
+  if ((mw->osm_inf->selected_objects) &&
+      (!g_list_next(mw->osm_inf->selected_objects))) {
+    display_tags(mw->osm_inf,
+		 (struct osm_object *)mw->osm_inf->selected_objects->data);
+  }
 }
 
 
@@ -822,8 +836,9 @@ static void osm_set_tag_cb(GtkWidget *w, gpointer user_data)
   char *k = gtk_editable_get_chars(GTK_EDITABLE(GTK_COMBO(mw->osm_inf->tag_combo)->entry),0,-1);
   char *v = gtk_editable_get_chars(GTK_EDITABLE(mw->osm_inf->tag_value),0,-1);
   mw->osm_main_file->changed=1;
-  if (strlen(k)&&strlen(v)&&mw->osm_inf->selected_object) {
-    set_tag_cb(k,v,mw->osm_inf->selected_object,mw);
+  if (strlen(k)&&strlen(v)&&(mw->osm_inf->selected_objects)&&
+      (!g_list_next(mw->osm_inf->selected_objects))) {
+    set_tag_cb(k,v,(struct osm_object *)mw->osm_inf->selected_objects->data,mw);
   } 
   free(k);
   free(v);
@@ -1441,16 +1456,25 @@ static struct osm_object * find_nearest_object(struct osm_file *osmf,
     return &minw->head;
 }
 
-static void handle_edit_sel_click(struct mapwin *mw, int x, int y)
+static void handle_edit_sel_click(struct mapwin *mw, int x, int y,int add_select)
 {
   int nodeafter=0;
-  mw->osm_inf->selected_object = find_nearest_object(mw->osm_main_file,
-						     x,y,NULL,&nodeafter);
-  
-  if (mw->osm_inf->selected_object) {
-    display_tags(mw->osm_inf,mw->osm_inf->selected_object);
-    if (mw->osm_inf->selected_object->type == NODE)
-      mw->osm_inf->moving_node=1;
+  struct osm_object *obj = find_nearest_object(mw->osm_main_file,
+					       x,y,NULL,&nodeafter);
+  if (obj) {
+    GList *l;
+    if (!add_select) {
+      g_list_free(mw->osm_inf->selected_objects);
+      mw->osm_inf->selected_objects=NULL;
+      display_tags(mw->osm_inf,obj);
+      if (obj->type == NODE)
+	mw->osm_inf->moving_node=1;
+    }
+    mw->osm_inf->selected_objects=g_list_append(mw->osm_inf->selected_objects,obj);
+    for(l = g_list_first(mw->osm_inf->selected_objects); l; l = g_list_next(l)) {
+      struct osm_object *obj = (struct osm_object *)l->data;
+      printf("sel obj: %d\n",obj->id);
+    }
   } else {
     double longsec=0;
     double lattsec=0;
@@ -1513,7 +1537,9 @@ static void handle_edit_addway_click(struct mapwin *mw,
  
   add_nodes_to_way(mw->osm_inf->way_to_edit,l);
   g_list_free(l);
-  mw->osm_inf->selected_object=&mw->osm_inf->way_to_edit->head;
+  g_list_free(mw->osm_inf->selected_objects);
+  mw->osm_inf->selected_objects=g_list_append(NULL,
+					      &mw->osm_inf->way_to_edit->head);
   gtk_widget_queue_draw_area(mw->map,0,0,
 			     mw->page_width,
 			     mw->page_height);
@@ -1524,12 +1550,13 @@ static void handle_node_move(struct mapwin *mw, int x, int y)
   double nx,ny;
   double lon,lat;
   struct osm_node *node;
-  if (!(mw->osm_inf->selected_object))
+  if (!(mw->osm_inf->selected_objects))
     return;
-  if (mw->osm_inf->selected_object->type!=NODE)
+  if (g_list_next(mw->osm_inf->selected_objects))
     return;
-  node=(struct osm_node *)
-    mw->osm_inf->selected_object;
+  node=(struct osm_node *)mw->osm_inf->selected_objects->data;
+  if (node->head.type!=NODE)
+    return;
   geosec2point(&nx,&ny,node->lon,node->lat);
   nx=x-mw->mouse_x+nx;
   ny=y-mw->mouse_y+ny;
@@ -1542,7 +1569,7 @@ static void handle_node_move(struct mapwin *mw, int x, int y)
 			     mw->page_height);
 }
 
-int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
+int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state, int mod_state)
 {
   
   int above_limit;
@@ -1552,7 +1579,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
     above_limit=((millitime-mw->osm_inf->clicktime)>1000);
   }
   if (!state) {
-    if ((mw->osm_inf->moving_node)&&(mw->osm_inf->selected_object)) {
+    if ((mw->osm_inf->moving_node)&&(mw->osm_inf->selected_objects)) {
       mw->osm_inf->moving_node=0;
       if (above_limit) {
 	handle_node_move(mw,x,y);
@@ -1607,7 +1634,7 @@ int osm_mouse_handler(struct mapwin *mw, int x, int y, int millitime, int state)
   } else if ((GTK_WIDGET_MAPPED(mw->osm_inf->editb.selbut))&&
 	     (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mw->osm_inf->editb.selbut)))) {
     if (mw->osm_main_file)
-      handle_edit_sel_click(mw,x,y);
+      handle_edit_sel_click(mw,x,y,mod_state&GDK_SHIFT_MASK);
     mw->osm_inf->clicktime=millitime;
     
     return TRUE;
@@ -1649,14 +1676,16 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
   int nodeafter=0;
   double x,y;
   mw->osm_inf->way_to_edit=NULL;
-  if (mw->osm_inf->selected_object == NULL)
+  if (mw->osm_inf->selected_objects == NULL)
     return;
-  if (mw->osm_inf->selected_object->type != NODE)
+  if (g_list_next(mw->osm_inf->selected_objects))
     return;
-  node=(struct osm_node *)mw->osm_inf->selected_object;
+  node=(struct osm_node *)mw->osm_inf->selected_objects->data;
+  if (node->head.type != NODE)
+    return;
   geosec2point(&x,&y,node->lon,node->lat);
   nearest_obj=find_nearest_object(mw->osm_main_file,
-				  x,y,mw->osm_inf->selected_object,
+				  x,y,&node->head,
 				  &nodeafter);
   if (nearest_obj == NULL)
     return;
@@ -1673,7 +1702,10 @@ static void osmedit_joinbut_cb(GtkWidget *w, gpointer data)
   } else if (nearest_obj->type == NODE) {
     osm_merge_node(mw->osm_main_file,(struct osm_node *)nearest_obj,
 		   node);
-    mw->osm_inf->selected_object=nearest_obj;
+    mw->osm_inf->selected_objects=
+      g_list_remove(mw->osm_inf->selected_objects,node);
+    mw->osm_inf->selected_objects=
+      g_list_append(mw->osm_inf->selected_objects,nearest_obj);
   }
   
 }
@@ -1683,11 +1715,14 @@ static void osmedit_splitbut_cb(GtkWidget *w, gpointer data)
   struct mapwin *mw = (struct mapwin *)data;
   struct osm_node *node;
   mw->osm_inf->way_to_edit=NULL;
-  if (mw->osm_inf->selected_object == NULL)
+  if (!mw->osm_inf->selected_objects)
     return;
-  if (mw->osm_inf->selected_object->type != NODE)
+  if (g_list_next(mw->osm_inf->selected_objects))
     return;
-  node=(struct osm_node *)mw->osm_inf->selected_object;
+  node=(struct osm_node *)mw->osm_inf->selected_objects->data;
+  
+  if (node->head.type != NODE)
+    return;
   mw->osm_main_file->changed=1;
   osm_split_ways_at_node(mw->osm_main_file,
 			 node);
@@ -1697,16 +1732,31 @@ static void osmedit_delobjbut_cb(GtkWidget *w, gpointer data)
 {
   struct mapwin *mw = (struct mapwin *)data;
   mw->osm_inf->way_to_edit=NULL;
-  if (mw->osm_inf->selected_object == NULL)
-    return;
-  if (mw->osm_inf->selected_object->type == WAY) {
-    osm_delete_way(mw->osm_main_file,
-		   (struct osm_way *)mw->osm_inf->selected_object);
-  } else {
-    osm_delete_node(mw->osm_main_file,
-		    (struct osm_node *)mw->osm_inf->selected_object);
+  GList *lway=NULL;
+  GList *lnode=NULL;
+  GList *l;
+  for(l=g_list_first(mw->osm_inf->selected_objects);l;l=g_list_next(l)) {
+    struct osm_object *obj = (struct osm_object *)l->data;
+    if (obj->type==NODE) {
+      lnode=g_list_append(lnode,(gpointer )obj->id);
+    } else if (obj->type==WAY) {
+      lway=g_list_append(lway,(gpointer)obj->id);
+    }
   }
-  mw->osm_inf->selected_object=NULL;
+  for(l=g_list_first(lnode);l;l=g_list_next(l)) {
+    struct osm_node *node=get_osm_node((int)l->data);
+    if (node) {
+      osm_delete_node(mw->osm_main_file,node);
+    }
+  }
+  for(l=g_list_first(lway);l;l=g_list_next(l)) {
+    struct osm_way *way=get_osm_way((int)l->data);
+    if (way) {
+      osm_delete_way(mw->osm_main_file,way);
+    }
+  }
+  g_list_free(mw->osm_inf->selected_objects);
+  mw->osm_inf->selected_objects=NULL;
   gtk_widget_queue_draw_area(mw->map,0,0,
 			     mw->page_width,
 			     mw->page_height);
@@ -1867,7 +1917,8 @@ void load_osm_gfx(struct mapwin *mw, const char *name)
   if (!osmf)
     return;
   mw->osm_inf->way_to_edit=NULL;
-  mw->osm_inf->selected_object=NULL;
+  g_list_free(mw->osm_inf->selected_objects);
+  mw->osm_inf->selected_objects=NULL;
  
   if (mw->osm_main_file)
     free_osm_file(osmf);
