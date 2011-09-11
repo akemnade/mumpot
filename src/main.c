@@ -140,6 +140,7 @@ static int find_nearst_point(GList *l, int x, int y);
 static void add_pkt_to_list(GList **l, int x, int y);
 static void zoom_in(struct mapwin *mw);
 static void zoom_out(struct mapwin *mw);
+static int gps_timer_first(void *data);
 static void handle_pan_release(struct mapwin *mw, GdkEventButton *event,
 			       int x, int y);
 static void change_sidebar_cb(gpointer callback_data,
@@ -1888,13 +1889,28 @@ static void got_gpsinput(gpointer data, int fd,
   if (proc_gps_input(mw->gpsf,
 		     got_gps_position, mw)<=0) {
     close_gps(mw);
+    if (mw->gpstimertag)
+      g_source_remove(mw->gpstimertag);
+    mw->gpstimertag=0; 
     display_text_box(_("Lost GPS connection"));
   } else { 
     if (mw->gpstimertag) {
       g_source_remove(mw->gpstimertag);
-      mw->gpstimertag=0;
+      mw->gpstimertag=g_timeout_add_full(0,3000,gps_timer_first,mw,NULL);
     }
   }
+}
+
+#define GPSD_COMMAND_NEW "?WATCH={\"enable\":true,\"nmea\":true}\n"
+/* send enable command for new gpsd */
+static int gps_timer_second(void *data)
+{
+  struct mapwin *mw = (struct mapwin *)data;
+  if (mw->gpsf) {
+    write(1,GPSD_COMMAND_NEW,strlen(GPSD_COMMAND_NEW));
+    gps_writeback(mw->gpsf,GPSD_COMMAND_NEW,strlen(GPSD_COMMAND_NEW));
+  }
+  return FALSE;
 }
 
 /* send r if no nmea data arrives */
@@ -1903,6 +1919,7 @@ static int gps_timer_first(void *data)
   struct mapwin *mw = (struct mapwin *)data;
   if (mw->gpsf) {
     gps_writeback(mw->gpsf,"r+\n",3); 
+    mw->gpstimertag=g_timeout_add_full(0,3000,gps_timer_second,mw,NULL);
   }
   return FALSE;
 }

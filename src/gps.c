@@ -367,6 +367,11 @@ static void proc_gps_nmea(struct gpsfile *gpsf,
 			  void *data)
 {
   char *endp;
+  if (!strncmp(gpsf->buf,"<?xml",5)) {
+    gpsf->handling_procedure=proc_gps_gpx;
+    proc_gps_gpx(gpsf,gpsproc,data);
+    return;
+  }
   while ((endp=memchr(gpsf->buf,'\n',gpsf->bufpos))) {
     int readlen;
     *endp=0;

@@ -132,6 +132,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
   struct pixmap_info *pi_ret;
   struct pixmap_info pinfo;
   FILE *fh;
+  png_uint_32 tmp_width,tmp_height;
 
   png_structp png_ptr;
   png_infop info_ptr;
@@ -184,10 +185,12 @@ struct pixmap_info *load_gfxfile(const char *filename)
   png_init_io(png_ptr,fh);   
   png_set_sig_bytes(png_ptr, 8);   
   png_read_info(png_ptr, info_ptr);  
-  png_get_IHDR(png_ptr, info_ptr, &pinfo.width, 
-               &pinfo.height, &pinfo.bit_depth, 
+  png_get_IHDR(png_ptr, info_ptr, &tmp_width, 
+               &tmp_height, &pinfo.bit_depth, 
                &pinfo.color_type,
                &pinfo.interlace_type, NULL, NULL);
+  pinfo.width = tmp_width;
+  pinfo.height = tmp_height;
   pinfo.num_palette=0;
   pinfo.row_mask_pointers=NULL;
   if (pinfo.color_type & PNG_COLOR_TYPE_PALETTE)
