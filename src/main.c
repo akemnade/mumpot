@@ -761,7 +761,7 @@ gboolean map_click_release(GtkWidget *widget, GdkEventButton *event,
   y=(int)event->y;
   x+=mw->page_x;
   y+=mw->page_y;
-  if (osm_mouse_handler(mw,x,y,event->time,0))
+  if (osm_mouse_handler(mw,x,y,event->time,0,event->state))
     return TRUE;
   if (mouse_state==PANNING) {
     handle_pan_release(mw,event,x,y);
@@ -1031,7 +1031,7 @@ gboolean map_click(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
     gtk_selection_owner_set(mw->map,GDK_SELECTION_PRIMARY,GDK_CURRENT_TIME);
     return TRUE;
   }
-  if (osm_mouse_handler(mw,x,y,event->time,1))
+  if (osm_mouse_handler(mw,x,y,event->time,1,event->state))
     return TRUE;
   switch(mouse_state) {
   case START_WAY: handle_start_way_click(mw,event,x,y); break;
