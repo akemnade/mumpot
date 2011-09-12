@@ -1188,7 +1188,11 @@ void suche_ort_cb(GtkWidget *w,gpointer data)
   struct mapwin *mw=data;
   char *ort;
   ort=gtk_editable_get_chars(GTK_EDITABLE(mw->entry),0,-1);
-  center_ort(mw,ort);
+  if (strchr(ort,'=')) {
+    osmedit_search(mw,ort);
+  } else {
+    center_ort(mw,ort);
+  }
   g_free(ort);
   
 }

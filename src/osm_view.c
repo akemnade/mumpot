@@ -30,6 +30,8 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
+#include <fnmatch.h>
+
 #include "myintl.h"
 #include "mapconfig_data.h"
 #include "gps.h"
@@ -1454,6 +1456,36 @@ static struct osm_object * find_nearest_object(struct osm_file *osmf,
     return &minn->head;
   } else
     return &minw->head;
+}
+
+void osmedit_search(struct mapwin *mw, const char *tag)
+{
+  GList *l;
+  char *val;
+  char *tname;
+  if (! mw->osm_main_file)
+    return;
+  tname = g_strdup(tag);
+  val = strchr(tname, '='); 
+  if (val) { 
+    val[0]=0;
+    val++;
+    for(l=g_list_first(mw->osm_main_file->nodes);l;l=g_list_next(l)) {
+      char *rval = get_tag_value((struct osm_object *)l->data,tname); 
+      if ((rval)&&(!fnmatch(val,rval,FNM_CASEFOLD))) {
+        mw->osm_inf->selected_objects =
+          g_list_append(mw->osm_inf->selected_objects,l->data); 
+      }
+    }
+    for(l=g_list_first(mw->osm_main_file->ways);l;l=g_list_next(l)) {
+      char *rval = get_tag_value((struct osm_object *)l->data,tname); 
+      if ((rval)&&(!fnmatch(val,rval,FNM_CASEFOLD))) {
+        mw->osm_inf->selected_objects =
+          g_list_append(mw->osm_inf->selected_objects,l->data); 
+      }
+    }
+  }
+  g_free(tname);
 }
 
 static void handle_edit_sel_click(struct mapwin *mw, int x, int y,int add_select)
