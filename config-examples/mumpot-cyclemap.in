@@ -14,6 +14,6 @@ map "OSM" {
   tilewidth 256
   tileheight 256
   filepattern "~/.mumpot/tilescycle/tiles%Z/%05X/%03Y"
-  url "http://andy.sandbox.cloudmade.com/tiles/cycle/%Z/%05X/%05Y.png"
+  url "http://tile.opencyclemap.org/cycle/%Z/%05X/%05Y.png"
 }
 
