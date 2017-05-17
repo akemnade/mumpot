@@ -33,6 +33,7 @@ struct trip_stats {
   double spdsum;
   double dist;
   double maxspeed;
+  double remaining_dist;
   int old_time;
   int travel_time; 
   GtkWidget *trp_stat_win;
@@ -110,7 +111,7 @@ struct trip_stats * trip_stats_new()
   return ts;
 }
 
-void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
+void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea, double remaining_dist)
 {
   char buf[80];
  
@@ -132,6 +133,7 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
   ts->speed = nmea->speed;
   ts->old_lon = nmea->lon;
   ts->old_lat = nmea->lat;
+  ts->remaining_dist = remaining_dist;
   make_nice_coord_string(buf,sizeof(buf),nmea->lon,nmea->lat);
  
   gtk_label_set_text(GTK_LABEL(ts->coordlabel),buf);
@@ -152,9 +154,13 @@ void trip_stats_update(struct trip_stats *ts, struct nmea_pointinfo *nmea)
 void trip_stats_line(struct trip_stats *ts,
 		     char *buf, int len,int current)
 {
+  char b[16];
+  b[0] = 0;
+  if (ts->remaining_dist != 0)
+    snprintf(b, sizeof(b), " %.1f km", ts->remaining_dist);
   if (current)
-    snprintf(buf,len,"%.1f km/h %.2f km",ts->speed*1.852,
-	     ts->dist/1000.0);
+    snprintf(buf,len,"%.1f km/h %.2f km%s",ts->speed*1.852,
+	     ts->dist/1000.0, b);
   else
     snprintf(buf,len,"%.2f km",
 	     ts->dist/1000.0);

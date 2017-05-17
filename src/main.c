@@ -629,6 +629,77 @@ static int find_nearst_point(GList *l, int x, int y)
   return best_pt;
 }
 
+/* find nearest point which is on a street */
+static int find_nearst_point_latlon(GList *l, struct nmea_pointinfo *p)
+{
+  int i,len;
+  int dx,dy;
+  int best_pt;
+  int min_dist;
+  min_dist=1<<30;
+  best_pt=-1;
+  len=g_list_length(l);
+  l=g_list_first(l);
+    for(i=0;i<len;i++,l=g_list_next(l)) {
+      dy=3600.0*(((struct t_punkt32 *)l->data)->latt-p->lat);
+      dx=3600.0*(((struct t_punkt32 *)l->data)->longg-p->lon);
+    if ((MY_ABS(dx)>1000)||(MY_ABS(dy)>1000)) {
+      continue;
+    }
+    dx*=dx;
+    dy*=dy;
+    dx+=dy;
+    if (dx<min_dist) {
+      min_dist=dx;
+      best_pt=i+1;
+    }
+  }
+  return best_pt;
+}
+
+static double remaining_length(int offset, struct mapwin *mw, struct t_punkt32 *p)
+{
+  struct t_punkt32 *p1;
+  struct t_punkt32 *p2;
+  char buf[80];
+  double entf;
+  double dx,dy;
+  int i,len;
+  GList *l;
+  entf=0;
+  l=*mw->mark_line_list;
+  p1=NULL;
+  if (l == NULL)
+    return 0;
+  len=g_list_length(l);
+  if (offset >= len)
+    return 0;
+  l = g_list_first(l);
+  for(i = 0; (i < offset) && (l != NULL); i++) {
+    l = g_list_next(l);
+  }
+  p1 = p;
+  while(l != NULL) {
+    p2=(struct t_punkt32 *)l->data;
+    dx=p2->x-p1->x;
+    dy=p2->y-p1->y;
+    entf+=sqrt(dx*dx+dy*dy);
+    p1=p2;
+    l = g_list_next(l);
+  }
+  entf/=(1<<globalmap.zoomshift);
+  if ((p1)&&(!globalmap.is_utm)) {
+    double dd;
+    dd=cos(p1->latt/180.0*M_PI)*M_PI*6371221.0*1000.0;
+    /* pixels per mm */
+    dd=globalmap.xfactor*180.0/dd;
+    entf=entf/dd/1000000.0;
+  } else {
+    entf=entf/200.0/globalmap.xfactor*6.198382541;
+  }
+  return entf;
+}
+
 /* recalculate the length of the marked route */
 static void recalc_mark_length(int offset, struct mapwin *mw)
 {
@@ -1860,7 +1931,7 @@ static void got_gps_position(struct nmea_pointinfo *nmea,
 			     void *data)
 {
   struct mapwin *mw = (struct mapwin *)data;
- 
+  int offset;
   struct t_punkt32 *p_new;
   mw->have_gpspos|=1;
   p_new=geosec2pointstruct(nmea->lon,nmea->lat);
@@ -1871,7 +1942,9 @@ static void got_gps_position(struct nmea_pointinfo *nmea,
   p_new->start_new=nmea->start_new;
   *mw->gps_line_list = g_list_append(*mw->gps_line_list,p_new);
   mw->last_nmea=*nmea;
-  trip_stats_update(mw->stats,nmea);
+ 
+  offset=find_nearst_point_latlon(*mw->mark_line_list, nmea);
+  trip_stats_update(mw->stats, nmea, remaining_length(offset, mw, p_new));
   g_idle_add(set_gps_position,mw);
 }
 
