@@ -697,7 +697,7 @@ static double remaining_length(int offset, struct mapwin *mw, struct t_punkt32 *
   } else {
     entf=entf/200.0/globalmap.xfactor*6.198382541;
   }
-  return entf;
+  return 1000.0*entf;
 }
 
 /* recalculate the length of the marked route */
