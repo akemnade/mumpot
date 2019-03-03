@@ -14,6 +14,7 @@
 #include <config.h>
 #endif
 
+#include <string.h>
 #include <png.h>
 #include <stdlib.h>
 #include <jpeglib.h>
@@ -76,7 +77,7 @@ void save_pinfo(const char *filename,struct pixmap_info *pinfo)
 			       (png_infopp)NULL);
       return;
     }
-  if (setjmp(png_ptr->jmpbuf))
+  if (setjmp(png_jmpbuf(png_ptr)))
     {
       /* Free all of the memory associated with the png_ptr and info_ptr */
       png_destroy_write_struct(&png_ptr, &info_ptr);
@@ -169,7 +170,7 @@ struct pixmap_info *load_gfxfile(const char *filename)
      
       return NULL;
     }
-  if (setjmp(png_ptr->jmpbuf)) {
+  if (setjmp(png_jmpbuf(png_ptr))) {
     /* Free all of the memory associated with the png_ptr and info_ptr */
     png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
     fclose(fh);
