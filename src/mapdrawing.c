@@ -30,6 +30,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #endif
+#include <curl/curl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -70,6 +71,7 @@ static GList *tile_fetch_queue;
 static GList *request_list;
 static int running_requests=0;
 static void free_image_cache(char *fname);
+static CURLM *curlm;
 int tile_request_mode=1;
 struct http_fetch_buf {
   char *request;
@@ -82,6 +84,9 @@ struct http_fetch_buf {
   char *filename;
   GIOChannel *ioc;
   void *data;
+#ifndef SIMPLE_SOCK_FETCH
+  CURL *curl;
+#endif
   void (*finish_cb)(const char *,const char *,void *);
   void (*fail_cb)(const char *,const char *,void *);
   int (*size_check)(const char *,void *,int);
@@ -128,12 +133,16 @@ static void cleanup_http_buf(struct http_fetch_buf *hfb)
     g_io_channel_unref(hfb->ioc);
   if (hfb->outfd>=0)
     close(hfb->outfd);
+  if ((hfb->fd>=0) || hfb->curl) {
+    running_requests--;
+  }
   if (hfb->fd>=0) {
     if (closesocket(hfb->fd)) {
       perror("close: ");
     }
-    running_requests--;
   }
+  if (hfb->curl)
+    curl_easy_cleanup(hfb->curl);
   g_free(hfb);
   check_request_queue();
 }
@@ -500,9 +509,182 @@ static void get_http_tile(struct mapwin *mw,
   g_free(fullname);
 }
 
+/* do http recv */
+static ssize_t  maptile_writefunc(void *ptr, size_t size,
+				  size_t nmemb, void *data)
+{
+  ssize_t l = size * nmemb;
+  struct http_fetch_buf *hfb=(struct http_fetch_buf *)data;
+  if (hfb->outfd < 0) {
+    if (hfb->use_tempname) {
+#ifdef _WIN32
+      mktemp(hfb->filename);
+      hfb->outfd=open(hfb->filename,O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,0666);
+      printf("opened: %s\n",hfb->filename);
+#else
+      hfb->outfd=mkstemp(hfb->filename);
+#endif
+    } else {
+      char *nfname=g_strdup_printf("%s.",hfb->filename);
+#ifdef _WIN32
+      hfb->outfd=open(nfname,O_WRONLY|O_CREAT|O_TRUNC|O_BINARY,0666);
+#else
+      hfb->outfd=open(nfname,O_WRONLY|O_CREAT|O_TRUNC,0666);
+#endif
+      fprintf(stderr,"opened %s\n",nfname);
+      g_free(nfname);
+    }
+  }
+  if (hfb->outfd >= 0) {
+    write(hfb->outfd,ptr,l);
+  }
+  return l;
+}
 
+static gboolean maptile_failed(gpointer data)
+{
+  struct http_fetch_buf *hfb = (struct http_fetch_buf *) data;
+  if (hfb->fail_cb)
+    hfb->fail_cb(hfb->url,hfb->filename,hfb->data);
+  cleanup_http_buf(hfb);
+  return FALSE;
+}
+
+static gboolean maptile_finished(gpointer data)
+{
+  struct http_fetch_buf *hfb = (struct http_fetch_buf *) data;
+  if (hfb->finish_cb)
+    hfb->finish_cb(hfb->url,hfb->filename,hfb->data);
+  cleanup_http_buf(hfb);
+  return FALSE;
+}
+
+static gboolean maptile_check_msg(gpointer key, gpointer value, gpointer user_data)
+{
+  CURLMsg *msg = (CURLMsg *)user_data;
+  struct http_fetch_buf *hfb = (struct http_fetch_buf *) value;
+  if (hfb->curl == msg->easy_handle) {
+    if (hfb->outfd > 0) {
+      close(hfb->outfd);
+      hfb->outfd = -1;
+    }
+    curl_multi_remove_handle(curlm, hfb->curl);
+    if (msg->data.result == CURLE_OK) {
+      if (!hfb->use_tempname) {
+	struct stat st;
+	char *nfname=g_strdup_printf("%s.",hfb->filename);
+	if ((!stat(nfname,&st))&&
+	    ((!hfb->size_check) || (hfb->size_check(hfb->filename,hfb->data,st.st_size)))) { 
+	  if (!rename(nfname,hfb->filename)) {
+	    g_hash_table_remove(tile_files_to_fetch,hfb->filename);
+	  }
+	} else {
+	  unlink(nfname);
+	}
+	g_free(nfname);
+      }
+      g_idle_add(maptile_finished, hfb);
+     
+    } else {
+      g_idle_add(maptile_failed, hfb);
+    }
+    return TRUE;
+  }
+  return FALSE;
+}
+
+static gboolean maptile_check_msgs(void *data)
+{
+  int msgs_left = 0;
+  CURLMsg *msg; /* for picking up messages with the transfer status */
+
+  while((msg = curl_multi_info_read(curlm, &msgs_left))) {
+    if (msg->msg == CURLMSG_DONE) {
+      g_hash_table_foreach_remove(http_hash, maptile_check_msg, msg);
+    }
+  }
+  return FALSE;
+}
+
+
+static int maptile_iofunc(GIOChannel *source,
+			  GIOCondition cond,
+			  gpointer data)
+{
+  int handles;
+  int bm;
+  if (!cond)
+    return FALSE;
+  if (cond&G_IO_IN)
+    bm|=CURL_CSELECT_IN;
+  if (cond&G_IO_OUT)
+    bm|=CURL_CSELECT_OUT;
+  while(CURLM_CALL_MULTI_PERFORM==curl_multi_socket_action(curlm,
+							   g_io_channel_unix_get_fd(source),
+							   bm,
+                                                           &handles));
+  g_idle_add(maptile_check_msgs, NULL);
+  return TRUE;
+
+}
+
+static int maptile_sockfunc(CURL *easy,
+			    curl_socket_t s,
+			    int action,
+			    void *userp,
+			    void *socketp)
+{
+  struct {
+    GIOChannel *ioc;
+    int src;
+  } *sockdata;
+  if (socketp) {
+    sockdata = socketp;
+  } else {
+    sockdata = calloc(1, sizeof(*sockdata));
+    curl_multi_assign(curlm, s, (void *)sockdata);
+  }
+  if (sockdata->ioc == NULL) {
+#ifdef _WIN32
+    sockdata->ioc = g_io_channel_win32_new_stream_socket(s);
+#else
+    sockdata->ioc = g_io_channel_unix_new(s);
+#endif
+  }
+  GIOCondition cond = 0;
+  g_source_remove_by_user_data(sockdata);
+  switch(action) {
+  case CURL_POLL_IN:
+    cond |= G_IO_IN;
+    break;
+  case CURL_POLL_OUT:
+    cond |= G_IO_OUT;
+    break;
+  case CURL_POLL_INOUT:
+    cond |= (G_IO_IN | G_IO_OUT);
+    break;
+  case CURL_POLL_REMOVE:
+    if (sockdata->ioc) {
+      g_io_channel_unref(sockdata->ioc);
+      sockdata->ioc = NULL;
+      free(sockdata);
+      curl_multi_assign(curlm, s, (void *)NULL);
+    }
+    return 0;
+  }
+
+  if (cond) {
+    sockdata->src = g_io_add_watch(sockdata->ioc, cond, maptile_iofunc, sockdata);
+  }
+  
+  return 0;
+}
 static void start_http_request(struct http_fetch_buf *hfb)
 {
+  int running = 0;
+  fprintf(stderr, "fetching %s\n", hfb->url);
+#ifdef SIMPLE_SOCK_FETCH
+
   int i;
   char hostname[512];
   const char *hostn;
@@ -529,7 +711,15 @@ static void start_http_request(struct http_fetch_buf *hfb)
     cleanup_http_buf(hfb);
     return;
   }
+#else
+  if (!curlm) {
+    curlm = curl_multi_init();
+    curl_multi_setopt(curlm, CURLMOPT_SOCKETFUNCTION,
+		      maptile_sockfunc);
+  }
+#endif
   running_requests++;
+#ifdef SIMPLE_SOCK_FETCH
   hfb->fd=sock;
   hfb->request=g_strdup_printf("%s %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s %s\r\n\r\n",
 			       "GET",slash,hostname,PACKAGE,VERSION);
@@ -541,6 +731,16 @@ static void start_http_request(struct http_fetch_buf *hfb)
   g_io_add_watch(hfb->ioc,
 		 G_IO_OUT|G_IO_HUP,
 		 do_http_send,hfb);
+#else
+  hfb->curl = curl_easy_init();
+  curl_easy_setopt(hfb->curl, CURLOPT_URL, hfb->url);
+  curl_easy_setopt(hfb->curl,CURLOPT_NOSIGNAL,1);
+  curl_easy_setopt(hfb->curl, CURLOPT_WRITEDATA, hfb);
+  curl_easy_setopt(hfb->curl, CURLOPT_WRITEFUNCTION, maptile_writefunc);
+  curl_multi_add_handle(curlm, hfb->curl);
+  while(CURLM_CALL_MULTI_PERFORM==(curl_multi_socket_all(curlm,&running)));
+
+#endif
 }
 
 static void check_request_queue()
