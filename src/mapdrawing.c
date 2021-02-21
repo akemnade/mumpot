@@ -55,7 +55,7 @@ int tile_cache_size=64;
 #define M_PI_2         1.57079632679489661923
 #endif
 
-#define MAX_HTTP_REQUESTS 8
+#define MAX_HTTP_REQUESTS 2
 
 static int cache_count;
 static GList *cache_list;
@@ -516,6 +516,11 @@ static ssize_t  maptile_writefunc(void *ptr, size_t size,
   ssize_t l = size * nmemb;
   struct http_fetch_buf *hfb=(struct http_fetch_buf *)data;
   if (hfb->outfd < 0) {
+    if (! memcmp(ptr,"<!", 2)) {
+      fprintf(stderr," junk received: \n");
+      fwrite(ptr, size, nmemb, stderr);
+      return l;
+    }
     if (hfb->use_tempname) {
 #ifdef _WIN32
       mktemp(hfb->filename);
@@ -679,6 +684,14 @@ static int maptile_sockfunc(CURL *easy,
   
   return 0;
 }
+
+static int curl_ping(void *data)
+{
+  int running = 0;
+  while(CURLM_CALL_MULTI_PERFORM==(curl_multi_socket_all(curlm,&running)));
+  return running != 0;	
+}
+
 static void start_http_request(struct http_fetch_buf *hfb)
 {
   int running = 0;
@@ -734,12 +747,13 @@ static void start_http_request(struct http_fetch_buf *hfb)
 #else
   hfb->curl = curl_easy_init();
   curl_easy_setopt(hfb->curl, CURLOPT_URL, hfb->url);
+  curl_easy_setopt(hfb->curl, CURLOPT_USERAGENT, "tileloader");
   curl_easy_setopt(hfb->curl,CURLOPT_NOSIGNAL,1);
   curl_easy_setopt(hfb->curl, CURLOPT_WRITEDATA, hfb);
   curl_easy_setopt(hfb->curl, CURLOPT_WRITEFUNCTION, maptile_writefunc);
   curl_multi_add_handle(curlm, hfb->curl);
   while(CURLM_CALL_MULTI_PERFORM==(curl_multi_socket_all(curlm,&running)));
-
+  g_timeout_add(2000, curl_ping, NULL);
 #endif
 }
 
