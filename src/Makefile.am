@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 INCLUDES = \
-	@GTK_CFLAGS@ @LIBCURL_CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/pixmaps -I$(top_srcdir)/intl
+	@GTK_CFLAGS@ @LIBCURL_CFLAGS@ @PROJ_CFLAGS@ @LIBXML2_CFLAGS@ -I$(top_srcdir)/pixmaps -I$(top_srcdir)/intl
 DEFS = -DLOCALEDIR=\"$(localedir)\" -DMUMPOT_DATADIR=\"$(datadir)/mumpot\" @DEFS@
 AM_YFLAGS = -d
 
@@ -30,7 +30,7 @@ download_osm_SOURCES= \
 	download_osm.c gps.c gps.h common.h common.c
 pngviewer_LDADD = @GTK_LIBS@ -lpng -lz -ljpeg
 #png2cfxga_LDADD = -lpng -lz -ljpeg
-mumpot_LDADD = @GTK_LIBS@  -lpng -lz -ljpeg @LIBXML2_LIBS@ @INTLLIBS@ @BTLIBS@ @LIBCURL_LIBS@ -lm
+mumpot_LDADD = @GTK_LIBS@  -lpng -lz -ljpeg @LIBXML2_LIBS@ @INTLLIBS@ @BTLIBS@ @LIBCURL_LIBS@ @PROJ_LIBS@ -lm
 osm2places_LDADD = @LIBXML2_LIBS@ -lm
 get_maprect_LDADD = @GTK_LIBS@ -lpng -lz -ljpeg @LIBXML2_LIBS@ @LIBCURL_LIBS@ -lm
 simplify_gps_LDADD = @GTK_LIBS@ -lz @LIBXML2_LIBS@ -lm
