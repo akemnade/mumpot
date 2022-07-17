@@ -917,6 +917,10 @@ void point2geosec(double *longr, double *lattr, double x, double y)
     dest = pj_inv(src, globalmap.proj4);
     longg = dest.lam;
     latt = dest.phi;
+    longg/=M_PI;
+    latt/=M_PI;
+    longg*=(180);
+    latt*=(180);
   } else {
     y=y/(180);
     /* x=x-9331.3392; */
@@ -951,14 +955,14 @@ void point2geosec(double *longr, double *lattr, double x, double y)
       longg=utmr;
       latt=atan(sinh(utmh));
     }
+    //printf("back: latt rad: %.6f utmr: %.6f\n",latt, longg);
+    longg/=M_PI;
+    latt/=M_PI;
+    longg*=(180);
+    latt*=(180);
+    if (globalmap.is_utm)
+      longg+=9;
   }
-  //printf("back: latt rad: %.6f utmr: %.6f\n",latt, longg);
-  longg/=M_PI;
-  latt/=M_PI;
-  longg*=(180);
-  latt*=(180);
-  if (globalmap.is_utm)
-    longg+=9;
   *longr=longg;
   *lattr=latt;
 }
@@ -1524,18 +1528,23 @@ struct pixmap_info * get_map_rectangle(int x, int y, int w, int h)
 /* calculate auxillary values fsor the coordinate transformation*/
 void calc_mapoffsets()
 {
-  double x,y;
   struct t_map *map;
   /*printf("zero latt_sec: %.3f zero long_sec: %.3f\n",globalmap.zerolatt,
 	 globalmap.zerolong); */
 /*  printf("zero latt_sec rad: %.6f zero long_sec rad: %.6f\n",y,x); */
-  if (globalmap.is_utm) {
+  if (globalmap.proj4) {
+    globalmap.xoffset=0;
+    globalmap.yoffset=0;
+  } 
+  else if (globalmap.is_utm) {
+    double x,y;
     x=(globalmap.zerolong-9.0)/(180)*M_PI;
     y=globalmap.zerolatt/(180)*M_PI;
     globalmap.xoffset=asin(sin(x)*cos(y));
     globalmap.yoffset=M_PI_2-atan(cos(x)/tan(y));
     /*  printf("xoffset: %.6f, yoffset: %.6f\n",globalmap.xoffset, globalmap.yoffset); */
   } else {
+    double x,y;
     x=globalmap.zerolong/(180)*M_PI;
     y=globalmap.zerolatt/(180)*M_PI;
     globalmap.xoffset=x;

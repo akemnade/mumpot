@@ -475,7 +475,7 @@ static gboolean map_move_cb(gpointer user_data)
   mx=mw->page_x+(int)event->x;
   my=mw->page_y+(int)event->y;
   point2geosec(&longg,&latt,(double)mx,(double)my);
-  make_nice_coord_string(last_coord_buf,sizeof(last_coord_buf),
+  snprintf(last_coord_buf, sizeof(last_coord_buf),"%.6f %.6f",
 			 latt,longg);
 
   mw->mouse_moved=0;
@@ -695,7 +695,12 @@ static double remaining_length(int offset, struct mapwin *mw, struct t_punkt32 *
     dd=globalmap.xfactor*180.0/dd;
     entf=entf/dd/1000000.0;
   } else {
+    if (globalmap.proj4) {
+      entf /= globalmap.xfactor;
+      return entf;
+    }
     entf=entf/200.0/globalmap.xfactor*6.198382541;
+    entf*=3600;
   }
   return 1000.0*entf;
 }
@@ -736,7 +741,13 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
     dd=globalmap.xfactor*180.0/dd;
     entf=entf/dd/1000000.0;
   } else {
-    entf=entf/200.0/globalmap.xfactor*6.198382541;
+    if (globalmap.proj4) {
+      entf /= globalmap.xfactor;
+      entf /= 1000;
+    } else {
+      entf=entf/200.0/globalmap.xfactor*6.198382541;
+      entf *= 3600;
+    }
   }
   if (entf==0) {
     gtk_label_set_text(GTK_LABEL(mw->entf_label),"");
