@@ -867,23 +867,33 @@ void geosec2point(double *xr, double *yr,double long_sec, double latt_sec)
   //printf("latt_sec:%.3f long_sec: %.3f\n",latt_sec,long_sec);
   x=x/(180.0)*M_PI;
   y=y/(180.0)*M_PI;
-  if (globalmap.is_utm) {
-    x=x-(9.0*M_PI/180.0);
-    //printf("latt sec rad:%.6f long rad: %.6f\n",y,x);
-    utmh=M_PI_2-atan(cos(x)/tan(y));
-    utmr=asin(sin(x)*cos(y));
-    //printf("utm right rad: %.6f utm high rad: %.6f\n",utmr,utmh);
-    
+  if (globalmap.proj4) {
+    PJ_LP lpsrc;
+    PJ_XY dest;
+    lpsrc.lam = x;
+    lpsrc.phi = y;
+    dest = pj_fwd(lpsrc, globalmap.proj4);
+    x = dest.x;
+    y = dest.y;
   } else {
-    utmr=x;
-    utmh=log(tan(y)+1.0/cos(y));
+    if (globalmap.is_utm) {
+      x=x-(9.0*M_PI/180.0);
+      //printf("latt sec rad:%.6f long rad: %.6f\n",y,x);
+      utmh=M_PI_2-atan(cos(x)/tan(y));
+      utmr=asin(sin(x)*cos(y));
+      //printf("utm right rad: %.6f utm high rad: %.6f\n",utmr,utmh);
+    
+    } else {
+      utmr=x;
+      utmh=log(tan(y)+1.0/cos(y));
+    }
+    utmr-=globalmap.xoffset;
+    utmh-=globalmap.yoffset;
+    x=utmr/M_PI;
+    y=utmh/M_PI;
+    x=x*180.0;
+    y=y*180.0;
   }
-  utmr-=globalmap.xoffset;
-  utmh-=globalmap.yoffset;
-  x=utmr/M_PI;
-  y=utmh/M_PI;
-  x=x*180.0;
-  y=y*180.0;
   y=-y*globalmap.yfactor;
   x=x*globalmap.xfactor;
   *xr=x;
@@ -899,13 +909,25 @@ void point2geosec(double *longr, double *lattr, double x, double y)
   x=x/globalmap.xfactor;
   /* y=y-1228259; */
   y=-y/globalmap.yfactor;
-  y=y/(180);
-  /* x=x-9331.3392; */
-  x=x/(180);
-  utmr=x*M_PI;
-  utmh=y*M_PI;
-  utmr+=globalmap.xoffset;
-  utmh+=globalmap.yoffset;
+  if (globalmap.proj4) {
+    PJ_LP dest;
+    PJ_XY src;
+    src.x = x;
+    src.y = y;
+    dest = pj_inv(src, globalmap.proj4);
+    longg = dest.lam;
+    latt = dest.phi;
+  } else {
+    y=y/(180);
+    /* x=x-9331.3392; */
+    x=x/(180);
+    x*=M_PI;
+    y*=M_PI;
+	
+    utmr=x;
+    utmh=y;
+    utmr+=globalmap.xoffset;
+    utmh+=globalmap.yoffset;
   /**   Napiers rule
    *    cot(utmh)=cos(long)/tan(latt)
         sin(utmr)=sin(long)*cos(latt) */
@@ -922,12 +944,13 @@ void point2geosec(double *longr, double *lattr, double x, double y)
         latt=arccos(cos(utmr)*cos(utmh)) */
 
   //printf("back: utmh: %.6f utmr: %.6f\n",utmh, utmr);
-  if (globalmap.is_utm) {
-    latt=asin(cos(utmr)*sin(utmh));
-    longg=atan(tan(utmr)/cos(utmh));
-  } else {
-    longg=utmr;
-    latt=atan(sinh(utmh));
+    if (globalmap.is_utm) {
+      latt=asin(cos(utmr)*sin(utmh));
+      longg=atan(tan(utmr)/cos(utmh));
+    } else {
+      longg=utmr;
+      latt=atan(sinh(utmh));
+    }
   }
   //printf("back: latt rad: %.6f utmr: %.6f\n",latt, longg);
   longg/=M_PI;
@@ -1526,14 +1549,17 @@ void calc_mapoffsets()
   map=globalmap.first;
   while(map) {
     double x,y;
+    if (!strstr(map->filepattern,"%Z")) {
+     globalmap.zoomable=0;
+    globalmap.xfactor=globalmap.orig_xfactor;
+    globalmap.yfactor=globalmap.orig_yfactor;
+    }
     geosec2point(&x,&y,map->reflong,map->reflatt);
     map->xoffset=map->refx-(int)x;
     map->yoffset=map->refy-(int)y;
-    if (!strstr(map->filepattern,"%Z"))
- 
-     globalmap.zoomable=0;
     map=map->next;
   }
+  if (globalmap.zoomable)
   {
     int maxdim=globalmap.fullwidth;
     if (globalmap.fullheight>maxdim)

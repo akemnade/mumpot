@@ -13,6 +13,9 @@
 
 #ifndef K_MAPCONFIG_DATA_H
 #define K_MAPCONFIG_DATA_H
+#include <proj.h>
+#define ACCEPT_USE_OF_DEPRECATED_PROJ_API_H
+#include <proj_api.h>
 struct t_map {
   char *name;
   double reflatt;
@@ -49,6 +52,7 @@ struct t_globalmap {
   double orig_xfactor;
   double orig_yfactor;
   char *startplace;    /* start place name */
+  projPJ proj4;
   struct t_map *first;
   struct t_map *last;
   GList *placefilelist;

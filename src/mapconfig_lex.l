@@ -96,6 +96,7 @@ initialzoom    return T_INITIALZOOM;
 utm            return T_UTM;
 url            return T_URL;
 mercator       return T_MERCATOR;
+proj4	       return T_PROJ4;
 \n   current_lineno++; return T_NEWLINE;
 [ \t]+ /* ignore */
 #.* /* ignore*/

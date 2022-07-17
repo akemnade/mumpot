@@ -98,7 +98,7 @@ char *expand_home(char *h)
 %token <str> T_STRING
 %token <num> T_NUM
 %token <realnum> T_REALNUM
-%token T_PLACEFILE T_STARTPLACE T_FULLWIDTH T_FULLHEIGHT T_INITIALZOOM T_MAP T_ORIGIN T_XFACTOR T_YFACTOR T_TILEWIDTH T_TILEHEIGHT T_FILEPATTERN T_NEWLINE PARSE_MAPCONFIG PARSE_COORDS T_MERCATOR T_UTM T_PROJECTION T_URL
+%token T_PLACEFILE T_STARTPLACE T_FULLWIDTH T_FULLHEIGHT T_INITIALZOOM T_MAP T_ORIGIN T_XFACTOR T_YFACTOR T_TILEWIDTH T_TILEHEIGHT T_FILEPATTERN T_NEWLINE PARSE_MAPCONFIG PARSE_COORDS T_MERCATOR T_UTM T_PROJECTION T_URL T_PROJ4
 %type <realnum> lattitude longitude degree degmin degsec realnum
 
 %%
@@ -166,7 +166,13 @@ configexp:
      globalmap.orig_yfactor=$2;
    }
    | T_PROJECTION projtype 
-   
+   | T_PROJ4 T_STRING {
+     globalmap.proj4 = pj_init_plus($2);
+     if (globalmap.proj4 == NULL) {
+       fprintf(stderr, "invalid map projection: %s\n", $2);
+       exit(1);
+     }
+   }
    /*§ definition of a map */
    | T_MAP map 
    ;
