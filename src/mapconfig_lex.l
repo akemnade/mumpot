@@ -24,7 +24,7 @@
 #include "mapconfig.h"
 char *current_file;
 int current_lineno=1;
-YYSTYPE kconfylval;
+extern YYSTYPE kconfylval;
 extern double parsed_lattitude;
 extern double parsed_longitude;
 int parse_init_state;

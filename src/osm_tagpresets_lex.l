@@ -26,7 +26,7 @@
 
 extern void tagselparse(FILE *f);
 int tagpreset_lineno=1;
-YYSTYPE tagsellval;
+extern YYSTYPE tagsellval;
 
 int osm_parse_presetfile(char *fname)
 {
