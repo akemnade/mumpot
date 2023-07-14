@@ -867,14 +867,13 @@ void geosec2point(double *xr, double *yr,double long_sec, double latt_sec)
   //printf("latt_sec:%.3f long_sec: %.3f\n",latt_sec,long_sec);
   x=x/(180.0)*M_PI;
   y=y/(180.0)*M_PI;
-  if (globalmap.proj4) {
-    PJ_LP lpsrc;
-    PJ_XY dest;
-    lpsrc.lam = x;
-    lpsrc.phi = y;
-    dest = pj_fwd(lpsrc, globalmap.proj4);
-    x = dest.x;
-    y = dest.y;
+  if (globalmap.proj) {
+    PJ_COORD c;
+    c.lp.lam = x;
+    c.lp.phi = y;
+    c = proj_trans(globalmap.proj, PJ_FWD, c);
+    x = c.xy.x;
+    y = c.xy.y;
   } else {
     if (globalmap.is_utm) {
       x=x-(9.0*M_PI/180.0);
@@ -909,14 +908,13 @@ void point2geosec(double *longr, double *lattr, double x, double y)
   x=x/globalmap.xfactor;
   /* y=y-1228259; */
   y=-y/globalmap.yfactor;
-  if (globalmap.proj4) {
-    PJ_LP dest;
-    PJ_XY src;
-    src.x = x;
-    src.y = y;
-    dest = pj_inv(src, globalmap.proj4);
-    longg = dest.lam;
-    latt = dest.phi;
+  if (globalmap.proj) {
+    PJ_COORD c;
+    c.xy.x = x;
+    c.xy.y = y;
+    c = proj_trans(globalmap.proj, PJ_INV, c);
+    longg = c.lp.lam;
+    latt = c.lp.phi;
     longg/=M_PI;
     latt/=M_PI;
     longg*=(180);
@@ -1532,7 +1530,7 @@ void calc_mapoffsets()
   /*printf("zero latt_sec: %.3f zero long_sec: %.3f\n",globalmap.zerolatt,
 	 globalmap.zerolong); */
 /*  printf("zero latt_sec rad: %.6f zero long_sec rad: %.6f\n",y,x); */
-  if (globalmap.proj4) {
+  if (globalmap.proj) {
     globalmap.xoffset=0;
     globalmap.yoffset=0;
   } 

@@ -167,8 +167,8 @@ configexp:
    }
    | T_PROJECTION projtype 
    | T_PROJ4 T_STRING {
-     globalmap.proj4 = pj_init_plus($2);
-     if (globalmap.proj4 == NULL) {
+     globalmap.proj = proj_create(PJ_DEFAULT_CTX, $2);
+     if (globalmap.proj == NULL) {
        fprintf(stderr, "invalid map projection: %s\n", $2);
        exit(1);
      }

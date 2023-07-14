@@ -695,7 +695,7 @@ static double remaining_length(int offset, struct mapwin *mw, struct t_punkt32 *
     dd=globalmap.xfactor*180.0/dd;
     entf=entf/dd/1000000.0;
   } else {
-    if (globalmap.proj4) {
+    if (globalmap.proj) {
       entf /= globalmap.xfactor;
       return entf;
     }
@@ -741,7 +741,7 @@ static void recalc_mark_length(int offset, struct mapwin *mw)
     dd=globalmap.xfactor*180.0/dd;
     entf=entf/dd/1000000.0;
   } else {
-    if (globalmap.proj4) {
+    if (globalmap.proj) {
       entf /= globalmap.xfactor;
       entf /= 1000;
     } else {
